@@ -43,19 +43,19 @@ def test_shift_rotation():
 
 
 # Employee gets two shifts (same types) on consecutive days, but only one in a row is allowed- should be infeasible
-# def test_max_number_shifts():
-#     with AssertModelInfeasible() as model:
-#         lokal_shift_type = shiftType.ShiftType()
-#         lokal_employee = employee.Employee()
-#         # set second shift type to be blocked after first
-#         lokal_employee.
-#         instance = instace.Instance(
-#             number_of_days=2,
-#             shift_typs=lokal_shift_types,
-#             emplyees=[lokal_employee],
-#         )
-#         vars = shift_vars.Shift_vars(instance, model)
-#         shift_rotation_constraint.Shift_rotation_constraint().build(instance, vars)
+def test_max_number_shifts():
+    with AssertModelInfeasible() as model:
+        lokal_shift_type = shiftType.ShiftType()
+        lokal_employee = employee.Employee()
+        # set second shift type to be blocked after first
+        lokal_employee.max_numbers_of_shifts = {lokal_shift_type.uid: 1}
+        instance = instace.Instance(
+            number_of_days=2,
+            shift_typs=[lokal_shift_type],
+            emplyees=[lokal_employee],
+        )
+        vars = shift_vars.Shift_vars(instance, model)
+        shift_rotation_constraint.Shift_rotation_constraint().build(instance, vars)
 
-#         model.Add(vars.vars[(0, lokal_shift_types[0].uid, lokal_employee.uid)] == 1)
-#         model.Add(vars.vars[(1, lokal_shift_types[1].uid, lokal_employee.uid)] == 1)
+        model.Add(vars.vars[(0, lokal_shift_type.uid, lokal_employee.uid)] == 1)
+        model.Add(vars.vars[(1, lokal_shift_type.uid, lokal_employee.uid)] == 1)
