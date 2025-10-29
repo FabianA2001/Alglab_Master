@@ -12,7 +12,7 @@ class Limited_shifts_per_type_validation(ShiftAssignmentModule):
         vars: shift_vars.Shift_vars,
     ) -> cp_model.LinearExprT:
         for employee_uid in instance.employees:
-            for type_uid in instance.shiftType:
+            for type_uid in instance.shift_types:
                 assigned_shifts = []
                 for day in range(instance.number_of_days):
                     assigned_shifts.append(vars.vars[(day, type_uid, employee_uid)])
