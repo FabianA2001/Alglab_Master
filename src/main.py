@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from .inputTypes import employee, instace, shiftType
 from .parseData.parseXML import print_xml_structure
 
 
@@ -15,7 +16,8 @@ def get_tes_data():
 
 
 def main() -> None:
-    get_tes_data()
+    # get_tes_data()
+    inst = instace.Instance(14, [shiftType.ShiftType()], [employee.Employee()])
 
 
 if __name__ == "__main__":
