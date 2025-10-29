@@ -19,5 +19,22 @@ class Shift_vars:
                     )
 
         self.weekend_vars = {}
+        for employee_uid in instance.employees:
+            for weekend in instance.weekend_days:
+                self.weekend_vars[(weekend, employee_uid)] = self.model.new_bool_var(
+                    f"weekend_work_{weekend}_for_{employee_uid}"
+                )
+                for type_uid in instance.shifts[weekend]:
+                    # force weekend var for saturday
+                    self.model.add(
+                        self.weekend_vars[(weekend, employee_uid)]
+                        >= self.vars[(weekend, type_uid, employee_uid)]
+                    )
+                    # force weekend var for sunday
+                    if weekend > 0:
+                        self.model.add(
+                            self.weekend_vars[(weekend, employee_uid)]
+                            >= self.vars[(weekend + 1, type_uid, employee_uid)]
+                        )
 
-        # TODO K,y,z variable
+        # TODO y,z variable

@@ -1,4 +1,6 @@
+import pytest
 from cpsat_utils.testing import AssertModelFeasible, AssertModelInfeasible
+from ortools.sat.python import cp_model
 
 from src import shift_vars
 from src.inputTypes import employee, instace, shiftType
@@ -111,3 +113,27 @@ def test_min_max_worktime_exact():
         vars = shift_vars.Shift_vars(instance, model)
         minMaxWorkTime.MinMaxWorkTime().build(instance, vars)
         model.Add(vars.vars[(0, lokal_shift_type.uid, lokal_employee.uid)] == 1)
+
+
+@pytest.mark.parametrize(
+    "day",
+    [
+        1,
+        2,
+    ],
+)
+def test_weekend_assignment(day):
+    lokal_shift_type = shiftType.ShiftType()
+    lokal_employee = employee.Employee()
+    instance = instace.Instance(
+        number_of_days=3,
+        shift_typs=[lokal_shift_type],
+        emplyees=[lokal_employee],
+        weekend_days={1},
+    )
+    vars = shift_vars.Shift_vars(instance)
+    vars.model.add(vars.vars[(day, lokal_shift_type.uid, lokal_employee.uid)] == 1)
+    solver = cp_model.CpSolver()
+    status = solver.Solve(vars.model)
+    assert status == cp_model.OPTIMAL or status == cp_model.FEASIBLE
+    assert solver.Value(vars.weekend_vars[(1, lokal_employee.uid)]) == 1
