@@ -46,3 +46,6 @@ class Instance(BaseModel):
     shift_types: dict[shiftType.TypeUid, shiftType.ShiftType] = Field(
         default_factory=dict, description="Set of Shift Types in the Instance"
     )
+
+    def get_shift(self, day: int, type_uid: int) -> shift.Shift:
+        return self.shifts[day][type_uid]

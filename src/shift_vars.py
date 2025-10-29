@@ -9,6 +9,13 @@ class Shift_vars:
     ):
         self.model: cp_model.CpModel = model
         # (day, type_uid, employee_uid) -> variable
+
+        self.__init_vars(instance)
+        self.__init_weekend_vars(instance)
+        self.__init_below_prefferd_vars(instance)
+        self.__init_above_prefferd_vars(instance)
+
+    def __init_vars(self, instance: instace.Instance):
         self.vars = {}
         for day in range(instance.number_of_days):
             for type_uid in instance.shifts[day]:
@@ -18,6 +25,7 @@ class Shift_vars:
                         f"assign_{day}_{type_uid}_to_{employee_uid}"
                     )
 
+    def __init_weekend_vars(self, instance: instace.Instance):
         self.weekend_vars = {}
         for employee_uid in instance.employees:
             for weekend in instance.weekend_days:
@@ -37,9 +45,58 @@ class Shift_vars:
                             >= self.vars[(weekend + 1, type_uid, employee_uid)]
                         )
 
-    def get_var(self, day: int, type_uid: int, employee_uid: int):
+    def __init_below_prefferd_vars(self, instance: instace.Instance):
+        self.below_prefferd_vars = {}
+        for day in range(instance.number_of_days):
+            for type_uid in instance.shifts[day]:
+                self.below_prefferd_vars[(day, type_uid)] = self.model.new_int_var(
+                    0,
+                    instance.get_shift(day, type_uid).preffert_number_employees,
+                    f"below_prefferd_{day}_{type_uid}",
+                )
+                self.model.add(
+                    instance.get_shift(day, type_uid).preffert_number_employees
+                    - sum(
+                        self.vars[(day, type_uid, emp_uid)]
+                        for emp_uid in instance.employees
+                    )
+                    <= self.below_prefferd_vars[(day, type_uid)]
+                )
+                self.model.add(self.below_prefferd_vars[(day, type_uid)] >= 0)
+
+    def __init_above_prefferd_vars(self, instance: instace.Instance):
+        number_of_employees = len(instance.employees)
+        self.above_prefferd_vars = {}
+        for day in range(instance.number_of_days):
+            for type_uid in instance.shifts[day]:
+                self.above_prefferd_vars[(day, type_uid)] = self.model.new_int_var(
+                    0,
+                    max(
+                        number_of_employees
+                        - instance.get_shift(day, type_uid).preffert_number_employees,
+                        0,
+                    ),
+                    f"above_prefferd_{day}_{type_uid}",
+                )
+                self.model.add(
+                    sum(
+                        self.vars[(day, type_uid, emp_uid)]
+                        for emp_uid in instance.employees
+                    )
+                    - instance.get_shift(day, type_uid).preffert_number_employees
+                    <= self.above_prefferd_vars[(day, type_uid)]
+                )
+                self.model.add(self.above_prefferd_vars[(day, type_uid)] >= 0)
+        # TODO y,z variable
+
+    def get_var(self, day: int, type_uid: int, employee_uid: int) -> cp_model.BoolVarT:
         return self.vars[(day, type_uid, employee_uid)]
 
-    def get_weekend_var(self, weekend: int, employee_uid: int):
+    def get_weekend_var(self, weekend: int, employee_uid: int) -> cp_model.BoolVarT:
         return self.weekend_vars[(weekend, employee_uid)]
-        # TODO y,z variable
+
+    def get_above_prefferd_var(self, day: int, type_uid: int) -> cp_model.IntVar:
+        return self.above_prefferd_vars[(day, type_uid)]
+
+    def get_below_prefferd_var(self, day: int, type_uid: int) -> cp_model.IntVar:
+        return self.below_prefferd_vars[(day, type_uid)]
