@@ -5,10 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python Debugger: Module",
+            "name": "Python Debugger: main function",
             "type": "debugpy",
             "request": "launch",
-            "module": "ALGLAB_MASTER"
+            "module": "src.main",
+            "cwd": "${workspaceFolder}",
+            "justMyCode": true
         }
     ]
 }
