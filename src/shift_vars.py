@@ -87,7 +87,6 @@ class Shift_vars:
                     <= self.above_prefferd_vars[(day, type_uid)]
                 )
                 self.model.add(self.above_prefferd_vars[(day, type_uid)] >= 0)
-        # TODO y,z variable
 
     def get_var(self, day: int, type_uid: int, employee_uid: int) -> cp_model.BoolVarT:
         return self.vars[(day, type_uid, employee_uid)]
