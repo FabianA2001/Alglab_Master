@@ -2,7 +2,11 @@ from cpsat_utils.testing import AssertModelInfeasible
 
 from src import shift_vars
 from src.inputTypes import employee, instace, shiftType
-from src.module import shift_assignment_single_day_validation, shift_rotation_constraint
+from src.module import (
+    limited_shifts_per_type_validation,
+    shift_assignment_single_day_validation,
+    shift_rotation_constraint,
+)
 
 
 # Employee gets two shifts (different types) on a single day - should be infeasible
@@ -55,7 +59,9 @@ def test_max_number_shifts():
             emplyees=[lokal_employee],
         )
         vars = shift_vars.Shift_vars(instance, model)
-        shift_rotation_constraint.Shift_rotation_constraint().build(instance, vars)
+        limited_shifts_per_type_validation.Limited_shifts_per_type_validation().build(
+            instance, vars
+        )
 
         model.Add(vars.vars[(0, lokal_shift_type.uid, lokal_employee.uid)] == 1)
         model.Add(vars.vars[(1, lokal_shift_type.uid, lokal_employee.uid)] == 1)
