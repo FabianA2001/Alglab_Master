@@ -16,6 +16,7 @@ class Instance(BaseModel):
         **data,
     ):
         super().__init__(**data)
+        self.number_of_days = number_of_days
         for type in shift_typs:
             self.shift_types[type.uid] = type
         for emp in emplyees:
