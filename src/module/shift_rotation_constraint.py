@@ -13,12 +13,13 @@ class Shift_rotation_constraint(ShiftAssignmentModule):
             for day in range(instance.number_of_days - 1):
                 assigned_shifts = []
                 for type_uid in instance.shifts[day]:
-                    assigned_shifts.append(vars.vars[(day, type_uid, employee_uid)])
+                    assigned_shifts.append(
+                        vars.vars[(day, type_uid, employee_uid)])
                     for btype_uid in instance.shift_types[
                         type_uid
                     ].blocked_shifts_after:
                         assigned_shifts.append(
-                            vars.vars[(day + 1, btype_uid, employee_uid)]
-                        )
+                            vars.vars[(day+1, btype_uid, employee_uid)])
                     vars.model.AddAtMostOne(assigned_shifts)
+
         return 0
