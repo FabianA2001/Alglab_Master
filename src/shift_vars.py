@@ -37,4 +37,9 @@ class Shift_vars:
                             >= self.vars[(weekend + 1, type_uid, employee_uid)]
                         )
 
+    def get_var(self, day: int, type_uid: int, employee_uid: int):
+        return self.vars[(day, type_uid, employee_uid)]
+
+    def get_weekend_var(self, weekend: int, employee_uid: int):
+        return self.weekend_vars[(weekend, employee_uid)]
         # TODO y,z variable
