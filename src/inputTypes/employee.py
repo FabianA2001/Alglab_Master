@@ -1,3 +1,5 @@
+import math
+
 from pydantic import BaseModel, Field
 
 from . import shiftType
@@ -16,24 +18,25 @@ class Employee(BaseModel):
     blocked_shifts: set[EmployeeUid] = Field(
         default_factory=set, description="List of blocked shift UIDs for the Employee"
     )
-    max_numbers_of_shifts: set[shiftType.TypeUid] = Field(
-        default_factory=int,
+    max_numbers_of_shifts: dict[shiftType.TypeUid, int] = Field(
+        default_factory=dict,
         description="Set of maximum number of shifts per shift type for the Employee",
     )
     min_minutes_assigned: int = Field(
         default=0, description="Minimum number of minutes assigned to the Employee"
     )
     max_minutes_assigned: int = Field(
-        default=0, description="Maximum number of minutes assigned to the Employee"
+        default=math.inf,
+        description="Maximum number of minutes assigned to the Employee",
     )
     min_number_consecutive_shifts: int = Field(
         default=0,
         description="Minimum number of consecutive shifts for the Employee",
     )
     max_number_consecutive_shifts: int = Field(
-        default=0,
+        default=math.inf,
         description="Maximum number of consecutive shifts for the Employee",
     )
     max_number_weekends: int = Field(
-        default=0, description="Maximum number of weekends for the Employee"
+        default=math.inf, description="Maximum number of weekends for the Employee"
     )
