@@ -15,7 +15,7 @@ class Max_Cons_Shifts(ShiftAssignmentModule):
             for day in range(instance.number_of_days-instance.employees[employee_uid].max_number_consecutive_shifts):
                 assigned_shifts = []
                 for type_uid in instance.shifts[day]:
-                    for i in range(instance.employees[employee_uid].max_number_consecutive_shifts):
+                    for i in range(instance.employees[employee_uid].max_number_consecutive_shifts+1):
                         assigned_shifts.append(
                             vars.vars[(day+i, type_uid, employee_uid)])
 
