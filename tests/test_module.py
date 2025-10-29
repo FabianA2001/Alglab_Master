@@ -1,9 +1,10 @@
-from cpsat_utils.testing import AssertModelInfeasible
+from cpsat_utils.testing import AssertModelFeasible, AssertModelInfeasible
 
 from src import shift_vars
 from src.inputTypes import employee, instace, shiftType
 from src.module import (
     limited_shifts_per_type_validation,
+    minMaxWorkTime,
     shift_assignment_single_day_validation,
     shift_rotation_constraint,
 )
@@ -65,3 +66,54 @@ def test_max_number_shifts():
 
         model.Add(vars.vars[(0, lokal_shift_type.uid, lokal_employee.uid)] == 1)
         model.Add(vars.vars[(1, lokal_shift_type.uid, lokal_employee.uid)] == 1)
+
+
+# Employee works not enough minutes- should be infeasible
+def test_min_max_worktime_below():
+    with AssertModelInfeasible() as model:
+        lokal_shift_type = shiftType.ShiftType()
+        lokal_shift_type.length = 60
+        lokal_employee = employee.Employee()
+        lokal_employee.min_minutes_assigned = 120
+        instance = instace.Instance(
+            number_of_days=1,
+            shift_typs=[lokal_shift_type],
+            emplyees=[lokal_employee],
+        )
+        vars = shift_vars.Shift_vars(instance, model)
+        minMaxWorkTime.MinMaxWorkTime().build(instance, vars)
+
+
+# Employee works to many minutes- should be infeasible
+def test_min_max_worktime_above():
+    with AssertModelInfeasible() as model:
+        lokal_shift_type = shiftType.ShiftType()
+        lokal_shift_type.length = 120
+        lokal_employee = employee.Employee()
+        lokal_employee.max_minutes_assigned = 60
+        instance = instace.Instance(
+            number_of_days=1,
+            shift_typs=[lokal_shift_type],
+            emplyees=[lokal_employee],
+        )
+        vars = shift_vars.Shift_vars(instance, model)
+        minMaxWorkTime.MinMaxWorkTime().build(instance, vars)
+        model.Add(vars.vars[(0, lokal_shift_type.uid, lokal_employee.uid)] == 1)
+
+
+# Employee works exact minutes- should be feasible
+def test_min_max_worktime_exact():
+    with AssertModelFeasible() as model:
+        lokal_shift_type = shiftType.ShiftType()
+        lokal_shift_type.length = 120
+        lokal_employee = employee.Employee()
+        lokal_employee.min_minutes_assigned = 60
+        lokal_employee.max_minutes_assigned = 160
+        instance = instace.Instance(
+            number_of_days=1,
+            shift_typs=[lokal_shift_type],
+            emplyees=[lokal_employee],
+        )
+        vars = shift_vars.Shift_vars(instance, model)
+        minMaxWorkTime.MinMaxWorkTime().build(instance, vars)
+        model.Add(vars.vars[(0, lokal_shift_type.uid, lokal_employee.uid)] == 1)

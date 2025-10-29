@@ -1,5 +1,3 @@
-import math
-
 from pydantic import BaseModel, Field
 
 from . import shiftType
@@ -25,18 +23,21 @@ class Employee(BaseModel):
     min_minutes_assigned: int = Field(
         default=0, description="Minimum number of minutes assigned to the Employee"
     )
+    # HACK: max minutes is magnic number, inf is not supported
     max_minutes_assigned: int = Field(
-        default=math.inf,
+        default=1000000,
         description="Maximum number of minutes assigned to the Employee",
     )
     min_number_consecutive_shifts: int = Field(
         default=0,
         description="Minimum number of consecutive shifts for the Employee",
     )
+    # HACK: max minutes is magnic number, inf is not supported
     max_number_consecutive_shifts: int = Field(
-        default=math.inf,
+        default=1000000,
         description="Maximum number of consecutive shifts for the Employee",
     )
+    # HACK: max minutes is magnic number, inf is not supported
     max_number_weekends: int = Field(
-        default=math.inf, description="Maximum number of weekends for the Employee"
+        default=1000000, description="Maximum number of weekends for the Employee"
     )
