@@ -2,11 +2,7 @@ from cpsat_utils.testing import AssertModelInfeasible
 
 from src import shift_vars
 from src.inputTypes import employee, instace, shiftType
-from src.module import (
-    limited_shifts_per_type_validation,
-    shift_assignment_single_day_validation,
-    shift_rotation_constraint,
-)
+from src.module import shift_assignment_single_day_validation, shift_rotation_constraint, max_Cons_Shifts
 
 
 # Employee gets two shifts (different types) on a single day - should be infeasible
@@ -42,26 +38,26 @@ def test_shift_rotation():
         vars = shift_vars.Shift_vars(instance, model)
         shift_rotation_constraint.Shift_rotation_constraint().build(instance, vars)
 
-        model.Add(vars.vars[(0, lokal_shift_types[0].uid, lokal_employee.uid)] == 1)
-        model.Add(vars.vars[(1, lokal_shift_types[1].uid, lokal_employee.uid)] == 1)
+        model.Add(
+            vars.vars[(0, lokal_shift_types[0].uid, lokal_employee.uid)] == 1)
+        model.Add(
+            vars.vars[(1, lokal_shift_types[1].uid, lokal_employee.uid)] == 1)
 
 
-# Employee gets two shifts (same types) on consecutive days, but only one in a row is allowed- should be infeasible
-def test_max_number_shifts():
+def test_max_cons_shifts():
     with AssertModelInfeasible() as model:
-        lokal_shift_type = shiftType.ShiftType()
-        lokal_employee = employee.Employee()
-        # set second shift type to be blocked after first
-        lokal_employee.max_numbers_of_shifts = {lokal_shift_type.uid: 1}
+        lokal_shift_types = [shiftType.ShiftType()]
+
+        lokal_employee = employee.Employee(max_number_consecutive_shifts=1)
         instance = instace.Instance(
             number_of_days=2,
-            shift_typs=[lokal_shift_type],
+            shift_typs=lokal_shift_types,
             emplyees=[lokal_employee],
         )
         vars = shift_vars.Shift_vars(instance, model)
-        limited_shifts_per_type_validation.Limited_shifts_per_type_validation().build(
-            instance, vars
-        )
+        max_Cons_Shifts.Max_Cons_Shifts().build(instance, vars)
 
-        model.Add(vars.vars[(0, lokal_shift_type.uid, lokal_employee.uid)] == 1)
-        model.Add(vars.vars[(1, lokal_shift_type.uid, lokal_employee.uid)] == 1)
+        model.Add(
+            vars.vars[(0, lokal_shift_types[0].uid, lokal_employee.uid)] == 1)
+        model.Add(
+            vars.vars[(1, lokal_shift_types[0].uid, lokal_employee.uid)] == 1)
