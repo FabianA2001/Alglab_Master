@@ -17,4 +17,7 @@ class Shift_vars:
                     self.vars[(day, type_uid, employee_uid)] = self.model.new_bool_var(
                         f"assign_{day}_{type_uid}_to_{employee_uid}"
                     )
+
+        self.weekend_vars = {}
+
         # TODO K,y,z variable

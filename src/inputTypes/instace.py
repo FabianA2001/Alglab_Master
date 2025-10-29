@@ -12,11 +12,13 @@ class Instance(BaseModel):
         number_of_days: int,
         shift_typs: list[shiftType.ShiftType],
         emplyees: list[employee.Employee],
+        # set saturday(Samstag)
         weekend_days: set[int] = set(),
         **data,
     ):
         super().__init__(**data)
         self.number_of_days = number_of_days
+        self.weekend_days = weekend_days
         for type in shift_typs:
             self.shift_types[type.uid] = type
         for emp in emplyees:
@@ -24,7 +26,7 @@ class Instance(BaseModel):
         for day in range(number_of_days):
             for type in shift_typs:
                 new_shift = shift.Shift()
-                if day in weekend_days:
+                if (day in weekend_days) or (day > 0 and day - 1 in weekend_days):
                     new_shift.is_weekend = True
                 self.shifts[day][type.uid] = new_shift
 
@@ -33,6 +35,9 @@ class Instance(BaseModel):
     )
     number_of_days: int = Field(
         default=0, description="Number of days in the scheduling Instance"
+    )
+    weekend_days: set[int] = Field(
+        default_factory=set, description="Set of weekend days in the Instance"
     )
     # shifts[day][type] = shift
     shifts: dict[int, dict[shiftType.TypeUid, shift.Shift]] = Field(
