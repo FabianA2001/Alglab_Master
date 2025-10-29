@@ -17,7 +17,7 @@ def get_tes_data():
 
 def main() -> None:
     # get_tes_data()
-    inst = instace.Instance(14, [shiftType.ShiftType()], [employee.Employee()])
+    inst = instace.Instance(14, (), [shiftType.ShiftType()], [employee.Employee()])
 
 
 if __name__ == "__main__":

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 from . import day
@@ -18,15 +20,10 @@ class ShiftType(BaseModel):
         default_factory=set,
         description="List of blocked shift UIDs after this Shift Type",
     )
-    prefert_number_employees: set[day.DayUid] = Field(
-        default_factory=set,
-        description="Preferred number of employees for this Shift Type",
+
+    start_time: datetime = Field(
+        default=datetime(2005, 1, 1), description="Start time of the Shift"
     )
-    weight_below_preferred_per_day: set[day.DayUid] = Field(
-        default_factory=set,
-        description="Weight for being below the preferred number of employees per day",
-    )
-    weight_above_preferred_per_day: set[day.DayUid] = Field(
-        default_factory=set,
-        description="Weight for being above the preferred number of employees per day",
+    end_time: datetime = Field(
+        default=datetime(2005, 1, 1), description="End time of the Shift"
     )

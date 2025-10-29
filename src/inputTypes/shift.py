@@ -1,8 +1,6 @@
-from datetime import datetime
-
 from pydantic import BaseModel, Field
 
-from . import employee, shiftType
+from . import employee
 from .inputTypesUtiles import generate_random_uid
 
 # Semantic type aliases for clarity
@@ -14,15 +12,8 @@ class Shift(BaseModel):
         default_factory=generate_random_uid,
         description="Unique identifier for the Shift",
     )
-    type: shiftType.TypeUid = Field(..., description="Type UID of the Shift")
-    day: int = Field(..., description="Day UID of the Shift")
     name: str = Field(default_factory=str, description="Name of the Shift")
-    start_time: datetime = Field(
-        default=datetime(2005, 1, 1), description="Start time of the Shift"
-    )
-    end_time: datetime = Field(
-        default=datetime(2005, 1, 1), description="End time of the Shift"
-    )
+
     is_weekend: bool = Field(
         default=False, description="Indicates if the Day is a weekend"
     )
@@ -34,3 +25,25 @@ class Shift(BaseModel):
         default_factory=set,
         description="Set of penalties for assigning the shift to an employee",
     )
+    prefert_number_employees: int = Field(
+        default=0,
+        description="Preferred number of employees for this Shift",
+    )
+    weight_below_preferred: int = Field(
+        default=0,
+        description="Weight for being below the preferred number of employees",
+    )
+    weight_above_preferred: int = Field(
+        default=0,
+        description="Weight for being above the preferred number of employees",
+    )
+
+
+"""
+1,2,3
+day1:[1,2][3]
+day2:[3,2][1]
+
+
+
+"""
