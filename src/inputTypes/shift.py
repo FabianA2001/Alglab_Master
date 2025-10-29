@@ -25,7 +25,7 @@ class Shift(BaseModel):
         default_factory=set,
         description="Set of penalties for assigning the shift to an employee",
     )
-    prefert_number_employees: int = Field(
+    preffert_number_employees: int = Field(
         default=0,
         description="Preferred number of employees for this Shift",
     )
