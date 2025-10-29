@@ -29,12 +29,16 @@ class Employee(BaseModel):
         description="Maximum number of minutes assigned to the Employee",
     )
     min_number_consecutive_shifts: int = Field(
-        default=0,
+        default=2,
         description="Minimum number of consecutive shifts for the Employee",
     )
     # HACK: max minutes is magnic number, inf is not supported
     max_number_consecutive_shifts: int = Field(
         default=1000000,
+        description="Maximum number of consecutive shifts for the Employee",
+    )
+    min_number_consecutive_days_off: int = Field(
+        default=2,
         description="Maximum number of consecutive shifts for the Employee",
     )
     # HACK: max minutes is magnic number, inf is not supported
