@@ -1,25 +1,11 @@
-from pathlib import Path
-
 from cpsat_utils.testing import AssertModelInfeasible
 
-from . import shift_vars
-from .inputTypes import employee, instace, shiftType
-from .module import shift_assignment_single_day_validation
-from .parseData.parseXML import print_xml_structure
+from src import shift_vars
+from src.inputTypes import employee, instace, shiftType
+from src.module import shift_assignment_single_day_validation
 
 
-def sayHello(name="World") -> str:
-    return f"Hello, {name}!"
-
-
-def get_tes_data():
-    test_file = Path.joinpath(
-        Path(__file__).resolve().parent.parent, "data", "Instance1.ros"
-    )
-    print_xml_structure(test_file)
-
-
-def t_single_day_validation():
+def test_shift_assignment_single_day_validation():
     with AssertModelInfeasible() as model:
         # build a model that is supposed to be feasible
         # if the model is infeasible, the context manager will raise an error
@@ -34,15 +20,5 @@ def t_single_day_validation():
         shift_assignment_single_day_validation.Single_day_validation().build(
             instance, vars
         )
-        print(vars.vars)
         for type_uid in lokal_shift_types:
             model.Add(vars.vars[(0, type_uid.uid, lokal_employee.uid)] == 1)
-
-
-def main() -> None:
-    # get_tes_data()
-    t_single_day_validation()
-
-
-if __name__ == "__main__":
-    main()

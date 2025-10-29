@@ -1,0 +1,28 @@
+from ortools.sat.python import cp_model
+
+from . import shift_vars
+from .inputTypes import instace
+
+
+class Solver:
+    def __init__(self, instance: instace.Instance, vars: shift_vars.Shift_vars):
+        self.instance = instance
+        self.vars = vars.vars
+        self.model = vars.model
+
+    def solve(self):
+        solver = cp_model.CpSolver()
+        status = solver.Solve(self.model)
+        if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
+            print("Solution found:")
+            for day in range(self.instance.number_of_days):
+                for type_uid in self.instance.shifts[day]:
+                    for employee_uid in self.instance.employees:
+                        if solver.BooleanValue(
+                            self.vars[(day, type_uid, employee_uid)]
+                        ):
+                            print(
+                                f"Day {day}, Shift Type {type_uid} assigned to Employee {employee_uid}"
+                            )
+        else:
+            print("No solution found.")

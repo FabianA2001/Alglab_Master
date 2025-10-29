@@ -2,7 +2,6 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from . import day
 from .inputTypesUtiles import generate_random_uid
 
 # Semantic type aliases for clarity
