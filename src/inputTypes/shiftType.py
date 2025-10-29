@@ -19,10 +19,9 @@ class ShiftType(BaseModel):
         default_factory=set,
         description="List of blocked shift UIDs after this Shift Type",
     )
-
     start_time: datetime = Field(
-        default=datetime(2005, 1, 1), description="Start time of the Shift"
+        default=datetime(2005, 1, 1, 0, 0), description="Start time of the Shift"
     )
-    end_time: datetime = Field(
-        default=datetime(2005, 1, 1), description="End time of the Shift"
-    )
+    # end_time: datetime = Field(
+    #     default=datetime(2005, 1, 1), description="End time of the Shift"
+    # )
