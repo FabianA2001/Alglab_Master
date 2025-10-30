@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from . import employee, shift, shiftType
 
@@ -37,7 +37,8 @@ class Instance(BaseModel):
         default=0, description="Number of days in the scheduling Instance"
     )
     weekend_days: set[int] = Field(
-        default_factory=set, description="Set of weekend days in the Instance"
+        default_factory=set,
+        description="Set of saturday days in the Instance, does not include sunday",
     )
     # shifts[day][type] = shift
     shifts: dict[int, dict[shiftType.TypeUid, shift.Shift]] = Field(
@@ -49,3 +50,11 @@ class Instance(BaseModel):
 
     def get_shift(self, day: int, type_uid: int) -> shift.Shift:
         return self.shifts[day][type_uid]
+
+    @model_validator(mode="after")
+    def validate_nurses_unique_uids(self):
+        """Weekends are maximal one consecutive day."""
+        for weekend in self.weekend_days:
+            if weekend + 1 in self.weekend_days:
+                raise ValueError("Weekend days cannot be consecutive.")
+        return self

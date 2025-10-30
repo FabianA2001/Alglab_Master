@@ -140,16 +140,24 @@ def test_weekend_assignment(day):
         assert solver.Value(vars.weekend_vars[(1, lokal_employee.uid)]) == 1
 
 
-def test_above_prefferd():
+@pytest.mark.parametrize(
+    ("preffert", "num_employee", "expected"),
+    [
+        (1, 2, 1),
+        (3, 5, 2),
+        (3, 2, 0),
+    ],
+)
+def test_above_prefferd(preffert, num_employee, expected):
     with AssertModelFeasible() as model:
         lokal_shift_type = shiftType.ShiftType()
-        employees = [employee.Employee() for _ in range(2)]
+        employees = [employee.Employee() for _ in range(num_employee)]
         instance = instace.Instance(
             number_of_days=1,
             shift_typs=[lokal_shift_type],
             emplyees=employees,
         )
-        instance.get_shift(0, lokal_shift_type.uid).preffert_number_employees = 1
+        instance.get_shift(0, lokal_shift_type.uid).preffert_number_employees = preffert
 
         vars = shift_vars.Shift_vars(instance, model)
         for lokal_employee in employees:
@@ -159,19 +167,30 @@ def test_above_prefferd():
         solver = cp_model.CpSolver()
         status = solver.Solve(vars.model)
         assert status == cp_model.OPTIMAL or status == cp_model.FEASIBLE
-        assert solver.Value(vars.get_above_prefferd_var(0, lokal_shift_type.uid)) == 1
+        assert (
+            solver.Value(vars.get_above_prefferd_var(0, lokal_shift_type.uid))
+            == expected
+        )
 
 
-def test_below_prefferd():
+@pytest.mark.parametrize(
+    ("preffert", "num_employee", "expected"),
+    [
+        (2, 1, 1),
+        (5, 3, 2),
+        (3, 5, 0),
+    ],
+)
+def test_below_prefferd(preffert, num_employee, expected):
     with AssertModelFeasible() as model:
         lokal_shift_type = shiftType.ShiftType()
-        employees = [employee.Employee() for _ in range(2)]
+        employees = [employee.Employee() for _ in range(num_employee)]
         instance = instace.Instance(
             number_of_days=1,
             shift_typs=[lokal_shift_type],
             emplyees=employees,
         )
-        instance.get_shift(0, lokal_shift_type.uid).preffert_number_employees = 3
+        instance.get_shift(0, lokal_shift_type.uid).preffert_number_employees = preffert
 
         vars = shift_vars.Shift_vars(instance, model)
         for lokal_employee in employees:
@@ -181,4 +200,7 @@ def test_below_prefferd():
         solver = cp_model.CpSolver()
         status = solver.Solve(vars.model)
         assert status == cp_model.OPTIMAL or status == cp_model.FEASIBLE
-        assert solver.Value(vars.get_below_prefferd_var(0, lokal_shift_type.uid)) == 1
+        assert (
+            solver.Value(vars.get_below_prefferd_var(0, lokal_shift_type.uid))
+            == expected
+        )
