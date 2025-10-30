@@ -10,7 +10,7 @@ from src.module import (
     shift_assignment_single_day_validation,
     shift_rotation_constraint,
     minimum_consecutive_shifts,
-    minimum_consecutive_days_off
+    minimum_consecutive_days_off,
 )
 
 
@@ -142,7 +142,6 @@ def test_weekend_assignment(day):
         assert solver.Value(vars.weekend_vars[(1, lokal_employee.uid)]) == 1
 
 
-
 def test_minimum_consecutive_shifts():
     with AssertModelInfeasible() as model:
         lokal_shift_type_list = [shiftType.ShiftType()]
@@ -157,12 +156,48 @@ def test_minimum_consecutive_shifts():
         minimum_consecutive_shifts.Minimum_consecutive_shifts().build(instance, vars)
         status = cp_model.CpSolver().Solve(vars.model)
         assert status == cp_model.OPTIMAL or status == cp_model.FEASIBLE
-        vars.model.add(vars.vars[(0, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 0)
-        vars.model.add(vars.vars[(1, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 1)
-        vars.model.add(vars.vars[(2, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 0)
+        vars.model.add(
+            vars.vars[(0, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 0
+        )
+        vars.model.add(
+            vars.vars[(1, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 1
+        )
+        vars.model.add(
+            vars.vars[(2, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 0
+        )
         status = cp_model.CpSolver().Solve(vars.model)
         assert status == cp_model.INFEASIBLE
-    
+
+    with AssertModelInfeasible() as model:
+        lokal_shift_type_list = [shiftType.ShiftType()]
+        lokal_employee = employee.Employee()
+        lokal_employee.min_number_consecutive_shifts = 4
+        instance = instace.Instance(
+            number_of_days=5,
+            shift_typs=lokal_shift_type_list,
+            emplyees=[lokal_employee],
+        )
+        vars = shift_vars.Shift_vars(instance, model)
+        minimum_consecutive_shifts.Minimum_consecutive_shifts().build(instance, vars)
+        status = cp_model.CpSolver().Solve(vars.model)
+        assert status == cp_model.OPTIMAL or status == cp_model.FEASIBLE
+        vars.model.add(
+            vars.vars[(0, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 0
+        )
+        vars.model.add(
+            vars.vars[(1, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 1
+        )
+        vars.model.add(
+            vars.vars[(2, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 1
+        )
+        vars.model.add(
+            vars.vars[(3, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 1
+        )
+        vars.model.add(
+            vars.vars[(4, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 0
+        )
+        status = cp_model.CpSolver().Solve(vars.model)
+        assert status == cp_model.INFEASIBLE
 
 
 def test_minimum_consecutive_days_off():
@@ -176,14 +211,53 @@ def test_minimum_consecutive_days_off():
             emplyees=[lokal_employee],
         )
         vars = shift_vars.Shift_vars(instance, model)
-        minimum_consecutive_days_off.Minimum_consecutive_days_off().build(instance, vars)
+        minimum_consecutive_days_off.Minimum_consecutive_days_off().build(
+            instance, vars
+        )
         status = cp_model.CpSolver().Solve(vars.model)
         assert status == cp_model.OPTIMAL or status == cp_model.FEASIBLE
-        vars.model.add(vars.vars[(0, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 1)
-        vars.model.add(vars.vars[(1, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 0)
-        vars.model.add(vars.vars[(2, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 1)
+        vars.model.add(
+            vars.vars[(0, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 1
+        )
+        vars.model.add(
+            vars.vars[(1, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 0
+        )
+        vars.model.add(
+            vars.vars[(2, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 1
+        )
         status = cp_model.CpSolver().Solve(vars.model)
         assert status == cp_model.INFEASIBLE
+
+    with AssertModelInfeasible() as model:
+        lokal_shift_type_list = [shiftType.ShiftType()]
+        lokal_employee = employee.Employee()
+        lokal_employee.min_number_consecutive_days_off = 3
+        instance = instace.Instance(
+            number_of_days=5,
+            shift_typs=lokal_shift_type_list,
+            emplyees=[lokal_employee],
+        )
+        vars = shift_vars.Shift_vars(instance, model)
+        minimum_consecutive_days_off.Minimum_consecutive_days_off().build(
+            instance, vars
+        )
+        status = cp_model.CpSolver().Solve(vars.model)
+        assert status == cp_model.OPTIMAL or status == cp_model.FEASIBLE
+        vars.model.add(
+            vars.vars[(0, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 1
+        )
+        vars.model.add(
+            vars.vars[(1, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 0
+        )
+        vars.model.add(
+            vars.vars[(2, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 0
+        )
+        vars.model.add(
+            vars.vars[(3, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 1
+        )
+        status = cp_model.CpSolver().Solve(vars.model)
+        assert status == cp_model.INFEASIBLE
+
 
 def test_above_prefferd():
     with AssertModelFeasible() as model:
