@@ -13,8 +13,9 @@ class Employee(BaseModel):
         description="Unique identifier for the Employee",
     )
     name: str = Field(default_factory=str, description="Name of the Employee")
-    blocked_shifts: set[EmployeeUid] = Field(
-        default_factory=set, description="List of blocked shift UIDs for the Employee"
+    # hab ich geändert
+    blocked_shifts: set[int] = Field(
+        default_factory=set, description="List of blocked days for the Employee"
     )
     max_numbers_of_shifts: dict[shiftType.TypeUid, int] = Field(
         default_factory=dict,
