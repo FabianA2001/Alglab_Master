@@ -5,6 +5,7 @@ from ortools.sat.python import cp_model
 from src import shift_vars
 from src.inputTypes import employee, instace, shift, shiftType
 from src.module import (
+    days_off,
     max_Cons_Shifts,
     minimum_consecutive_days_off,
     minimum_consecutive_shifts,
@@ -335,9 +336,7 @@ def test_days_off():
             emplyees=[lokal_employee],
         )
         vars = shift_vars.Shift_vars(instance, model)
-        shift_assignment_single_day_validation.Single_day_validation().build(
-            instance, vars
-        )
+        days_off.Days_off().build(instance, vars)
 
         model.Add(vars.vars[(0, lokal_shift_type.uid, lokal_employee.uid)] == 1)
 
