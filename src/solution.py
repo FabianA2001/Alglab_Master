@@ -59,3 +59,40 @@ class Solution(BaseModel):
 
     def set_objective_value(self, objective_value: float):
         self.objective_value = objective_value
+
+    def print_assign(self):
+        for day, type_uid, employee_uid in self.vars.keys():
+            print(
+                f"assign_{day}_{type_uid}_to_{employee_uid}: ",
+                self.vars[(day, type_uid, employee_uid)],
+            )
+
+    def print_weekend_work(self):
+        for weekend, employee_uid in self.weekend_vars.keys():
+            print(
+                f"weekend_work_{weekend}_for_{employee_uid}: ",
+                self.weekend_vars[(weekend, employee_uid)],
+            )
+
+    def print_below_prefferd(self):
+        for day, type_uid in self.below_prefferd_vars.keys():
+            print(
+                f"below_prefferd_{day}_{type_uid}: ",
+                self.below_prefferd_vars[(day, type_uid)],
+            )
+
+    def print_assign_above_prefferd(self):
+        for day, type_uid in self.above_prefferd_vars.keys():
+            print(
+                f"below_prefferd_{day}_{type_uid}: ",
+                self.above_prefferd_vars[(day, type_uid)],
+            )
+
+    def print_all_variables(self):
+        self.print_assign()
+        print("\n" * 2)
+        self.print_weekend_work()
+        print("\n" * 2)
+        self.print_below_prefferd()
+        print("\n" * 2)
+        self.print_assign_above_prefferd()

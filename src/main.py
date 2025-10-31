@@ -25,7 +25,8 @@ def get_solution_from_model():
     instance = get_tes_data()
     vars = Shift_vars(instance)
     solution = Solver(instance, vars).solve()
-    print(solution.objective_value)
+    solution.print_all_variables()
+    print("obj value: ", solution.objective_value)
 
 
 def t_single_day_validation():
