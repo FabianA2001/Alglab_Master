@@ -14,6 +14,12 @@ class Instance(BaseModel):
         emplyees: list[employee.Employee],
         # set saturday(Samstag)
         weekend_days: set[int] = set(),
+        # (day, shifttype_id) -> (employee_id ->, weight)
+        shift_on_requests: dict[tuple[int, int], dict[int,int]] = defaultdict(dict),
+        # (day, shifttype_id) -> (employee_id -> weight)
+        shift_off_requests: dict[tuple[int, int], dict[int,int]] = defaultdict(dict),
+        # (day, shifttype_id) -> (requirement, weight_under, weight_over)
+        cover_requirements: dict[tuple[int, int], tuple[int, int, int]] = {},
         **data,
     ):
         super().__init__(**data)
@@ -29,6 +35,7 @@ class Instance(BaseModel):
                 if (day in weekend_days) or (day > 0 and day - 1 in weekend_days):
                     new_shift.is_weekend = True
                 self.shifts[day][type.uid] = new_shift
+
 
     employees: dict[employee.EmployeeUid, employee.Employee] = Field(
         default_factory=dict, description="Set of Employees in the Instance"

@@ -1,6 +1,7 @@
+from collections import defaultdict
 from pathlib import Path
 
-from ..inputTypes import instace
+from ..inputTypes import employee, instace, shiftType
 
 
 def parse_txt(txt_file_path: Path) -> instace.Instance:
@@ -8,12 +9,14 @@ def parse_txt(txt_file_path: Path) -> instace.Instance:
         lines = [line.strip() for line in file if line.strip() and not line.startswith("#")]
     
     horizon = 0
-    shifts = {}
-    staff = {}
-    days_off = {}
-    shift_on_requests = []
-    shift_off_requests = []
-    cover_requirements = []
+    shifts :list[shiftType.ShiftType] = []
+    staff : dict[employee.EmployeeUid,employee.Employee]= {}
+    # (day, shifttype_id) -> (employee_id ->, weight)
+    shift_on_requests: dict[tuple[int, int], dict[int,int]] = defaultdict(dict)
+    # (day, shifttype_id) -> (employee_id -> weight)
+    shift_off_requests: dict[tuple[int, int], dict[int,int]] = defaultdict(dict)
+    # (day, shifttype_id) -> (requirement, weight_under, weight_over)
+    cover_requirements: dict[tuple[int, int], tuple[int, int, int]] = {}
     
     current_section = None
     
@@ -30,7 +33,10 @@ def parse_txt(txt_file_path: Path) -> instace.Instance:
             shift_id = parts[0]
             length = int(parts[1])
             forbidden = parts[2].split("|") if parts[2] else []
-            shifts[shift_id] = {"length": length, "forbidden_followers": forbidden}
+            blocked_shifts_after = set()
+            for fs in forbidden:
+                blocked_shifts_after.add(hash(fs))
+            shifts.append(shiftType.ShiftType(uid=hash(shift_id), length=length, blocked_shifts_after=blocked_shifts_after))
         
         elif current_section == "SECTION_STAFF":
             parts = line.split(",")
@@ -40,56 +46,39 @@ def parse_txt(txt_file_path: Path) -> instace.Instance:
                 if "=" in shift_constraint:
                     shift, count = shift_constraint.split("=")
                     max_shifts[shift] = int(count)
-            staff[staff_id] = {
-                "max_shifts": max_shifts,
-                "max_total_minutes": int(parts[2]),
-                "min_total_minutes": int(parts[3]),
-                "max_consecutive_shifts": int(parts[4]),
-                "min_consecutive_shifts": int(parts[5]),
-                "min_consecutive_days_off": int(parts[6]),
-                "max_weekends": int(parts[7])
-            }
+                raise ValueError("Invalid shift constraint format")
+            id = hash(staff_id)
+            staff[id] = (employee.Employee(
+                uid=id,
+                max_numbers_of_shifts={hash(shift): count for shift, count in max_shifts.items()},
+                max_minutes_assigned=int(parts[2]),
+                min_minutes_assigned=int(parts[3]),
+                max_number_consecutive_shifts=int(parts[4]),
+                min_number_consecutive_shifts=int(parts[5]),
+                min_number_consecutive_days_off=int(parts[6]),
+                max_number_weekends=int(parts[7])
+            ))
         
         elif current_section == "SECTION_DAYS_OFF":
             parts = line.split(",")
             employee_id = parts[0]
-            day_indexes = [int(d) for d in parts[1:]]
-            days_off[employee_id] = day_indexes
+            day_indexes = set(int(d) for d in parts[1:])
+            staff[hash(employee_id)].blocked_shifts = day_indexes
         
         elif current_section == "SECTION_SHIFT_ON_REQUESTS":
             parts = line.split(",")
-            shift_on_requests.append({
-                "employee_id": parts[0],
-                "day": int(parts[1]),
-                "shift_id": parts[2],
-                "weight": int(parts[3])
-            })
+            shift_on_requests[(int(parts[1]), hash(parts[2]))][hash(parts[0])] = int(parts[3])
         
         elif current_section == "SECTION_SHIFT_OFF_REQUESTS":
             parts = line.split(",")
-            shift_off_requests.append({
-                "employee_id": parts[0],
-                "day": int(parts[1]),
-                "shift_id": parts[2],
-                "weight": int(parts[3])
-            })
+            shift_off_requests[(int(parts[1]), hash(parts[2]))][hash(parts[0])] = int(parts[3])
         
         elif current_section == "SECTION_COVER":
             parts = line.split(",")
-            cover_requirements.append({
-                "day": int(parts[0]),
-                "shift_id": parts[1],
-                "requirement": int(parts[2]),
-                "weight_under": int(parts[3]),
-                "weight_over": int(parts[4])
-            })
+            cover_requirements[(int(parts[0]), hash(parts[1]))] = (int(parts[2]), int(parts[3]), int(parts[4]))
     
     return instace.Instance(
-        horizon=horizon,
-        shifts=shifts,
-        staff=staff,
-        days_off=days_off,
-        shift_on_requests=shift_on_requests,
-        shift_off_requests=shift_off_requests,
-        cover_requirements=cover_requirements
+        number_of_days=horizon,
+        shift_typs=shifts,
+        emplyees=list(staff.values()),
     )
