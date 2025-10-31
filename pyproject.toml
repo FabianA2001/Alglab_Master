@@ -10,7 +10,8 @@ requires-python = ">=3.10"
 dependencies = [
     "ortools",
     "pydantic",
-    "taipy",
+    "taipy-gui",
+    "pandas",
 ]
 
 [project.optional-dependencies]
