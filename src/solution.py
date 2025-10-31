@@ -3,12 +3,11 @@ from typing import Dict, Tuple
 from pydantic import BaseModel, Field
 
 from .inputTypes import employee, instace, shift
-from .inputTypes.instace import Instance
 
 
 class Solution(BaseModel):
-    def __init__(self, instance: Instance):
-        self.instance = instance
+    def __init__(self, instance: instace.Instance, **data):
+        super().__init__(instance=instance, **data)
 
     """Class to handle variable storage and management for shift scheduling."""
 
@@ -35,7 +34,7 @@ class Solution(BaseModel):
         description="An instance that contains all given variables",
     )
     objective_value: float = Field(
-        default_factory=float,
+        default=0.0,
         description="The result of an objective function",
     )
 
