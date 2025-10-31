@@ -40,8 +40,8 @@ class Solver:
                         day, type_uid, employee_uid)]
         for day in range(self.instance.number_of_days):
             for type_uid in self.instance.shifts[day]:
-                objective_value += self.below_prefferd_vars * \
+                objective_value += self.below_prefferd_vars[day][type_uid] * \
                     self.instance.shifts[day][type_uid].weight_below_preferred
-                objective_value += self.above_prefferd_vars * \
+                objective_value += self.above_prefferd_vars[day][type_uid] * \
                     self.instance.shifts[day][type_uid].weight_above_preferred
         return objective_value
