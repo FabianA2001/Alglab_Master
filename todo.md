@@ -8,6 +8,7 @@
 - - Ergenisee "schön" darstellen
 
 - input/output test (Solver-Agnostic Validation)
+- ci
 - 
 
 ### nächste Ziele

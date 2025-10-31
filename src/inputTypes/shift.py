@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from pydantic import BaseModel, Field
 
 from . import employee
@@ -17,13 +19,13 @@ class Shift(BaseModel):
     is_weekend: bool = Field(
         default=False, description="Indicates if the Day is a weekend"
     )
-    penalty_not_assigned_day_employee: set[employee.EmployeeUid] = Field(
-        default_factory=set,
-        description="Set of penalties for not assigning the shift to an employee",
+    penalty_not_assigned_day_employee: dict[employee.EmployeeUid, int] = Field(
+        default=defaultdict(int),
+        description="dict of penalty for employee not assigned on specific day",
     )
-    penalty_assigned_day_employee: set[employee.EmployeeUid] = Field(
-        default_factory=set,
-        description="Set of penalties for assigning the shift to an employee",
+    penalty_assigned_day_employee: dict[employee.EmployeeUid, int] = Field(
+        default=defaultdict(int),
+        description="dict of penalty for employee being assigned on specific day",
     )
     preffert_number_employees: int = Field(
         default=0,
@@ -39,11 +41,3 @@ class Shift(BaseModel):
     )
 
 
-"""
-1,2,3
-day1:[1,2][3]
-day2:[3,2][1]
-
-
-
-"""

@@ -25,6 +25,34 @@ class Solver:
         status = solver.Solve(self.vars.model)
         return self.handle_results(status, solver)
 
+    def objevtive_value(self):
+        objective_value = 0
+        for employee_uid in self.instance.employees:
+            for day in range(self.instance.number_of_days):
+                for type_uid in self.instance.shifts[day]:
+                    objective_value += self.instance.shifts[day][
+                        type_uid
+                    ].penalty_not_assigned_day_employee[employee_uid] * (
+                        1 - self.vars.vars[(day, type_uid, employee_uid)]
+                    )
+                    objective_value += (
+                        self.instance.shifts[day][
+                            type_uid
+                        ].penalty_assigned_day_employee[employee_uid]
+                        * self.vars.vars[(day, type_uid, employee_uid)]
+                    )
+        for day in range(self.instance.number_of_days):
+            for type_uid in self.instance.shifts[day]:
+                objective_value += (
+                    self.vars.below_prefferd_vars[day][type_uid]
+                    * self.instance.shifts[day][type_uid].weight_below_preferred
+                )
+                objective_value += (
+                    self.vars.above_prefferd_vars[day][type_uid]
+                    * self.instance.shifts[day][type_uid].weight_above_preferred
+                )
+        return objective_value
+
     def handle_results(self, status, solver: cp_model.CpSolver) -> Solution:
         """Handles the different results returned by the solver and returns a solution."""
         solution = Solution()  # Create a new Solution instance

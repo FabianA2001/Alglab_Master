@@ -16,7 +16,7 @@ def get_tes_data():
     test_file = Path.joinpath(
         Path(__file__).resolve().parent.parent, "data", "Instance1.txt"
     )
-    parseTXT.parse_txt(test_file)
+    print(parseTXT.parse_txt(test_file))
 
 
 def t_single_day_validation():

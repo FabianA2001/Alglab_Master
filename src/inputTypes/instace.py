@@ -14,6 +14,12 @@ class Instance(BaseModel):
         emplyees: list[employee.Employee],
         # set saturday(Samstag)
         weekend_days: set[int] = set(),
+        # (day, shifttype_id) -> (employee_id ->, weight)
+        shift_on_requests: dict[tuple[int, int], dict[int,int]] = defaultdict(dict),
+        # (day, shifttype_id) -> (employee_id -> weight)
+        shift_off_requests: dict[tuple[int, int], dict[int,int]] = defaultdict(dict),
+        # (day, shifttype_id) -> (requirement, weight_under, weight_over)
+        cover_requirements: dict[tuple[int, int], tuple[int, int, int]] = {},
         **data,
     ):
         super().__init__(**data)
@@ -28,7 +34,15 @@ class Instance(BaseModel):
                 new_shift = shift.Shift()
                 if (day in weekend_days) or (day > 0 and day - 1 in weekend_days):
                     new_shift.is_weekend = True
+                new_shift.penalty_assigned_day_employee = shift_on_requests[(day, type.uid)]
+                new_shift.penalty_not_assigned_day_employee = shift_off_requests[(day, type.uid)]
+                if (day, type.uid) in cover_requirements:
+                    cover = cover_requirements[(day, type.uid)]
+                    new_shift.preffert_number_employees = cover[0]
+                    new_shift.weight_below_preferred = cover[1]
+                    new_shift.weight_above_preferred = cover[2]
                 self.shifts[day][type.uid] = new_shift
+
 
     employees: dict[employee.EmployeeUid, employee.Employee] = Field(
         default_factory=dict, description="Set of Employees in the Instance"
