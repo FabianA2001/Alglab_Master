@@ -21,11 +21,11 @@ class Shift(BaseModel):
     )
     penalty_not_assigned_day_employee: dict[employee.EmployeeUid, int] = Field(
         default=defaultdict(int),
-        description="dict of penalty for employee not assigned on specific day",
+        description="dict of penalty for employee assigned on specific day",
     )
     penalty_assigned_day_employee: dict[employee.EmployeeUid, int] = Field(
         default=defaultdict(int),
-        description="dict of penalty for employee being assigned on specific day",
+        description="dict of penalty for employee not being assigned on specific day",
     )
     preffert_number_employees: int = Field(
         default=0,
@@ -39,5 +39,3 @@ class Shift(BaseModel):
         default=0,
         description="Weight for being above the preferred number of employees",
     )
-
-
