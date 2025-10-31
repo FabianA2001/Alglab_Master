@@ -3,20 +3,29 @@ from pathlib import Path
 from cpsat_utils.testing import AssertModelFeasible
 from ortools.sat.python import cp_model
 
-from . import shift_vars
+from .shift_vars import Shift_vars
 from .inputTypes import employee, instace, shiftType
 from .parseData import parseTXT
+
+from .solver import Solver
 
 
 def sayHello(name="World") -> str:
     return f"Hello, {name}!"
 
 
-def get_tes_data():
+def get_tes_data() -> instace.Instance:
     test_file = Path.joinpath(
         Path(__file__).resolve().parent.parent, "data", "Instance1.txt"
     )
-    print(parseTXT.parse_txt(test_file))
+    return parseTXT.parse_txt(test_file)
+
+
+def get_solution_from_model():
+    instance = get_tes_data()
+    vars = Shift_vars(instance)
+    solution = Solver(instance, vars).solve()
+    print(solution.objective_value)
 
 
 def t_single_day_validation():
@@ -30,20 +39,22 @@ def t_single_day_validation():
         )
         instance.get_shift(0, lokal_shift_type.uid).preffert_number_employees = 1
 
-        vars = shift_vars.Shift_vars(instance, model)
+        vars = Shift_vars(instance, model)
         for lokal_employee in employees:
             vars.model.add(
                 vars.vars[(0, lokal_shift_type.uid, lokal_employee.uid)] == 1
             )
         solver = cp_model.CpSolver()
         status = solver.Solve(vars.model)
+
         assert status == cp_model.OPTIMAL or status == cp_model.FEASIBLE
         assert solver.Value(vars.get_above_prefferd_var(0, lokal_shift_type.uid)) == 1
 
 
 def main() -> None:
-    get_tes_data()
+    # get_tes_data()
     # t_single_day_validation()
+    get_solution_from_model()
 
 
 if __name__ == "__main__":
