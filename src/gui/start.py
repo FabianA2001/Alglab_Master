@@ -5,7 +5,6 @@ from taipy.gui import Gui
 from .. import shift_vars, solver
 from ..inputTypes import instace
 from ..parseData import parseTXT
-from .components import main_solver_component
 
 DEFAULT_PATH = Path.joinpath(
     Path(__file__).resolve().parent.parent.parent, "data", "Instance1.txt"
@@ -19,17 +18,23 @@ def start_gui():
     # Initialisiere als None für Taipy State
     solution_result = None
 
-    def show_solution_text(state):
-        if state.solution_result is None:
-            return "No solution available."
-        else:
-            return f"Solution found with objective value: {state.solution_result.objective_value}"
-
-    # Hauptseite mit Modulen
-    page = main_solver_component(inst=inst)
+    # Berechne instance_info_display einmal - MUSS VOR page definiert werden
+    instance_info_display = f"""## Instance Info
+- number of shift typs: {len(inst.shift_types)}
+- number of employees: {len(inst.employees)}
+"""
 
     def on_button_click(state):
-        state.solution_result = solver_instance.solve()
+        state.solution_result = solver_instance.solve(log_search_progress=False)
+
+    # Hauptseite mit Modulen - NACH den Variablen definieren
+    page = f"""
+## Solver
+<|Solve|button|on_action=on_button_click|>  
+<|{instance_info_display}|>
+### Result
+<|{{solution_result.objective_value if solution_result else "No solution available."}}|text|>
+"""
 
     gui = Gui(page)
     gui.run(title="Alglab Master", debug=True, dark_mode=False, use_reloader=True)
