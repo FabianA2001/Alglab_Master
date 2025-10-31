@@ -15,9 +15,9 @@ class Instance(BaseModel):
         # set saturday(Samstag)
         weekend_days: set[int] = set(),
         # (day, shifttype_id) -> (employee_id ->, weight)
-        shift_on_requests: dict[tuple[int, int], dict[int,int]] = defaultdict(dict),
+        shift_on_requests: dict[tuple[int, int], dict[int, int]] = defaultdict(dict),
         # (day, shifttype_id) -> (employee_id -> weight)
-        shift_off_requests: dict[tuple[int, int], dict[int,int]] = defaultdict(dict),
+        shift_off_requests: dict[tuple[int, int], dict[int, int]] = defaultdict(dict),
         # (day, shifttype_id) -> (requirement, weight_under, weight_over)
         cover_requirements: dict[tuple[int, int], tuple[int, int, int]] = {},
         **data,
@@ -34,8 +34,12 @@ class Instance(BaseModel):
                 new_shift = shift.Shift()
                 if (day in weekend_days) or (day > 0 and day - 1 in weekend_days):
                     new_shift.is_weekend = True
-                new_shift.penalty_assigned_day_employee = shift_on_requests[(day, type.uid)]
-                new_shift.penalty_not_assigned_day_employee = shift_off_requests[(day, type.uid)]
+                new_shift.penalty_assigned_day_employee = shift_on_requests[
+                    (day, type.uid)
+                ]
+                new_shift.penalty_not_assigned_day_employee = shift_off_requests[
+                    (day, type.uid)
+                ]
                 if (day, type.uid) in cover_requirements:
                     cover = cover_requirements[(day, type.uid)]
                     new_shift.preffert_number_employees = cover[0]
@@ -43,18 +47,16 @@ class Instance(BaseModel):
                     new_shift.weight_above_preferred = cover[2]
                 self.shifts[day][type.uid] = new_shift
 
-
     def __str__(self) -> str:
         result_string = ""
         result_string += f"Instance with {self.number_of_days} days, {len(self.shift_types)} shift types and {len(self.employees)} employees.\n"
-        result_string += "\n"*2
+        result_string += "\n" * 2
         for shift_type in self.shift_types.values():
             result_string += f"{shift_type}\n"
-        result_string += "\n"*2
+        result_string += "\n" * 2
         for employee in self.employees.values():
             result_string += f"{employee}\n"
         return result_string
-        
 
     employees: dict[employee.EmployeeUid, employee.Employee] = Field(
         default_factory=dict, description="Set of Employees in the Instance"

@@ -3,6 +3,18 @@ from ortools.sat.python import cp_model
 from . import shift_vars
 from .inputTypes import instace
 from .solution import Solution
+from .module import (
+    days_off,
+    cover_requirements,
+    limited_shifts_per_type_validation,
+    max_Cons_Shifts,
+    max_weekend_days,
+    minimum_consecutive_days_off,
+    minimum_consecutive_shifts,
+    minMaxWorkTime,
+    shift_assignment_single_day_validation,
+    shift_rotation_constraint,
+)
 
 
 class Solver:
@@ -16,6 +28,27 @@ class Solver:
         max_time_in_seconds: float = 60.0,
         **solver_params,
     ) -> Solution:
+        days_off.Days_off().build(self.instance, self.vars)
+        cover_requirements.Cover_requirements().build(self.instance, self.vars)
+        limited_shifts_per_type_validation.Limited_shifts_per_type_validation().build(
+            self.instance, self.vars
+        )
+        max_Cons_Shifts.Max_Cons_Shifts().build(self.instance, self.vars)
+        # TODO solve the problem with max weekend days
+        # max_weekend_days.Max_weekend_days().build(self.instance, self.vars)
+        minimum_consecutive_days_off.Minimum_consecutive_days_off().build(
+            self.instance, self.vars
+        )
+        minimum_consecutive_shifts.Minimum_consecutive_shifts().build(
+            self.instance, self.vars
+        )
+        minMaxWorkTime.MinMaxWorkTime().build(self.instance, self.vars)
+        shift_rotation_constraint.Shift_rotation_constraint().build(
+            self.instance, self.vars
+        )
+        shift_assignment_single_day_validation.Single_day_validation().build(
+            self.instance, self.vars
+        )
         solver = cp_model.CpSolver()
         solver.parameters.log_search_progress = log_search_progress
         solver.parameters.max_time_in_seconds = max_time_in_seconds
