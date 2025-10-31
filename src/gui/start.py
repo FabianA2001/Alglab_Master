@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from taipy.gui import Gui
+import taipy.gui.builder as tgb
+from taipy.gui import Gui, Icon, navigate
 
 from .. import shift_vars, solver
 from ..inputTypes import instace
@@ -15,26 +16,40 @@ def start_gui():
     inst: instace.Instance = parseTXT.parse_txt(DEFAULT_PATH)
     solver_instance = solver.Solver(inst, shift_vars.Shift_vars(inst))
 
-    # Initialisiere als None für Taipy State
-    solution_result = None
+    beispiel_option = True
+    solution_data = {}
 
-    # Berechne instance_info_display einmal - MUSS VOR page definiert werden
-    instance_info_display = f"""## Instance Info
-- number of shift typs: {len(inst.shift_types)}
-- number of employees: {len(inst.employees)}
-"""
+    with tgb.Page() as page_1:
+        tgb.text("# Instance", mode="md")
 
-    def on_button_click(state):
-        state.solution_result = solver_instance.solve(log_search_progress=False)
+    with tgb.Page() as page_2:
+        tgb.text("# Solver", mode="md")
+        tgb.text("## Parameter", mode="md")
+        with tgb.layout():
+            with tgb.part():
+                tgb.text("Beipsiel Option")
+            with tgb.part():
+                tgb.toggle("{beispiel_option}")
+        tgb.text("Toggel ist {beispiel_option}")
 
-    # Hauptseite mit Modulen - NACH den Variablen definieren
-    page = f"""
-## Solver
-<|Solve|button|on_action=on_button_click|>  
-<|{instance_info_display}|>
-### Result
-<|{{solution_result.objective_value if solution_result else "No solution available."}}|text|>
-"""
+        tgb.text("## Solver Ergebniss", mode="md")
+        tgb.table("{solution_data}", auto_loading=True)
 
-    gui = Gui(page)
-    gui.run(title="Alglab Master", debug=True, dark_mode=False, use_reloader=True)
+    def menu_option_selected(state, action, info):
+        page = info["args"][0]
+        navigate(state, to=page)
+
+    with tgb.Page() as root_page:
+        tgb.menu(
+            label="Menu",
+            lov=[
+                ("page1", Icon("images/map.png", "Instance")),
+                ("page2", Icon("images/person.png", "Solver")),
+            ],
+            on_action=menu_option_selected,
+        )
+
+    # TODO: add an about page to discuss the application and its features
+    pages = {"/": root_page, "page1": page_1, "page2": page_2}
+
+    Gui(pages=pages).run(title="Alglab Master", dark_mode=False)
