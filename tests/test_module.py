@@ -12,6 +12,8 @@ from src.module import (
     minMaxWorkTime,
     shift_assignment_single_day_validation,
     shift_rotation_constraint,
+    max_weekend_days,
+    cover_requirements
 )
 
 
@@ -48,8 +50,10 @@ def test_shift_rotation():
         vars = shift_vars.Shift_vars(instance, model)
         shift_rotation_constraint.Shift_rotation_constraint().build(instance, vars)
 
-        model.Add(vars.vars[(0, lokal_shift_types[0].uid, lokal_employee.uid)] == 1)
-        model.Add(vars.vars[(1, lokal_shift_types[1].uid, lokal_employee.uid)] == 1)
+        model.Add(
+            vars.vars[(0, lokal_shift_types[0].uid, lokal_employee.uid)] == 1)
+        model.Add(
+            vars.vars[(1, lokal_shift_types[1].uid, lokal_employee.uid)] == 1)
 
 
 def test_max_cons_shifts():
@@ -63,8 +67,10 @@ def test_max_cons_shifts():
         )
         vars = shift_vars.Shift_vars(instance, model)
         max_Cons_Shifts.Max_Cons_Shifts().build(instance, vars)
-        model.Add(vars.vars[(0, lokal_shift_type.uid, lokal_employee.uid)] == 1)
-        model.Add(vars.vars[(1, lokal_shift_type.uid, lokal_employee.uid)] == 1)
+        model.Add(
+            vars.vars[(0, lokal_shift_type.uid, lokal_employee.uid)] == 1)
+        model.Add(
+            vars.vars[(1, lokal_shift_type.uid, lokal_employee.uid)] == 1)
 
 
 # Employee works not enough minutes- should be infeasible
@@ -97,7 +103,8 @@ def test_min_max_worktime_above():
         )
         vars = shift_vars.Shift_vars(instance, model)
         minMaxWorkTime.MinMaxWorkTime().build(instance, vars)
-        model.Add(vars.vars[(0, lokal_shift_type.uid, lokal_employee.uid)] == 1)
+        model.Add(
+            vars.vars[(0, lokal_shift_type.uid, lokal_employee.uid)] == 1)
 
 
 # Employee works exact minutes- should be feasible
@@ -115,7 +122,8 @@ def test_min_max_worktime_exact():
         )
         vars = shift_vars.Shift_vars(instance, model)
         minMaxWorkTime.MinMaxWorkTime().build(instance, vars)
-        model.Add(vars.vars[(0, lokal_shift_type.uid, lokal_employee.uid)] == 1)
+        model.Add(
+            vars.vars[(0, lokal_shift_type.uid, lokal_employee.uid)] == 1)
 
 
 @pytest.mark.parametrize(
@@ -136,7 +144,8 @@ def test_weekend_assignment(day):
             weekend_days={1},
         )
         vars = shift_vars.Shift_vars(instance, model)
-        vars.model.add(vars.vars[(day, lokal_shift_type.uid, lokal_employee.uid)] == 1)
+        vars.model.add(
+            vars.vars[(day, lokal_shift_type.uid, lokal_employee.uid)] == 1)
         solver = cp_model.CpSolver()
         status = solver.Solve(vars.model)
         assert status == cp_model.OPTIMAL or status == cp_model.FEASIBLE
@@ -158,13 +167,16 @@ def test_minimum_consecutive_shifts():
         status = cp_model.CpSolver().Solve(vars.model)
         assert status == cp_model.OPTIMAL or status == cp_model.FEASIBLE
         vars.model.add(
-            vars.vars[(0, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 0
+            vars.vars[(0, lokal_shift_type_list[0].uid,
+                       lokal_employee.uid)] == 0
         )
         vars.model.add(
-            vars.vars[(1, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 1
+            vars.vars[(1, lokal_shift_type_list[0].uid,
+                       lokal_employee.uid)] == 1
         )
         vars.model.add(
-            vars.vars[(2, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 0
+            vars.vars[(2, lokal_shift_type_list[0].uid,
+                       lokal_employee.uid)] == 0
         )
         status = cp_model.CpSolver().Solve(vars.model)
         assert status == cp_model.INFEASIBLE
@@ -183,19 +195,24 @@ def test_minimum_consecutive_shifts():
         status = cp_model.CpSolver().Solve(vars.model)
         assert status == cp_model.OPTIMAL or status == cp_model.FEASIBLE
         vars.model.add(
-            vars.vars[(0, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 0
+            vars.vars[(0, lokal_shift_type_list[0].uid,
+                       lokal_employee.uid)] == 0
         )
         vars.model.add(
-            vars.vars[(1, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 1
+            vars.vars[(1, lokal_shift_type_list[0].uid,
+                       lokal_employee.uid)] == 1
         )
         vars.model.add(
-            vars.vars[(2, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 1
+            vars.vars[(2, lokal_shift_type_list[0].uid,
+                       lokal_employee.uid)] == 1
         )
         vars.model.add(
-            vars.vars[(3, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 1
+            vars.vars[(3, lokal_shift_type_list[0].uid,
+                       lokal_employee.uid)] == 1
         )
         vars.model.add(
-            vars.vars[(4, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 0
+            vars.vars[(4, lokal_shift_type_list[0].uid,
+                       lokal_employee.uid)] == 0
         )
         status = cp_model.CpSolver().Solve(vars.model)
         assert status == cp_model.INFEASIBLE
@@ -218,13 +235,16 @@ def test_minimum_consecutive_days_off():
         status = cp_model.CpSolver().Solve(vars.model)
         assert status == cp_model.OPTIMAL or status == cp_model.FEASIBLE
         vars.model.add(
-            vars.vars[(0, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 1
+            vars.vars[(0, lokal_shift_type_list[0].uid,
+                       lokal_employee.uid)] == 1
         )
         vars.model.add(
-            vars.vars[(1, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 0
+            vars.vars[(1, lokal_shift_type_list[0].uid,
+                       lokal_employee.uid)] == 0
         )
         vars.model.add(
-            vars.vars[(2, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 1
+            vars.vars[(2, lokal_shift_type_list[0].uid,
+                       lokal_employee.uid)] == 1
         )
         status = cp_model.CpSolver().Solve(vars.model)
         assert status == cp_model.INFEASIBLE
@@ -245,16 +265,20 @@ def test_minimum_consecutive_days_off():
         status = cp_model.CpSolver().Solve(vars.model)
         assert status == cp_model.OPTIMAL or status == cp_model.FEASIBLE
         vars.model.add(
-            vars.vars[(0, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 1
+            vars.vars[(0, lokal_shift_type_list[0].uid,
+                       lokal_employee.uid)] == 1
         )
         vars.model.add(
-            vars.vars[(1, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 0
+            vars.vars[(1, lokal_shift_type_list[0].uid,
+                       lokal_employee.uid)] == 0
         )
         vars.model.add(
-            vars.vars[(2, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 0
+            vars.vars[(2, lokal_shift_type_list[0].uid,
+                       lokal_employee.uid)] == 0
         )
         vars.model.add(
-            vars.vars[(3, lokal_shift_type_list[0].uid, lokal_employee.uid)] == 1
+            vars.vars[(3, lokal_shift_type_list[0].uid,
+                       lokal_employee.uid)] == 1
         )
         status = cp_model.CpSolver().Solve(vars.model)
         assert status == cp_model.INFEASIBLE
@@ -277,7 +301,8 @@ def test_above_prefferd(preffert, num_employee, expected):
             shift_typs=[lokal_shift_type],
             emplyees=employees,
         )
-        instance.get_shift(0, lokal_shift_type.uid).preffert_number_employees = preffert
+        instance.get_shift(
+            0, lokal_shift_type.uid).preffert_number_employees = preffert
 
         vars = shift_vars.Shift_vars(instance, model)
         for lokal_employee in employees:
@@ -310,7 +335,8 @@ def test_below_prefferd(preffert, num_employee, expected):
             shift_typs=[lokal_shift_type],
             emplyees=employees,
         )
-        instance.get_shift(0, lokal_shift_type.uid).preffert_number_employees = preffert
+        instance.get_shift(
+            0, lokal_shift_type.uid).preffert_number_employees = preffert
 
         vars = shift_vars.Shift_vars(instance, model)
         for lokal_employee in employees:
@@ -338,7 +364,8 @@ def test_days_off():
         vars = shift_vars.Shift_vars(instance, model)
         days_off.Days_off().build(instance, vars)
 
-        model.Add(vars.vars[(0, lokal_shift_type.uid, lokal_employee.uid)] == 1)
+        model.Add(
+            vars.vars[(0, lokal_shift_type.uid, lokal_employee.uid)] == 1)
 
 
 def test_cover_requirements():
@@ -359,7 +386,7 @@ def test_cover_requirements():
             shifts=shifts,
         )
         vars = shift_vars.Shift_vars(instance, model)
-        shift_assignment_single_day_validation.Single_day_validation().build(
+        cover_requirements.Cover_requirements().build(
             instance, vars
         )
         for type_uid in lokal_shift_types:
@@ -379,7 +406,7 @@ def test_max_weekends():
             weekend_days={0},
         )
         vars = shift_vars.Shift_vars(instance, model)
-        shift_assignment_single_day_validation.Single_day_validation().build(
+        max_weekend_days.Max_weekend_days().build(
             instance, vars
         )
         for type_uid in lokal_shift_types:

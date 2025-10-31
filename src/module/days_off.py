@@ -14,7 +14,6 @@ class Days_off(ShiftAssignmentModule):
         for employee_uid in instance.employees:
             assigned_shifts = []
             for day in instance.employees[employee_uid].blocked_shifts:
-
                 for type_uid in instance.shifts[day]:
                     assigned_shifts.append(
                         vars.vars[(day, type_uid, employee_uid)])
