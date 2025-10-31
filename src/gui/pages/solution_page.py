@@ -39,7 +39,4 @@ def show():
 
     solution = st.session_state["solution"]
 
-    st.data_editor(
-        soluation_to_dataframe(solution),
-        key="shiftplan",
-    )
+    st.dataframe(soluation_to_dataframe(solution), key="shiftplan")
