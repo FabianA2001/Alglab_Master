@@ -44,6 +44,18 @@ class Instance(BaseModel):
                 self.shifts[day][type.uid] = new_shift
 
 
+    def __str__(self) -> str:
+        result_string = ""
+        result_string += f"Instance with {self.number_of_days} days, {len(self.shift_types)} shift types and {len(self.employees)} employees.\n"
+        result_string += "\n"*2
+        for shift_type in self.shift_types.values():
+            result_string += f"{shift_type}\n"
+        result_string += "\n"*2
+        for employee in self.employees.values():
+            result_string += f"{employee}\n"
+        return result_string
+        
+
     employees: dict[employee.EmployeeUid, employee.Employee] = Field(
         default_factory=dict, description="Set of Employees in the Instance"
     )

@@ -8,6 +8,10 @@ EmployeeUid = int
 
 
 class Employee(BaseModel):
+
+    def __str__(self) -> str:
+        return f"Employee {self.name} (UID: ...{str(self.uid)[-3:]}, Max Shifts: {self.max_numbers_of_shifts}, Max Minutes: {self.max_minutes_assigned}, Min Minutes: {self.min_minutes_assigned}, Max Consecutive Shifts: {self.max_number_consecutive_shifts}, Min Consecutive Shifts: {self.min_number_consecutive_shifts}, Min Consecutive Days Off: {self.min_number_consecutive_days_off}, Max Weekends: {self.max_number_weekends})"
+
     uid: EmployeeUid = Field(
         default_factory=generate_random_uid,
         description="Unique identifier for the Employee",

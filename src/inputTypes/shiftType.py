@@ -22,6 +22,5 @@ class ShiftType(BaseModel):
     start_time: datetime = Field(
         default=datetime(2005, 1, 1, 0, 0), description="Start time of the Shift"
     )
-    # end_time: datetime = Field(
-    #     default=datetime(2005, 1, 1), description="End time of the Shift"
-    # )
+    def __str__(self) -> str:
+        return f"ShiftType {self.name} (UID: ...{str(self.uid)[-3:]}, start time: {self.start_time} ,Length: {self.length} min, Blocked after: {self.blocked_shifts_after})"
