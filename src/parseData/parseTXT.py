@@ -14,9 +14,11 @@ def parse_txt(txt_file_path: Path) -> instace.Instance:
     shifts: list[shiftType.ShiftType] = []
     staff: dict[employee.EmployeeUid, employee.Employee] = {}
     # (day, shifttype_id) -> (employee_id ->, weight)
-    shift_on_requests: dict[tuple[int, int], dict[int, int]] = defaultdict(dict)
+    shift_on_requests: dict[tuple[int, int],
+                            dict[int, int]] = defaultdict(dict)
     # (day, shifttype_id) -> (employee_id -> weight)
-    shift_off_requests: dict[tuple[int, int], dict[int, int]] = defaultdict(dict)
+    shift_off_requests: dict[tuple[int, int],
+                             dict[int, int]] = defaultdict(dict)
     # (day, shifttype_id) -> (requirement, weight_under, weight_over)
     cover_requirements: dict[tuple[int, int], tuple[int, int, int]] = {}
 
@@ -52,11 +54,12 @@ def parse_txt(txt_file_path: Path) -> instace.Instance:
             staff_id = parts[0]
             max_shifts = {}
             for shift_constraint in parts[1].split():
-                if "=" in shift_constraint:
-                    shift, count = shift_constraint.split("=")
-                    max_shifts[shift] = int(count)
-                else:
-                    raise ValueError("Invalid shift constraint format")
+                for shift_constraint in parts[1].split("|"):
+                    if "=" in shift_constraint:
+                        shift, count = shift_constraint.split("=")
+                        max_shifts[shift] = int(count)
+                    else:
+                        raise ValueError("Invalid shift constraint format")
             id = hash(staff_id)
             staff[id] = employee.Employee(
                 uid=id,
