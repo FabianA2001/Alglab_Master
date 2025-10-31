@@ -1,11 +1,13 @@
 from pathlib import Path
 
+import pandas as pd
 import taipy.gui.builder as tgb
 from taipy.gui import Gui, Icon, navigate
 
 from .. import shift_vars, solver
 from ..inputTypes import instace
 from ..parseData import parseTXT
+from .parse_solution_to_table import parse_solution_to_table
 
 DEFAULT_PATH = Path.joinpath(
     Path(__file__).resolve().parent.parent.parent, "data", "Instance1.txt"
@@ -17,7 +19,11 @@ def start_gui():
     solver_instance = solver.Solver(inst, shift_vars.Shift_vars(inst))
 
     beispiel_option = True
-    solution_data = {}
+    solution_data = pd.DataFrame({"Test1": [1, 2, 3], "Test2": [4, 5, 6]})
+
+    def button_start_solve(state, action, info):
+        solved_solution = solver_instance.solve(log_search_progress=False)
+        state.solution_data = parse_solution_to_table(solved_solution)
 
     with tgb.Page() as page_1:
         tgb.text("# Instance", mode="md")
@@ -31,9 +37,10 @@ def start_gui():
             with tgb.part():
                 tgb.toggle("{beispiel_option}")
         tgb.text("Toggel ist {beispiel_option}")
+        tgb.button("Start Solve", on_action=button_start_solve)
 
         tgb.text("## Solver Ergebniss", mode="md")
-        tgb.table("{solution_data}", auto_loading=True)
+        tgb.table("{solution_data}", auto_loading=True, rebuild=True)
 
     def menu_option_selected(state, action, info):
         page = info["args"][0]
