@@ -1,10 +1,11 @@
-from pydantic import Field
 from typing import Dict, Tuple
-from .inputTypes import employee, shift
-from .inputTypes import instace
+
+from pydantic import BaseModel, Field
+
+from .inputTypes import employee, instace, shift
 
 
-class Solution:
+class Solution(BaseModel):
     """Class to handle variable storage and management for shift scheduling."""
 
     vars: Dict[Tuple[int, shift.ShiftUid, employee.EmployeeUid], int] = Field(
@@ -49,4 +50,5 @@ class Solution:
         self.instance = instance
 
     def set_objective_value(self, objective_value: float):
+        self.objective_value = objective_value
         self.objective_value = objective_value
