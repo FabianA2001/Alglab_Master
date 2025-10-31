@@ -22,6 +22,7 @@ class Solver:
         for key, value in solver_params.items():
             setattr(solver.parameters, key, value)
 
+        self.vars.model.Minimize(self.objevtive_value())
         status = solver.Solve(self.vars.model)
         return self.handle_results(status, solver)
 
