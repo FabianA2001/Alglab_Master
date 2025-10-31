@@ -4,6 +4,7 @@ import streamlit as st
 
 from .. import shift_vars, solution, solver
 from ..parseData import parseTXT
+from .pages import instance_page, solution_page, solver_page
 
 
 def get_solution() -> solution.Solution:
@@ -19,22 +20,22 @@ def start_gui():
     # Page configuration
     st.set_page_config(page_title="Algorithm Lab", page_icon="🔬", layout="wide")
 
+    if "solver_started" not in st.session_state:
+        st.session_state["solver_started"] = False
+    if "instance" not in st.session_state:
+        inst = parseTXT.parse_txt(instance_page.DEFAULT_PATH)
+        st.session_state["instance"] = inst
+
     # Navigation
     st.sidebar.title("Navigation")
     page = st.sidebar.radio("Gehe zu:", ["Instance", "Solver", "Solution"])
 
     # Import and display selected page
     if page == "Instance":
-        from .pages import instance_page
-
         instance_page.show()
     elif page == "Solver":
-        from .pages import solver_page
-
         solver_page.show()
     elif page == "Solution":
-        from .pages import solution_page
-
         solution_page.show()
 
 
