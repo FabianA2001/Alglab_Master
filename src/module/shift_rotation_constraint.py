@@ -11,15 +11,19 @@ class Shift_rotation_constraint(ShiftAssignmentModule):
     ) -> cp_model.LinearExprT:
         for employee_uid in instance.employees:
             for day in range(instance.number_of_days - 1):
-                assigned_shifts = []
+                # assigned_shifts = []
                 for type_uid in instance.shifts[day]:
-                    assigned_shifts.append(
-                        vars.vars[(day, type_uid, employee_uid)])
+                    # assigned_shifts.append(vars.vars[(day, type_uid, employee_uid)])
                     for btype_uid in instance.shift_types[
                         type_uid
                     ].blocked_shifts_after:
-                        assigned_shifts.append(
-                            vars.vars[(day+1, btype_uid, employee_uid)])
-                    vars.model.AddAtMostOne(assigned_shifts)
+                        # incorrect because more shift combination are being denied
+                        # assigned_shifts.append(
+                        #     vars.vars[(day + 1, btype_uid, employee_uid)]
+                        # )
+                        vars.model.AddAtMostOne(
+                            vars.vars[(day, type_uid, employee_uid)],
+                            vars.vars[(day + 1, btype_uid, employee_uid)],
+                        )
 
         return 0
