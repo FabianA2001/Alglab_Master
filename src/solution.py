@@ -124,6 +124,34 @@ class Solution(BaseModel):
     #         else:
     #             print("  (Niemand eingeteilt)")
 
+    def print_assign_values(self):
+        for day, type_uid, employee_uid in self.vars.keys():
+            print(
+                f"assign_{day}_{self.instance.shift_types[type_uid].name}_to_{self.instance.employees[employee_uid].name}: ",
+                self.vars[(day, type_uid, employee_uid)],
+            )
+
+    def print_weekend_work_values(self):
+        for weekend, employee_uid in self.weekend_vars.keys():
+            print(
+                f"weekend_work_{list(self.instance.weekend_days)[weekend]}_for_{self.instance.employees[employee_uid].name}: ",
+                self.weekend_vars[(weekend, employee_uid)],
+            )
+
+    def print_below_prefferd_values(self):
+        for day, type_uid in self.below_prefferd_vars.keys():
+            print(
+                f"below_prefferd_{day}_{self.instance.shift_types[type_uid].name}: ",
+                self.below_prefferd_vars[(day, type_uid)],
+            )
+
+    def print_assign_above_prefferd_values(self):
+        for day, type_uid in self.above_prefferd_vars.keys():
+            print(
+                f"above_prefferd_{day}_{self.instance.shift_types[type_uid].name}: ",
+                self.above_prefferd_vars[(day, type_uid)],
+            )
+
     def print_weekend_work(self):
         for weekend, employee_uid in self.weekend_vars.keys():
             print(
@@ -153,3 +181,12 @@ class Solution(BaseModel):
         self.print_below_prefferd()
         print("\n" * 2)
         self.print_assign_above_prefferd()
+
+    def print_all_variables_values(self):
+        self.print_assign_values()
+        print("\n" * 2)
+        self.print_weekend_work_values()
+        print("\n" * 2)
+        self.print_below_prefferd_values()
+        print("\n" * 2)
+        self.print_assign_above_prefferd_values()

@@ -26,6 +26,7 @@ def get_solution_from_model():
     vars = Shift_vars(instance)
     solution = Solver(instance, vars).solve()
     solution.print_all_variables()
+    solution.print_all_variables_values()
     print("obj value: ", solution.objective_value)
 
 
