@@ -46,7 +46,8 @@ def parse_txt(txt_file_path: Path) -> instace.Instance:
                 if "=" in shift_constraint:
                     shift, count = shift_constraint.split("=")
                     max_shifts[shift] = int(count)
-                raise ValueError("Invalid shift constraint format")
+                else:
+                    raise ValueError("Invalid shift constraint format")
             id = hash(staff_id)
             staff[id] = (employee.Employee(
                 uid=id,
@@ -81,4 +82,7 @@ def parse_txt(txt_file_path: Path) -> instace.Instance:
         number_of_days=horizon,
         shift_typs=shifts,
         emplyees=list(staff.values()),
+        shift_on_requests=shift_on_requests,
+        shift_off_requests=shift_off_requests,
+        cover_requirements=cover_requirements,
     )
