@@ -134,7 +134,7 @@ class Solution(BaseModel):
     def print_weekend_work_values(self):
         for weekend, employee_uid in self.weekend_vars.keys():
             print(
-                f"weekend_work_{list(self.instance.weekend_days)[weekend]}_for_{self.instance.employees[employee_uid].name}: ",
+                f"weekend_work_{weekend}_for_{self.instance.employees[employee_uid].name}: ",
                 self.weekend_vars[(weekend, employee_uid)],
             )
 

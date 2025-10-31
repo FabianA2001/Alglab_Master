@@ -120,7 +120,7 @@ class Solver:
                     )
                     solution.set_var(day, type_uid, employee_uid, var_value)
 
-        for weekend in self.instance.weekend_days:
+        for weekend in range(round(self.instance.number_of_days / 7)):
             for employee_uid in self.instance.employees:
                 weekend_value = solver.Value(
                     self.vars.get_weekend_var(weekend, employee_uid)
