@@ -44,3 +44,4 @@ class Solver:
                     self.instance.shifts[day][type_uid].weight_below_preferred
                 objective_value += self.above_prefferd_vars * \
                     self.instance.shifts[day][type_uid].weight_above_preferred
+        return objective_value
