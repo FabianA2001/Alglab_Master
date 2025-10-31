@@ -3,9 +3,13 @@ from typing import Dict, Tuple
 from pydantic import BaseModel, Field
 
 from .inputTypes import employee, instace, shift
+from .inputTypes.instace import Instance
 
 
 class Solution(BaseModel):
+    def __init__(self, instance: Instance):
+        self.instance = instance
+
     """Class to handle variable storage and management for shift scheduling."""
 
     vars: Dict[Tuple[int, shift.ShiftUid, employee.EmployeeUid], int] = Field(
@@ -27,8 +31,13 @@ class Solution(BaseModel):
         default_factory=dict,
         description="Mapping of integer variables representing the shortfall of employees assigned to a shift below its preferred capacity. The key is a tuple of (day, shift type).",
     )
-    instance: instace.Instance
-    objective_value: float
+    instance: instace.Instance = Field(
+        description="An instance that contains all given variables",
+    )
+    objective_value: float = Field(
+        default_factory=float,
+        description="The result of an objective function",
+    )
 
     def set_var(self, day: int, type_uid: int, employee_uid: int, value: int):
         """Sets the boolean variable value."""
@@ -50,5 +59,4 @@ class Solution(BaseModel):
         self.instance = instance
 
     def set_objective_value(self, objective_value: float):
-        self.objective_value = objective_value
         self.objective_value = objective_value

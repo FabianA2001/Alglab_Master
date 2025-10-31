@@ -32,13 +32,15 @@ class Solver:
         for employee_uid in self.instance.employees:
             for day in range(self.instance.number_of_days):
                 for type_uid in self.instance.shifts[day]:
-                    objective_value += self.instance.get_shift(day=day, type_uid=type_uid).penalty_not_assigned_day_employee.get(employee_uid,0) * (
+                    objective_value += self.instance.get_shift(
+                        day=day, type_uid=type_uid
+                    ).penalty_not_assigned_day_employee.get(employee_uid, 0) * (
                         1 - self.vars.vars[(day, type_uid, employee_uid)]
                     )
                     objective_value += (
                         self.instance.shifts[day][
                             type_uid
-                        ].penalty_assigned_day_employee.get(employee_uid,0)
+                        ].penalty_assigned_day_employee.get(employee_uid, 0)
                         * self.vars.vars[(day, type_uid, employee_uid)]
                     )
         for day in range(self.instance.number_of_days):
@@ -55,7 +57,7 @@ class Solver:
 
     def handle_results(self, status, solver: cp_model.CpSolver) -> Solution:
         """Handles the different results returned by the solver and returns a solution."""
-        solution = Solution()  # Create a new Solution instance
+        solution = Solution(self.instance)  # Create a new Solution instance
         if status in [cp_model.OPTIMAL, cp_model.FEASIBLE]:
             self.store_solution(
                 solver, solution
