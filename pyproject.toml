@@ -10,8 +10,8 @@ requires-python = ">=3.10"
 dependencies = [
     "ortools",
     "pydantic",
-    "taipy-gui",
     "pandas",
+    "taipy-gui",
 ]
 
 [project.optional-dependencies]
@@ -23,6 +23,7 @@ dev = [
 
 [project.scripts]
 main = "src.main:main"
+gui = "src.gui.start:start_gui"
 
 [tool.setuptools.packages.find]
 where = ["."]
