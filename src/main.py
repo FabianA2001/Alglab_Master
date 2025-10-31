@@ -3,10 +3,9 @@ from pathlib import Path
 from cpsat_utils.testing import AssertModelFeasible
 from ortools.sat.python import cp_model
 
-from .shift_vars import Shift_vars
 from .inputTypes import employee, instace, shiftType
 from .parseData import parseTXT
-
+from .shift_vars import Shift_vars
 from .solver import Solver
 
 
@@ -54,9 +53,10 @@ def t_single_day_validation():
 
 
 def main() -> None:
-    # get_tes_data()
+    inst = get_tes_data()
+    x = inst
     # t_single_day_validation()
-    get_solution_from_model()
+    # get_solution_from_model()
 
 
 if __name__ == "__main__":

@@ -4,8 +4,6 @@ from pydantic import BaseModel, Field
 
 from .inputTypes import employee, instace, shift
 
-import string
-
 
 class Solution(BaseModel):
     def __init__(self, instance: instace.Instance, **data):
@@ -61,6 +59,13 @@ class Solution(BaseModel):
 
     def set_objective_value(self, objective_value: float):
         self.objective_value = objective_value
+
+    def is_employee_assigned(
+        self, day: int, shift_type_uid: int, employee_uid: int
+    ) -> bool:
+        """Überprüft, ob ein Mitarbeiter einem bestimmten Schichttyp an einem bestimmten Tag zugewiesen ist."""
+
+        return self.vars[(day, shift_type_uid, employee_uid)] == 1
 
     # def print_assign(self):
     #     for day, type_uid, employee_uid in self.vars.keys():
