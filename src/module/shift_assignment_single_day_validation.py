@@ -18,4 +18,7 @@ class Single_day_validation(ShiftAssignmentModule):
                     assigned_shifts.append(vars.vars[(day, type_uid, employee_uid)])
                 # Ensure that at most one shift is assigned to the employee on this day
                 vars.model.AddAtMostOne(assigned_shifts)
+                vars.add_active_constraint(
+                    f"max_one_shift_per_day_{employee_uid}", sum(assigned_shifts) <= 1
+                )
         return 0

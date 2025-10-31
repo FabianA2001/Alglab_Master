@@ -30,14 +30,28 @@ class Max_weekend_days(ShiftAssignmentModule):
                 vars.model.Add(
                     vars.weekend_vars[(weekend, employee_uid)] <= sum(assigned_shifts)
                 )
+                vars.add_active_constraint(
+                    f"max_weekends_days_{weekend}_{employee_uid}_right",
+                    vars.weekend_vars[(weekend, employee_uid)] <= sum(assigned_shifts),
+                )
                 vars.model.Add(
                     # x
                     sum(assigned_shifts)
                     <= 2 * (vars.weekend_vars[(weekend, employee_uid)])
                 )
+                vars.add_active_constraint(
+                    f"max_weekends_days_{weekend}_{employee_uid}_left",
+                    sum(assigned_shifts)
+                    <= 2 * (vars.weekend_vars[(weekend, employee_uid)]),
+                )
                 assigned_weekends.append(vars.weekend_vars[(weekend, employee_uid)])
             vars.model.Add(
                 sum(assigned_weekends)
                 <= instance.employees[employee_uid].max_number_weekends
+            )
+            vars.add_active_constraint(
+                f"max_weekends_days_{employee_uid}",
+                sum(assigned_weekends)
+                <= instance.employees[employee_uid].max_number_weekends,
             )
         return 0

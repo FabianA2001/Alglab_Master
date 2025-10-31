@@ -15,12 +15,28 @@ class MinMaxWorkTime(ShiftAssignmentModule):
             assigned_minutes = 0
             for day in range(instance.number_of_days):
                 for type_uid in instance.shifts[day]:
-                    assigned_minutes += (vars.vars[(day, type_uid, employee_uid)]
-                                         )*instance.shift_types[type_uid].length
+                    assigned_minutes += (
+                        (vars.vars[(day, type_uid, employee_uid)])
+                        * instance.shift_types[type_uid].length
+                    )
 
             vars.model.Add(
-                assigned_minutes <= instance.employees[employee_uid].max_minutes_assigned)
+                assigned_minutes
+                <= instance.employees[employee_uid].max_minutes_assigned
+            )
+            vars.add_active_constraint(
+                f"max_work_time_{employee_uid}",
+                assigned_minutes
+                <= instance.employees[employee_uid].max_minutes_assigned,
+            )
             vars.model.Add(
-                assigned_minutes >= instance.employees[employee_uid].min_minutes_assigned)
+                assigned_minutes
+                >= instance.employees[employee_uid].min_minutes_assigned
+            )
+            vars.add_active_constraint(
+                f"min_work_time_{employee_uid}",
+                assigned_minutes
+                >= instance.employees[employee_uid].min_minutes_assigned,
+            )
 
         return 0

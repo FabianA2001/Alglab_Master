@@ -12,13 +12,27 @@ class Max_Cons_Shifts(ShiftAssignmentModule):
         vars: shift_vars.Shift_vars,
     ) -> cp_model.LinearExprT:
         for employee_uid in instance.employees:
-            for day in range(instance.number_of_days-instance.employees[employee_uid].max_number_consecutive_shifts):
+            for day in range(
+                instance.number_of_days
+                - instance.employees[employee_uid].max_number_consecutive_shifts
+            ):
                 assigned_shifts = []
                 for type_uid in instance.shifts[day]:
-                    for i in range(instance.employees[employee_uid].max_number_consecutive_shifts+1):
+                    for i in range(
+                        instance.employees[employee_uid].max_number_consecutive_shifts
+                        + 1
+                    ):
                         assigned_shifts.append(
-                            vars.vars[(day+i, type_uid, employee_uid)])
+                            vars.vars[(day + i, type_uid, employee_uid)]
+                        )
 
-                vars.model.Add(sum(
-                    assigned_shifts) <= instance.employees[employee_uid].max_number_consecutive_shifts)
+                vars.model.Add(
+                    sum(assigned_shifts)
+                    <= instance.employees[employee_uid].max_number_consecutive_shifts
+                )
+                vars.add_active_constraint(
+                    f"max_cons_shifts_{day}_{employee_uid}",
+                    sum(assigned_shifts)
+                    <= instance.employees[employee_uid].max_number_consecutive_shifts,
+                )
         return 0

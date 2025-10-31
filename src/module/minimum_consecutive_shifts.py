@@ -41,4 +41,13 @@ class Minimum_consecutive_shifts(ShiftAssignmentModule):
                         + sum(assigned_shifts_interval_end)
                         > 0
                     )
+                    vars.add_active_constraint(
+                        f"Minimum_consecutive_on_{day_d}_{day_s}_{employee_uid}",
+                        sum(assigned_shifts)
+                        + day_s
+                        + 1
+                        - (sum(assigned_shifts_inner_interval))
+                        + sum(assigned_shifts_interval_end)
+                        > 0,
+                    )
         return 0

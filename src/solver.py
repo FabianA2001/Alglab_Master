@@ -1,3 +1,4 @@
+from typing import List
 from ortools.sat.python import cp_model
 
 from . import shift_vars
@@ -48,6 +49,26 @@ class Solver:
         shift_assignment_single_day_validation.Single_day_validation().build(
             self.instance, self.vars
         )
+        solver = cp_model.CpSolver()
+        solver.parameters.log_search_progress = log_search_progress
+        solver.parameters.max_time_in_seconds = max_time_in_seconds
+
+        for key, value in solver_params.items():
+            setattr(solver.parameters, key, value)
+
+        self.vars.model.Minimize(self.objevtive_value())
+        status = solver.Solve(self.vars.model)
+        return self.handle_results(status, solver)
+
+    def solve_with_constraints(
+        self,
+        constraints: List[cp_model.BoundedLinearExpression] = [],
+        log_search_progress: bool = True,
+        max_time_in_seconds: float = 60.0,
+        **solver_params,
+    ) -> Solution:
+        for constraint in constraints:
+            self.vars.model.Add(constraint)
         solver = cp_model.CpSolver()
         solver.parameters.log_search_progress = log_search_progress
         solver.parameters.max_time_in_seconds = max_time_in_seconds
