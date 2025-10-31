@@ -1,4 +1,5 @@
 from ortools.sat.python import cp_model
+
 from . import shift_vars
 from .inputTypes import instace
 from .solution import Solution
@@ -31,25 +32,23 @@ class Solver:
         for employee_uid in self.instance.employees:
             for day in range(self.instance.number_of_days):
                 for type_uid in self.instance.shifts[day]:
-                    objective_value += self.instance.shifts[day][
-                        type_uid
-                    ].penalty_not_assigned_day_employee[employee_uid] * (
+                    objective_value += self.instance.get_shift(day=day, type_uid=type_uid).penalty_not_assigned_day_employee.get(employee_uid,0) * (
                         1 - self.vars.vars[(day, type_uid, employee_uid)]
                     )
                     objective_value += (
                         self.instance.shifts[day][
                             type_uid
-                        ].penalty_assigned_day_employee[employee_uid]
+                        ].penalty_assigned_day_employee.get(employee_uid,0)
                         * self.vars.vars[(day, type_uid, employee_uid)]
                     )
         for day in range(self.instance.number_of_days):
             for type_uid in self.instance.shifts[day]:
                 objective_value += (
-                    self.vars.below_prefferd_vars[day][type_uid]
+                    self.vars.below_prefferd_vars[(day, type_uid)]
                     * self.instance.shifts[day][type_uid].weight_below_preferred
                 )
                 objective_value += (
-                    self.vars.above_prefferd_vars[day][type_uid]
+                    self.vars.above_prefferd_vars[(day, type_uid)]
                     * self.instance.shifts[day][type_uid].weight_above_preferred
                 )
         return objective_value
@@ -118,4 +117,5 @@ class Solver:
 
     def process_invalid_model(self) -> None:
         """Handles the case when the model is invalid."""
+        print("The model provided is invalid and cannot be solved.")
         print("The model provided is invalid and cannot be solved.")
