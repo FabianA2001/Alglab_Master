@@ -4,6 +4,8 @@ from pydantic import BaseModel, Field
 
 from .inputTypes import employee, instace, shift
 
+import string
+
 
 class Solution(BaseModel):
     def __init__(self, instance: instace.Instance, **data):
@@ -60,12 +62,67 @@ class Solution(BaseModel):
     def set_objective_value(self, objective_value: float):
         self.objective_value = objective_value
 
+    # def print_assign(self):
+    #     for day, type_uid, employee_uid in self.vars.keys():
+    #         print(
+    #             f"assign_{day}_{type_uid}_to_{employee_uid}: ",
+    #             self.vars[(day, type_uid, employee_uid)],
+    #         )
     def print_assign(self):
-        for day, type_uid, employee_uid in self.vars.keys():
-            print(
-                f"assign_{day}_{type_uid}_to_{employee_uid}: ",
-                self.vars[(day, type_uid, employee_uid)],
-            )
+        """Gibt alle eingeteilten Employee-UIDs pro Tag aus (value == 1)."""
+        print("=== Mitarbeiter-Zuordnung pro Tag ===")
+
+        # Alle vorhandenen Tage aus den Variablen extrahieren
+        days = sorted({day for (day, _, _) in self.vars.keys()})
+
+        for day in days:
+            # Alle Mitarbeiter, die an diesem Tag arbeiten (value == 1)
+            assigned = [
+                emp_uid
+                for (d, _, emp_uid), value in self.vars.items()
+                if d == day and value == 1
+            ]
+
+            # Ausgabe
+            print(f"\nTag {day}:")
+            if assigned:
+                for emp_uid in assigned:
+                    print(f"  - {self.instance.employees[emp_uid].name}")
+            else:
+                print("  (Niemand eingeteilt)")
+
+    # def print_assign(self):
+    #     """Gibt alle eingeteilten Mitarbeiter (A, B, C, ...) pro Tag aus."""
+    #     print("=== Mitarbeiter-Zuordnung pro Tag ===")
+
+    #     # Alle vorhandenen Mitarbeiter-UIDs extrahieren und sortieren
+    #     employee_uids = sorted(
+    #         {emp_uid for (_, _, emp_uid) in self.vars.keys()})
+
+    #     # Jedem Employee-UID einen Buchstaben zuweisen: A, B, C, ...
+    #     name_map = {
+    #         uid: string.ascii_uppercase[i % 26] +
+    #         (str(i // 26 + 1) if i >= 26 else "")
+    #         for i, uid in enumerate(employee_uids)
+    #     }
+    #     # (Falls du mehr als 26 Mitarbeitende hast, geht’s weiter mit A1, B1, C1, …)
+
+    #     # Alle vorhandenen Tage extrahieren
+    #     days = sorted({day for (day, _, _) in self.vars.keys()})
+
+    #     # Ausgabe
+    #     for day in days:
+    #         assigned = [
+    #             name_map[emp_uid]
+    #             for (d, _, emp_uid), value in self.vars.items()
+    #             if d == day and value == 1
+    #         ]
+    #         print(f"\nTag {day}:")
+    #         if assigned:
+    #             for name in assigned:
+    #                 print(f"  - {name}")
+    #         else:
+    #             print("  (Niemand eingeteilt)")
 
     def print_weekend_work(self):
         for weekend, employee_uid in self.weekend_vars.keys():
@@ -84,7 +141,7 @@ class Solution(BaseModel):
     def print_assign_above_prefferd(self):
         for day, type_uid in self.above_prefferd_vars.keys():
             print(
-                f"below_prefferd_{day}_{type_uid}: ",
+                f"above_prefferd_{day}_{type_uid}: ",
                 self.above_prefferd_vars[(day, type_uid)],
             )
 
