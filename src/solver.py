@@ -35,7 +35,7 @@ class Solver:
         )
         max_Cons_Shifts.Max_Cons_Shifts().build(self.instance, self.vars)
         # TODO solve the problem with max weekend days
-        # max_weekend_days.Max_weekend_days().build(self.instance, self.vars)
+        max_weekend_days.Max_weekend_days().build(self.instance, self.vars)
         minimum_consecutive_days_off.Minimum_consecutive_days_off().build(
             self.instance, self.vars
         )

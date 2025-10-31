@@ -373,13 +373,16 @@ def test_max_weekends():
         lokal_shift_types = [shiftType.ShiftType() for _ in range(2)]
         lokal_employee = employee.Employee(max_number_weekends=0)
         instance = instace.Instance(
-            number_of_days=1,
+            number_of_days=7,
             shift_typs=lokal_shift_types,
             emplyees=[lokal_employee],
             weekend_days={0},
         )
         vars = shift_vars.Shift_vars(instance, model)
         max_weekend_days.Max_weekend_days().build(instance, vars)
+        # test if an employee can work one weekend, which shouldnt be possible
         for type_uid in lokal_shift_types:
-            model.Add(vars.vars[(0, type_uid.uid, lokal_employee.uid)] == 1)
-            model.Add(vars.weekend_vars[(0, lokal_employee.uid)] == 1)
+            model.Add(vars.vars[(6, type_uid.uid, lokal_employee.uid)] == 1)
+            break
+            # wird automatisch mit dem Solver gesetzt
+            # model.Add(vars.weekend_vars[(0, lokal_employee.uid)] == 1)

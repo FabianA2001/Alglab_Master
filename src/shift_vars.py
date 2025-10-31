@@ -28,22 +28,23 @@ class Shift_vars:
     def __init_weekend_vars(self, instance: instace.Instance):
         self.weekend_vars = {}
         for employee_uid in instance.employees:
-            for weekend in instance.weekend_days:
+            for weekend in range(round(instance.number_of_days / 7)):
+                print(f"weekend_work_{weekend}_for_{employee_uid}")
                 self.weekend_vars[(weekend, employee_uid)] = self.model.new_bool_var(
                     f"weekend_work_{weekend}_for_{employee_uid}"
                 )
-                for type_uid in instance.shifts[weekend]:
-                    # force weekend var for saturday
-                    self.model.add(
-                        self.weekend_vars[(weekend, employee_uid)]
-                        >= self.vars[(weekend, type_uid, employee_uid)]
-                    )
-                    # force weekend var for sunday
-                    if weekend > 0:
-                        self.model.add(
-                            self.weekend_vars[(weekend, employee_uid)]
-                            >= self.vars[(weekend + 1, type_uid, employee_uid)]
-                        )
+                # for type_uid in instance.shifts[weekend]:
+                #     # force weekend var for saturday
+                #     self.model.add(
+                #         self.weekend_vars[(weekend, employee_uid)]
+                #         >= self.vars[(weekend, type_uid, employee_uid)]
+                #     )
+                #     # force weekend var for sunday
+                #     if weekend > 0:
+                #         self.model.add(
+                #             self.weekend_vars[(weekend, employee_uid)]
+                #             >= self.vars[(weekend + 1, type_uid, employee_uid)]
+                #         )
 
     def __init_below_prefferd_vars(self, instance: instace.Instance):
         self.below_prefferd_vars = {}
