@@ -5,7 +5,7 @@ from ortools.sat.python import cp_model
 
 from . import shift_vars
 from .inputTypes import employee, instace, shiftType
-from .parseData.parseXML import print_xml_structure
+from .parseData import parseTXT
 
 
 def sayHello(name="World") -> str:
@@ -14,9 +14,9 @@ def sayHello(name="World") -> str:
 
 def get_tes_data():
     test_file = Path.joinpath(
-        Path(__file__).resolve().parent.parent, "data", "Instance1.ros"
+        Path(__file__).resolve().parent.parent, "data", "Instance1.txt"
     )
-    print_xml_structure(test_file)
+    parseTXT.parse_txt(test_file)
 
 
 def t_single_day_validation():
@@ -42,8 +42,8 @@ def t_single_day_validation():
 
 
 def main() -> None:
-    # get_tes_data()
-    t_single_day_validation()
+    get_tes_data()
+    # t_single_day_validation()
 
 
 if __name__ == "__main__":
