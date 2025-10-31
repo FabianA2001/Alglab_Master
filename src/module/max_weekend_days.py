@@ -27,8 +27,6 @@ class Max_weekend_days(ShiftAssignmentModule):
                         vars.vars[((7 * (weekend + 1) - 1), type_uid, employee_uid)]
                     )
 
-                print(weekend, employee_uid)
-                print(vars.weekend_vars)
                 vars.model.Add(
                     vars.weekend_vars[(weekend, employee_uid)] <= sum(assigned_shifts)
                 )

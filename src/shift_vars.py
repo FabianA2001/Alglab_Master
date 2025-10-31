@@ -20,7 +20,6 @@ class Shift_vars:
         for day in range(instance.number_of_days):
             for type_uid in instance.shifts[day]:
                 for employee_uid in instance.employees:
-                    print("create var")
                     self.vars[(day, type_uid, employee_uid)] = self.model.new_bool_var(
                         f"assign_{day}_{type_uid}_to_{employee_uid}"
                     )
@@ -29,7 +28,6 @@ class Shift_vars:
         self.weekend_vars = {}
         for employee_uid in instance.employees:
             for weekend in range(round(instance.number_of_days / 7)):
-                print(f"weekend_work_{weekend}_for_{employee_uid}")
                 self.weekend_vars[(weekend, employee_uid)] = self.model.new_bool_var(
                     f"weekend_work_{weekend}_for_{employee_uid}"
                 )
