@@ -1,5 +1,7 @@
-from pydantic import BaseModel, Field
 from collections import defaultdict
+
+from pydantic import BaseModel, Field
+
 from . import employee
 from .inputTypesUtiles import generate_random_uid
 
@@ -18,11 +20,11 @@ class Shift(BaseModel):
         default=False, description="Indicates if the Day is a weekend"
     )
     penalty_not_assigned_day_employee: dict[employee.EmployeeUid, int] = Field(
-        default_factory=defaultdict(dict),
+        default=defaultdict(int),
         description="dict of penalty for employee not assigned on specific day",
     )
     penalty_assigned_day_employee: dict[employee.EmployeeUid, int] = Field(
-        default_factory=defaultdict(dict),
+        default=defaultdict(int),
         description="dict of penalty for employee being assigned on specific day",
     )
     preffert_number_employees: int = Field(
@@ -39,11 +41,3 @@ class Shift(BaseModel):
     )
 
 
-"""
-1,2,3
-day1:[1,2][3]
-day2:[3,2][1]
-
-
-
-"""
