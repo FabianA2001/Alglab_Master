@@ -11,7 +11,8 @@ dependencies = [
     "ortools",
     "pydantic",
     "pandas",
-    "taipy-gui",
+    "streamlit"
+    
 ]
 
 [project.optional-dependencies]
@@ -23,7 +24,6 @@ dev = [
 
 [project.scripts]
 main = "src.main:main"
-gui = "src.gui.start:start_gui"
 
 [tool.setuptools.packages.find]
 where = ["."]
