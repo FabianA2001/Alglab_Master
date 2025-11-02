@@ -29,7 +29,6 @@ def soluation_to_dataframe(solution: solution.Solution) -> pd.DataFrame:
 
 def show():
     st.title("✅ Solution")
-    st.write("Zeige die berechnete Lösung an.")
 
     # Check if solution exists in session state
     if "solution" not in st.session_state:
@@ -39,4 +38,7 @@ def show():
 
     solution = st.session_state["solution"]
 
+    st.write("### Objective Value")
+    st.write(f"**{solution.objective_value}**")
+    st.write("### Shift Plan")
     st.dataframe(soluation_to_dataframe(solution), key="shiftplan")
