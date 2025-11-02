@@ -64,13 +64,17 @@ def render_shift_plan_component(sol: solution.Solution):
     # Pfad zu den HTML/JS Dateien
     html_file = Path(__file__).parent / "shift_plan_table.html"
     js_file = Path(__file__).parent / "shift_plan_table.js"
+    config_file = Path(__file__).parent / "shift_plan_config.js"
 
-    # Lese HTML und JS
+    # Lese HTML, JS und Config
     with open(html_file, "r", encoding="utf-8") as f:
         html_content = f.read()
 
     with open(js_file, "r", encoding="utf-8") as f:
         js_content = f.read()
+
+    with open(config_file, "r", encoding="utf-8") as f:
+        config_content = f.read()
 
     # Konvertiere Lösung in JSON-Format
     shift_plan_data = solution_to_html_data(sol)
@@ -79,6 +83,10 @@ def render_shift_plan_component(sol: solution.Solution):
     full_html = f"""
     {html_content}
     <script>
+    // Lade die Konfiguration
+    {config_content}
+    
+    // Lade das Haupt-JavaScript
     {js_content}
     
     // Initialisiere die Tabelle mit den Daten
