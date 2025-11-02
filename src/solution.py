@@ -51,7 +51,7 @@ class Solution(BaseModel):
             return {
                 tuple(map(int, k.split(","))) if isinstance(k, str) else k: val
                 for k, val in v.items()
-            }
+            }  # type: ignore
         return v
 
     @field_validator("weekend_vars", mode="before")
@@ -62,7 +62,7 @@ class Solution(BaseModel):
             return {
                 tuple(map(int, k.split(","))) if isinstance(k, str) else k: val
                 for k, val in v.items()
-            }
+            }  # type: ignore
         return v
 
     @field_validator("above_prefferd_vars", mode="before")
@@ -73,7 +73,7 @@ class Solution(BaseModel):
             return {
                 tuple(map(int, k.split(","))) if isinstance(k, str) else k: val
                 for k, val in v.items()
-            }
+            }  # type: ignore
         return v
 
     @field_validator("below_prefferd_vars", mode="before")
@@ -84,7 +84,7 @@ class Solution(BaseModel):
             return {
                 tuple(map(int, k.split(","))) if isinstance(k, str) else k: val
                 for k, val in v.items()
-            }
+            }  # type: ignore
         return v
 
     def set_var(self, day: int, type_uid: int, employee_uid: int, value: int):
