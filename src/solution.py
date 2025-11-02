@@ -1,11 +1,16 @@
+from pathlib import Path
 from typing import Dict, Tuple
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from .inputTypes import employee, instace, shift
 
+DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "solutions"
+
 
 class Solution(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     def __init__(self, instance: instace.Instance, **data):
         super().__init__(instance=instance, **data)
 
@@ -195,3 +200,45 @@ class Solution(BaseModel):
         self.print_below_prefferd_values()
         print("\n" * 2)
         self.print_assign_above_prefferd_values()
+
+    def to_json_file(self, name: str):
+        """Speichert die Solution als JSON-Datei mit Pydantic's model_dump_json().
+
+        Args:
+            filepath: Pfad zur JSON-Datei
+        """
+        path = DATA_DIR / f"{name}.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Nutze Pydantic's eingebaute JSON-Serialisierung
+        json_str = self.model_dump_json(indent=2)
+
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(json_str)
+
+        print(f"Solution gespeichert in: {path}")
+
+    @classmethod
+    def from_json_file(cls, name: str) -> "Solution":
+        """Lädt eine Solution aus einer JSON-Datei mit Pydantic's model_validate_json().
+
+        Args:
+            filepath: Pfad zur JSON-Datei
+
+        Returns:
+            Solution: Die geladene Solution
+        """
+        path = DATA_DIR / f"{name}.json"
+
+        if not path.exists():
+            raise FileNotFoundError(f"Datei nicht gefunden: {path}")
+
+        with open(path, "r", encoding="utf-8") as f:
+            json_str = f.read()
+
+        # Nutze Pydantic's eingebaute JSON-Deserialisierung
+        solution = cls.model_validate_json(json_str)
+
+        print(f"Solution geladen aus: {path}")
+
+        return solution

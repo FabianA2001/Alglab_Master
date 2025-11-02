@@ -10,8 +10,9 @@ from ...inputTypes import instace
 def solve_in_thread(instance: instace.Instance) -> solution.Solution:
     """Führt den Solver in einem separaten Thread aus"""
     sol = solver.Solver(instance, shift_vars.Shift_vars(instance))
-    solution = sol.solve(log_search_progress=False)
-    return solution
+    sol = sol.solve(log_search_progress=False)
+    sol.to_json_file(instance.name)
+    return sol
 
 
 def show():

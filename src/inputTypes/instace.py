@@ -12,6 +12,7 @@ class Instance(BaseModel):
         number_of_days: int,
         shift_typs: list[shiftType.ShiftType],
         emplyees: list[employee.Employee],
+        name: str = "Default Instance",
         # set saturday(Samstag)
         weekend_days: set[int] = set(),
         # (day, shifttype_id) -> (employee_id ->, weight)
@@ -22,9 +23,13 @@ class Instance(BaseModel):
         cover_requirements: dict[tuple[int, int], tuple[int, int, int]] = {},
         **data,
     ):
+        # Prepare data dict with all required Pydantic fields
+        data["name"] = name
+        data["number_of_days"] = number_of_days
+        data["weekend_days"] = weekend_days
+
         super().__init__(**data)
-        self.number_of_days = number_of_days
-        self.weekend_days = weekend_days
+
         for type in shift_typs:
             self.shift_types[type.uid] = type
         for emp in emplyees:
@@ -58,6 +63,7 @@ class Instance(BaseModel):
             result_string += f"{employee}\n"
         return result_string
 
+    name: str = Field(description="Name of the Instance")
     employees: dict[employee.EmployeeUid, employee.Employee] = Field(
         default_factory=dict, description="Set of Employees in the Instance"
     )

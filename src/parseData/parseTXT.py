@@ -14,11 +14,9 @@ def parse_txt(txt_file_path: Path) -> instace.Instance:
     shifts: list[shiftType.ShiftType] = []
     staff: dict[employee.EmployeeUid, employee.Employee] = {}
     # (day, shifttype_id) -> (employee_id ->, weight)
-    shift_on_requests: dict[tuple[int, int],
-                            dict[int, int]] = defaultdict(dict)
+    shift_on_requests: dict[tuple[int, int], dict[int, int]] = defaultdict(dict)
     # (day, shifttype_id) -> (employee_id -> weight)
-    shift_off_requests: dict[tuple[int, int],
-                             dict[int, int]] = defaultdict(dict)
+    shift_off_requests: dict[tuple[int, int], dict[int, int]] = defaultdict(dict)
     # (day, shifttype_id) -> (requirement, weight_under, weight_over)
     cover_requirements: dict[tuple[int, int], tuple[int, int, int]] = {}
 
@@ -102,6 +100,7 @@ def parse_txt(txt_file_path: Path) -> instace.Instance:
             )
 
     return instace.Instance(
+        name=txt_file_path.stem,
         number_of_days=horizon,
         shift_typs=shifts,
         emplyees=list(staff.values()),
