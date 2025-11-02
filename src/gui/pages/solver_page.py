@@ -7,10 +7,15 @@ from ... import shift_vars, solution, solver
 from ...inputTypes import instace
 
 
-def solve_in_thread(instance: instace.Instance) -> solution.Solution:
+def solve_in_thread(
+    instance: instace.Instance,
+    disabled_constraints: list[solver.SolverConstraints] = [],
+) -> solution.Solution:
     """Führt den Solver in einem separaten Thread aus"""
     sol = solver.Solver(instance, shift_vars.Shift_vars(instance))
-    sol = sol.solve(log_search_progress=False)
+    sol = sol.solve(
+        log_search_progress=False, disabled_constraints=disabled_constraints
+    )
     sol.to_json_file(instance.name)
     return sol
 
@@ -28,13 +33,38 @@ def show():
     # Solver configuration
     st.subheader("Solver Einstellungen")
 
-    col1, col2 = st.columns(2)
+    if "disabled_constraints_value" not in st.session_state:
+        st.session_state["disabled_constraints_value"] = {}
+    disabled_constraints_value: dict[solver.SolverConstraints, bool] = st.session_state[
+        "disabled_constraints_value"
+    ]
 
-    with col1:
-        st.write("Parameter hier anzeigen/konfigurieren")
+    def toggle_constraint(mode: solver.SolverConstraints):
+        default = (
+            disabled_constraints_value[mode]
+            if mode in disabled_constraints_value
+            else True
+        )
+        disabled_constraints_value[mode] = st.toggle(
+            f"{mode.name.replace('_', ' ')}",
+            value=default,
+        )
 
-    with col2:
-        st.write("Weitere Optionen")
+    toggle_constraint(solver.SolverConstraints.cover_requirements)
+    toggle_constraint(solver.SolverConstraints.days_off)
+    toggle_constraint(solver.SolverConstraints.limited_shifts_per_type_validation)
+    toggle_constraint(solver.SolverConstraints.max_Cons_Shifts)
+    toggle_constraint(solver.SolverConstraints.max_weekend_days)
+    toggle_constraint(solver.SolverConstraints.minimum_consecutive_days_off)
+    toggle_constraint(solver.SolverConstraints.minimum_consecutive_shifts)
+    toggle_constraint(solver.SolverConstraints.minMaxWorkTime)
+    toggle_constraint(solver.SolverConstraints.shift_assignment_single_day_validation)
+    toggle_constraint(solver.SolverConstraints.shift_rotation_constraint)
+
+    disabled_constraints: list[solver.SolverConstraints] = []
+    for key, value in disabled_constraints_value.items():
+        if not value:
+            disabled_constraints.append(key)
 
     if "instance" in st.session_state:
         instance = st.session_state["instance"]
@@ -57,7 +87,7 @@ def show():
 
             # Start solver in a subprocess
             executor = ThreadPoolExecutor(max_workers=1)
-            future = executor.submit(solve_in_thread, instance)
+            future = executor.submit(solve_in_thread, instance, disabled_constraints)
 
             st.session_state["solver_executor"] = executor
             st.session_state["solver_future"] = future

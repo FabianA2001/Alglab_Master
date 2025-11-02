@@ -1,12 +1,12 @@
-from typing import List
+import enum
+
 from ortools.sat.python import cp_model
 
 from . import shift_vars
 from .inputTypes import instace
-from .solution import Solution
 from .module import (
-    days_off,
     cover_requirements,
+    days_off,
     limited_shifts_per_type_validation,
     max_Cons_Shifts,
     max_weekend_days,
@@ -16,6 +16,20 @@ from .module import (
     shift_assignment_single_day_validation,
     shift_rotation_constraint,
 )
+from .solution import Solution
+
+
+class SolverConstraints(enum.Enum):
+    cover_requirements = enum.auto()
+    days_off = enum.auto()
+    limited_shifts_per_type_validation = enum.auto()
+    max_Cons_Shifts = enum.auto()
+    max_weekend_days = enum.auto()
+    minimum_consecutive_days_off = enum.auto()
+    minimum_consecutive_shifts = enum.auto()
+    minMaxWorkTime = enum.auto()
+    shift_assignment_single_day_validation = enum.auto()
+    shift_rotation_constraint = enum.auto()
 
 
 class Solver:
@@ -27,28 +41,45 @@ class Solver:
         self,
         log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
+        disabled_constraints: list[SolverConstraints] = [],
         **solver_params,
     ) -> Solution:
-        days_off.Days_off().build(self.instance, self.vars)
-        cover_requirements.Cover_requirements().build(self.instance, self.vars)
-        limited_shifts_per_type_validation.Limited_shifts_per_type_validation().build(
-            self.instance, self.vars
-        )
-        max_Cons_Shifts.Max_Cons_Shifts().build(self.instance, self.vars)
-        max_weekend_days.Max_weekend_days().build(self.instance, self.vars)
-        minimum_consecutive_days_off.Minimum_consecutive_days_off().build(
-            self.instance, self.vars
-        )
-        minimum_consecutive_shifts.Minimum_consecutive_shifts().build(
-            self.instance, self.vars
-        )
-        minMaxWorkTime.MinMaxWorkTime().build(self.instance, self.vars)
-        shift_rotation_constraint.Shift_rotation_constraint().build(
-            self.instance, self.vars
-        )
-        shift_assignment_single_day_validation.Single_day_validation().build(
-            self.instance, self.vars
-        )
+        if SolverConstraints.days_off not in disabled_constraints:
+            days_off.Days_off().build(self.instance, self.vars)
+        if SolverConstraints.cover_requirements not in disabled_constraints:
+            cover_requirements.Cover_requirements().build(self.instance, self.vars)
+        if (
+            SolverConstraints.limited_shifts_per_type_validation
+            not in disabled_constraints
+        ):
+            limited_shifts_per_type_validation.Limited_shifts_per_type_validation().build(
+                self.instance, self.vars
+            )
+        if SolverConstraints.max_Cons_Shifts not in disabled_constraints:
+            max_Cons_Shifts.Max_Cons_Shifts().build(self.instance, self.vars)
+        if SolverConstraints.max_weekend_days not in disabled_constraints:
+            max_weekend_days.Max_weekend_days().build(self.instance, self.vars)
+        if SolverConstraints.minimum_consecutive_days_off not in disabled_constraints:
+            minimum_consecutive_days_off.Minimum_consecutive_days_off().build(
+                self.instance, self.vars
+            )
+        if SolverConstraints.minimum_consecutive_shifts not in disabled_constraints:
+            minimum_consecutive_shifts.Minimum_consecutive_shifts().build(
+                self.instance, self.vars
+            )
+        if SolverConstraints.minMaxWorkTime not in disabled_constraints:
+            minMaxWorkTime.MinMaxWorkTime().build(self.instance, self.vars)
+        if SolverConstraints.shift_rotation_constraint not in disabled_constraints:
+            shift_rotation_constraint.Shift_rotation_constraint().build(
+                self.instance, self.vars
+            )
+        if (
+            SolverConstraints.shift_assignment_single_day_validation
+            not in disabled_constraints
+        ):
+            shift_assignment_single_day_validation.Single_day_validation().build(
+                self.instance, self.vars
+            )
         solver = cp_model.CpSolver()
         solver.parameters.log_search_progress = log_search_progress
         solver.parameters.max_time_in_seconds = max_time_in_seconds
@@ -62,7 +93,7 @@ class Solver:
 
     def solve_with_constraints(
         self,
-        constraints: List[cp_model.BoundedLinearExpression] = [],
+        constraints: list[cp_model.BoundedLinearExpression] = [],
         log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
         **solver_params,
