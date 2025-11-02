@@ -1,7 +1,7 @@
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Any, Dict, Tuple
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .inputTypes import employee, instace, shift
 
@@ -42,6 +42,50 @@ class Solution(BaseModel):
         default=0.0,
         description="The result of an objective function",
     )
+
+    @field_validator("vars", mode="before")
+    @classmethod
+    def validate_vars(cls, v: Any) -> Dict[Tuple[int, int, int], int]:
+        """Convert string keys back to tuple keys for vars field."""
+        if isinstance(v, dict):
+            return {
+                tuple(map(int, k.split(","))) if isinstance(k, str) else k: val
+                for k, val in v.items()
+            }
+        return v
+
+    @field_validator("weekend_vars", mode="before")
+    @classmethod
+    def validate_weekend_vars(cls, v: Any) -> Dict[Tuple[int, int], int]:
+        """Convert string keys back to tuple keys for weekend_vars field."""
+        if isinstance(v, dict):
+            return {
+                tuple(map(int, k.split(","))) if isinstance(k, str) else k: val
+                for k, val in v.items()
+            }
+        return v
+
+    @field_validator("above_prefferd_vars", mode="before")
+    @classmethod
+    def validate_above_prefferd_vars(cls, v: Any) -> Dict[Tuple[int, int], int]:
+        """Convert string keys back to tuple keys for above_prefferd_vars field."""
+        if isinstance(v, dict):
+            return {
+                tuple(map(int, k.split(","))) if isinstance(k, str) else k: val
+                for k, val in v.items()
+            }
+        return v
+
+    @field_validator("below_prefferd_vars", mode="before")
+    @classmethod
+    def validate_below_prefferd_vars(cls, v: Any) -> Dict[Tuple[int, int], int]:
+        """Convert string keys back to tuple keys for below_prefferd_vars field."""
+        if isinstance(v, dict):
+            return {
+                tuple(map(int, k.split(","))) if isinstance(k, str) else k: val
+                for k, val in v.items()
+            }
+        return v
 
     def set_var(self, day: int, type_uid: int, employee_uid: int, value: int):
         """Sets the boolean variable value."""

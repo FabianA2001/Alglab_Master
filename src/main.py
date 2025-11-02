@@ -6,6 +6,7 @@ from ortools.sat.python import cp_model
 from .inputTypes import employee, instace, shiftType
 from .parseData import parseTXT
 from .shift_vars import Shift_vars
+from .solution import Solution
 from .solver import Solver
 
 
@@ -70,11 +71,12 @@ def t_single_day_validation():
 
 
 def main() -> None:
-    inst = get_tes_data()
-    x = inst
-    # t_single_day_validation()
-    get_test_constraint_deactivation()
-    get_test_solution_from_model()
+    # inst = get_tes_data()
+    # x = inst
+    # # t_single_day_validation()
+    # get_test_constraint_deactivation()
+    # get_test_solution_from_model()
+    sol = Solution.from_json_file("Instance1")
 
 
 if __name__ == "__main__":
