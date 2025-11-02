@@ -142,6 +142,7 @@ def show():
         available_solutions = []
         if SOLUTION_DIR.exists():
             available_solutions = [f.stem for f in SOLUTION_DIR.glob("*.json")]
+            available_solutions.sort()
 
         if available_solutions:
             selected_solution = st.selectbox(
