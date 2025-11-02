@@ -13,3 +13,6 @@
 
 ### Test
 `pytest`
+
+### GUI
+`streamlit run run_gui.py`

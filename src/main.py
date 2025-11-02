@@ -3,10 +3,9 @@ from pathlib import Path
 from cpsat_utils.testing import AssertModelFeasible
 from ortools.sat.python import cp_model
 
-from .shift_vars import Shift_vars
 from .inputTypes import employee, instace, shiftType
 from .parseData import parseTXT
-
+from .shift_vars import Shift_vars
 from .solver import Solver
 
 
@@ -56,8 +55,7 @@ def t_single_day_validation():
             shift_typs=[lokal_shift_type],
             emplyees=employees,
         )
-        instance.get_shift(
-            0, lokal_shift_type.uid).preffert_number_employees = 1
+        instance.get_shift(0, lokal_shift_type.uid).preffert_number_employees = 1
 
         vars = Shift_vars(instance, model)
         for lokal_employee in employees:
@@ -68,12 +66,12 @@ def t_single_day_validation():
         status = solver.Solve(vars.model)
 
         assert status == cp_model.OPTIMAL or status == cp_model.FEASIBLE
-        assert solver.Value(vars.get_above_prefferd_var(
-            0, lokal_shift_type.uid)) == 1
+        assert solver.Value(vars.get_above_prefferd_var(0, lokal_shift_type.uid)) == 1
 
 
 def main() -> None:
-    # get_tes_data()
+    inst = get_tes_data()
+    x = inst
     # t_single_day_validation()
     get_test_constraint_deactivation()
     get_test_solution_from_model()

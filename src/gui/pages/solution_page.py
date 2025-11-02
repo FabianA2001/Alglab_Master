@@ -10,8 +10,20 @@ def soluation_to_dataframe(solution: solution.Solution) -> pd.DataFrame:
     shift_types = [
         shift_type.name for shift_type in solution.instance.shift_types.values()
     ]
-    blank_data = {day: [[] for _ in shift_types] for day in days}
-    df = pd.DataFrame(blank_data, index=shift_types)
+    # blank_data = {day: [[] for _ in shift_types] for day in days}
+    data = []
+    for shift_type_uid in solution.instance.shift_types:
+        row = []
+        for day in days:
+            assigned_employees = []
+            for emp_id in solution.instance.employees:
+                if solution.is_employee_assigned(day, shift_type_uid, emp_id):
+                    assigned_employees.append(solution.instance.employees[emp_id].name)
+            row.append(assigned_employees)
+        data.append(row)
+
+    df = pd.DataFrame(data, index=shift_types)
+
     return df
 
 
@@ -27,7 +39,4 @@ def show():
 
     solution = st.session_state["solution"]
 
-    st.data_editor(
-        soluation_to_dataframe(solution),
-        key="shiftplan",
-    )
+    st.dataframe(soluation_to_dataframe(solution), key="shiftplan")
