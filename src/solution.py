@@ -4,6 +4,7 @@ from typing import Any, Dict, Tuple
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .inputTypes import employee, instace, shift
+from .module.solverConstraints import SolverConstraints
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "solutions"
 
@@ -41,6 +42,10 @@ class Solution(BaseModel):
     objective_value: float = Field(
         default=0.0,
         description="The result of an objective function",
+    )
+    disabled_constraints: list[SolverConstraints] = Field(
+        default_factory=list,
+        description="List of disabled solver constraints",
     )
 
     @field_validator("vars", mode="before")

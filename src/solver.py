@@ -1,5 +1,3 @@
-import enum
-
 from ortools.sat.python import cp_model
 
 from . import shift_vars
@@ -16,20 +14,8 @@ from .module import (
     shift_assignment_single_day_validation,
     shift_rotation_constraint,
 )
+from .module.solverConstraints import SolverConstraints
 from .solution import Solution
-
-
-class SolverConstraints(enum.Enum):
-    cover_requirements = enum.auto()
-    days_off = enum.auto()
-    limited_shifts_per_type_validation = enum.auto()
-    max_Cons_Shifts = enum.auto()
-    max_weekend_days = enum.auto()
-    minimum_consecutive_days_off = enum.auto()
-    minimum_consecutive_shifts = enum.auto()
-    minMaxWorkTime = enum.auto()
-    shift_assignment_single_day_validation = enum.auto()
-    shift_rotation_constraint = enum.auto()
 
 
 class Solver:
@@ -89,7 +75,7 @@ class Solver:
 
         self.vars.model.Minimize(self.objevtive_value())
         status = solver.Solve(self.vars.model)
-        return self.handle_results(status, solver)
+        return self.handle_results(status, solver, disabled_constraints)
 
     def solve_with_constraints(
         self,
@@ -139,7 +125,12 @@ class Solver:
                 )
         return objective_value
 
-    def handle_results(self, status, solver: cp_model.CpSolver) -> Solution:
+    def handle_results(
+        self,
+        status,
+        solver: cp_model.CpSolver,
+        disabled_constraints: list[SolverConstraints] = [],
+    ) -> Solution:
         """Handles the different results returned by the solver and returns a solution."""
         solution = Solution(self.instance)  # Create a new Solution instance
         if status in [cp_model.OPTIMAL, cp_model.FEASIBLE]:
@@ -152,6 +143,7 @@ class Solver:
                 print("Feasible solution found but not optimal.")
             solution.objective_value = solver.ObjectiveValue()
             solution.instance = self.instance
+            solution.disabled_constraints = disabled_constraints
             return solution  # Return the populated solution
         elif status == cp_model.INFEASIBLE:
             self.process_infeasible_solution()
