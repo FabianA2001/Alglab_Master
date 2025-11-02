@@ -50,7 +50,7 @@ def t_single_day_validation():
     with AssertModelFeasible() as model:
         lokal_shift_type = shiftType.ShiftType()
         employees = [employee.Employee() for _ in range(2)]
-        instance = instace.Instance(
+        instance = instace.Instance.create(
             number_of_days=1,
             shift_typs=[lokal_shift_type],
             emplyees=employees,

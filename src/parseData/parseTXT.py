@@ -99,7 +99,7 @@ def parse_txt(txt_file_path: Path) -> instace.Instance:
                 int(parts[4]),
             )
 
-    return instace.Instance(
+    return instace.Instance.create(
         name=txt_file_path.stem,
         number_of_days=horizon,
         shift_typs=shifts,

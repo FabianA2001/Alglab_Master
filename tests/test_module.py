@@ -3,17 +3,17 @@ from cpsat_utils.testing import AssertModelFeasible, AssertModelInfeasible
 from ortools.sat.python import cp_model
 
 from src import shift_vars
-from src.inputTypes import employee, instace, shift, shiftType
+from src.inputTypes import employee, instace, shiftType
 from src.module import (
+    cover_requirements,
     days_off,
     max_Cons_Shifts,
+    max_weekend_days,
     minimum_consecutive_days_off,
     minimum_consecutive_shifts,
     minMaxWorkTime,
     shift_assignment_single_day_validation,
     shift_rotation_constraint,
-    max_weekend_days,
-    cover_requirements,
 )
 
 
@@ -22,7 +22,7 @@ def test_single_day_validation():
     with AssertModelInfeasible() as model:
         lokal_shift_types = [shiftType.ShiftType() for _ in range(2)]
         lokal_employee = employee.Employee()
-        instance = instace.Instance(
+        instance = instace.Instance.create(
             number_of_days=1,
             shift_typs=lokal_shift_types,
             emplyees=[lokal_employee],
@@ -42,7 +42,7 @@ def test_shift_rotation():
         # set second shift type to be blocked after first
         lokal_shift_types[0].blocked_shifts_after.add(lokal_shift_types[1].uid)
         lokal_employee = employee.Employee()
-        instance = instace.Instance(
+        instance = instace.Instance.create(
             number_of_days=2,
             shift_typs=lokal_shift_types,
             emplyees=[lokal_employee],
@@ -58,7 +58,7 @@ def test_max_cons_shifts():
     with AssertModelInfeasible() as model:
         lokal_shift_type = shiftType.ShiftType()
         lokal_employee = employee.Employee(max_number_consecutive_shifts=1)
-        instance = instace.Instance(
+        instance = instace.Instance.create(
             number_of_days=2,
             shift_typs=[lokal_shift_type],
             emplyees=[lokal_employee],
@@ -76,7 +76,7 @@ def test_min_max_worktime_below():
         lokal_shift_type.length = 60
         lokal_employee = employee.Employee()
         lokal_employee.min_minutes_assigned = 120
-        instance = instace.Instance(
+        instance = instace.Instance.create(
             number_of_days=1,
             shift_typs=[lokal_shift_type],
             emplyees=[lokal_employee],
@@ -92,7 +92,7 @@ def test_min_max_worktime_above():
         lokal_shift_type.length = 120
         lokal_employee = employee.Employee()
         lokal_employee.max_minutes_assigned = 60
-        instance = instace.Instance(
+        instance = instace.Instance.create(
             number_of_days=1,
             shift_typs=[lokal_shift_type],
             emplyees=[lokal_employee],
@@ -110,7 +110,7 @@ def test_min_max_worktime_exact():
         lokal_employee = employee.Employee()
         lokal_employee.min_minutes_assigned = 60
         lokal_employee.max_minutes_assigned = 160
-        instance = instace.Instance(
+        instance = instace.Instance.create(
             number_of_days=1,
             shift_typs=[lokal_shift_type],
             emplyees=[lokal_employee],
@@ -131,7 +131,7 @@ def test_weekend_assignment(day):
     with AssertModelFeasible() as model:
         lokal_shift_type = shiftType.ShiftType()
         lokal_employee = employee.Employee()
-        instance = instace.Instance(
+        instance = instace.Instance.create(
             number_of_days=3,
             shift_typs=[lokal_shift_type],
             emplyees=[lokal_employee],
@@ -150,7 +150,7 @@ def test_minimum_consecutive_shifts():
         lokal_shift_type_list = [shiftType.ShiftType()]
         lokal_employee = employee.Employee()
         lokal_employee.min_number_consecutive_shifts = 4
-        instance = instace.Instance(
+        instance = instace.Instance.create(
             number_of_days=5,
             shift_typs=lokal_shift_type_list,
             emplyees=[lokal_employee],
@@ -175,7 +175,7 @@ def test_minimum_consecutive_shifts():
         lokal_shift_type_list = [shiftType.ShiftType()]
         lokal_employee = employee.Employee()
         lokal_employee.min_number_consecutive_shifts = 4
-        instance = instace.Instance(
+        instance = instace.Instance.create(
             number_of_days=5,
             shift_typs=lokal_shift_type_list,
             emplyees=[lokal_employee],
@@ -208,7 +208,7 @@ def test_minimum_consecutive_days_off():
         lokal_shift_type_list = [shiftType.ShiftType()]
         lokal_employee = employee.Employee()
         lokal_employee.min_number_consecutive_days_off = 3
-        instance = instace.Instance(
+        instance = instace.Instance.create(
             number_of_days=5,
             shift_typs=lokal_shift_type_list,
             emplyees=[lokal_employee],
@@ -235,7 +235,7 @@ def test_minimum_consecutive_days_off():
         lokal_shift_type_list = [shiftType.ShiftType()]
         lokal_employee = employee.Employee()
         lokal_employee.min_number_consecutive_days_off = 3
-        instance = instace.Instance(
+        instance = instace.Instance.create(
             number_of_days=5,
             shift_typs=lokal_shift_type_list,
             emplyees=[lokal_employee],
@@ -274,7 +274,7 @@ def test_above_prefferd(preffert, num_employee, expected):
     with AssertModelFeasible() as model:
         lokal_shift_type = shiftType.ShiftType()
         employees = [employee.Employee() for _ in range(num_employee)]
-        instance = instace.Instance(
+        instance = instace.Instance.create(
             number_of_days=1,
             shift_typs=[lokal_shift_type],
             emplyees=employees,
@@ -307,7 +307,7 @@ def test_below_prefferd(preffert, num_employee, expected):
     with AssertModelFeasible() as model:
         lokal_shift_type = shiftType.ShiftType()
         employees = [employee.Employee() for _ in range(num_employee)]
-        instance = instace.Instance(
+        instance = instace.Instance.create(
             number_of_days=1,
             shift_typs=[lokal_shift_type],
             emplyees=employees,
@@ -332,7 +332,7 @@ def test_days_off():
     with AssertModelInfeasible() as model:
         lokal_shift_type = shiftType.ShiftType()
         lokal_employee = employee.Employee(blocked_shifts={0})
-        instance = instace.Instance(
+        instance = instace.Instance.create(
             number_of_days=1,
             shift_typs=[lokal_shift_type],
             emplyees=[lokal_employee],
@@ -347,19 +347,20 @@ def test_cover_requirements():
     with AssertModelInfeasible() as model:
         lokal_shift_types = [shiftType.ShiftType()]
         lokal_employee = employee.Employee()
-        lokal_shift = shift.Shift()
-        lokal_shift.preffert_number_employees = 3
-        # <-- Typ-Hinweis + leeres Dict
-        shifts: dict[int, dict[shiftType.TypeUid, shift.Shift]] = {}
-        shifts[0] = {}  # inneres Dict initialisieren
-        shifts[0][lokal_shift_types[0].uid] = lokal_shift
 
-        instance = instace.Instance(
+        # lokal_shift = shift.Shift()
+        # lokal_shift.preffert_number_employees = 3
+        # <-- Typ-Hinweis + leeres Dict
+        # shifts: dict[int, dict[shiftType.TypeUid, shift.Shift]] = {}
+        # shifts[0] = {}  # inneres Dict initialisieren
+        # shifts[0][lokal_shift_types[0].uid] = lokal_shift
+        instance = instace.Instance.create(
             number_of_days=1,
             shift_typs=lokal_shift_types,
             emplyees=[lokal_employee],
-            shifts=shifts,
+            cover_requirements={(0, lokal_shift_types[0].uid): (3, 1, 1)},
         )
+
         vars = shift_vars.Shift_vars(instance, model)
         cover_requirements.Cover_requirements().build(instance, vars)
         for type_uid in lokal_shift_types:
@@ -372,7 +373,7 @@ def test_max_weekends():
     with AssertModelInfeasible() as model:
         lokal_shift_types = [shiftType.ShiftType() for _ in range(2)]
         lokal_employee = employee.Employee(max_number_weekends=0)
-        instance = instace.Instance(
+        instance = instace.Instance.create(
             number_of_days=7,
             shift_typs=lokal_shift_types,
             emplyees=[lokal_employee],
