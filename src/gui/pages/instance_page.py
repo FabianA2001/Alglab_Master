@@ -22,6 +22,12 @@ def show():
     st.title("📁 Instance")
     st.write("Lade und zeige Instanzdaten an.")
 
+    if "solution" in st.session_state and st.session_state["solution"] is not None:
+        st.warning(
+            "Der Solver hat bereits eine Lösung gefunden. Bitte starte die Anwendung neu, um den Solver erneut zu verwenden."
+        )
+        return
+
     if st.session_state["solver_running"]:
         st.warning(
             "Die Instanz kann nicht geändert werden, da der Solver bereits gestartet wurde."
@@ -43,14 +49,13 @@ def show():
             index=default_index,
         )
 
-        if st.button("Instanz laden"):
-            path = DATA_DIR / selected_file
-            if path.exists():
-                inst = parseTXT.parse_txt(path)
-                st.session_state["instance"] = inst
-                st.success(f"Datei geladen: {selected_file}")
-            else:
-                st.error("Datei nicht gefunden.")
+        path = DATA_DIR / selected_file
+        if path.exists():
+            inst = parseTXT.parse_txt(path)
+            st.session_state["instance"] = inst
+            st.success(f"Datei geladen: {selected_file}")
+        else:
+            st.error("Datei nicht gefunden.")
     else:
         st.error("Keine Instanz-Dateien im data Ordner gefunden.")
 
