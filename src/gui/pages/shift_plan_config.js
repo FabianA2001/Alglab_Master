@@ -2,7 +2,7 @@
 window.SHIFT_PLAN_CONFIG = {
     // Spaltenbreiten
     columns: {
-        shiftTypeMinWidth: '10px',
+        shiftTypeMinWidth: '80px',
         dayMinWidth: '100px'
     },
 
