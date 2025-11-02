@@ -33,7 +33,8 @@
         const thShiftType = document.createElement('th');
         thShiftType.textContent = CONFIG.text?.shiftTypeHeader || 'Schichttyp';
         thShiftType.className = 'shift-type-header';
-        thShiftType.style.minWidth = CONFIG.columns?.shiftTypeMinWidth || '150px';
+        thShiftType.style.width = CONFIG.columns?.shiftTypeMinWidth || '150px';
+        thShiftType.style.maxWidth = CONFIG.columns?.shiftTypeMinWidth || '150px';
         thShiftType.style.backgroundColor = CONFIG.colors?.shiftTypeHeaderBackground || '#4CAF50';
         thShiftType.style.color = CONFIG.colors?.shiftTypeHeaderText || '#ffffff';
         headerRow.appendChild(thShiftType);
@@ -43,27 +44,54 @@
             const th = document.createElement('th');
             th.textContent = `${CONFIG.text?.dayHeaderPrefix || 'Tag'} ${day}`;
             th.className = 'day-header';
-            th.style.minWidth = CONFIG.columns?.dayMinWidth || '200px';
+            th.style.width = CONFIG.columns?.dayMinWidth || '200px';
+            th.style.maxWidth = CONFIG.columns?.dayMinWidth || '200px';
             th.style.backgroundColor = CONFIG.colors?.headerBackground || '#f5f5f5';
             headerRow.appendChild(th);
         }
 
         // Create data rows
         let totalAssignments = 0;
-        shiftPlanData.shift_types.forEach((shiftType, index) => {
+        shiftPlanData.shift_types_info.forEach((shiftTypeInfo, index) => {
             const tr = document.createElement('tr');
             
-            // Shift type cell
+            // Shift type cell with multi-line layout
             const tdShiftType = document.createElement('td');
-            tdShiftType.textContent = shiftType;
-            tdShiftType.style.fontWeight = 'bold';
-            tdShiftType.style.minWidth = CONFIG.columns?.shiftTypeMinWidth || '150px';
+            tdShiftType.style.width = CONFIG.columns?.shiftTypeMinWidth || '150px';
+            tdShiftType.style.maxWidth = CONFIG.columns?.shiftTypeMinWidth || '150px';
+            
+            // Create container for the shift type info
+            const shiftTypeContainer = document.createElement('div');
+            
+            // Name (bold)
+            const nameDiv = document.createElement('div');
+            nameDiv.textContent = shiftTypeInfo.name;
+            nameDiv.style.fontWeight = 'bold';
+            nameDiv.style.marginBottom = '4px';
+            shiftTypeContainer.appendChild(nameDiv);
+            
+            // Start time
+            const startDiv = document.createElement('div');
+            startDiv.textContent = `Start: ${shiftTypeInfo.start_time}`;
+            startDiv.style.fontSize = '0.9em';
+            startDiv.style.color = '#555';
+            shiftTypeContainer.appendChild(startDiv);
+            
+            // End time
+            const endDiv = document.createElement('div');
+            endDiv.textContent = `Ende: ${shiftTypeInfo.end_time}`;
+            endDiv.style.fontSize = '0.9em';
+            endDiv.style.color = '#555';
+            shiftTypeContainer.appendChild(endDiv);
+            
+            tdShiftType.appendChild(shiftTypeContainer);
             tr.appendChild(tdShiftType);
 
             // Day cells
             for (let day = 0; day < shiftPlanData.num_days; day++) {
                 const td = document.createElement('td');
-                td.style.minWidth = CONFIG.columns?.dayMinWidth || '200px';
+                td.style.width = CONFIG.columns?.dayMinWidth || '200px';
+                td.style.maxWidth = CONFIG.columns?.dayMinWidth || '200px';
                 const employees = shiftPlanData.data[index][day];
                 
                 if (employees && employees.length > 0) {
@@ -109,14 +137,16 @@
         });
 
         // Update table info
+        const numShiftTypes = shiftPlanData.shift_types_info ? shiftPlanData.shift_types_info.length : 0;
+        
         if (CONFIG.text?.infoTemplate && typeof CONFIG.text.infoTemplate === 'function') {
             tableInfo.textContent = CONFIG.text.infoTemplate(
-                shiftPlanData.shift_types.length,
+                numShiftTypes,
                 shiftPlanData.num_days,
                 totalAssignments
             );
         } else {
-            tableInfo.textContent = `Gesamt: ${shiftPlanData.shift_types.length} Schichttypen, ${shiftPlanData.num_days} Tage, ${totalAssignments} Zuweisungen`;
+            tableInfo.textContent = `Gesamt: ${numShiftTypes} Schichttypen, ${shiftPlanData.num_days} Tage, ${totalAssignments} Zuweisungen`;
         }
         tableInfo.style.color = CONFIG.colors?.infoText || '#666';
         tableInfo.style.fontSize = CONFIG.fonts?.infoFontSize || '0.9em';

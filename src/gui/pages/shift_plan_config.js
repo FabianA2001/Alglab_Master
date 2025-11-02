@@ -2,7 +2,7 @@
 window.SHIFT_PLAN_CONFIG = {
     // Spaltenbreiten
     columns: {
-        shiftTypeMinWidth: '80px',
+        shiftTypeMinWidth: '120px',  // Kompakt für Name + Start/Ende
         dayMinWidth: '100px'
     },
 

@@ -36,8 +36,25 @@ def soluation_to_dataframe(solution: solution.Solution) -> pd.DataFrame:
 
 def solution_to_html_data(sol: solution.Solution) -> dict:
     """Konvertiert die Lösung in ein Format für die Custom HTML Komponente"""
+    from datetime import timedelta
+
     days = [day for day in range(sol.instance.number_of_days)]
-    shift_types = [shift_type.name for shift_type in sol.instance.shift_types.values()]
+
+    # Erstelle erweiterte Shift-Type-Informationen mit Start- und Endzeit
+    shift_types_info = []
+    for shift_type in sol.instance.shift_types.values():
+        start_time = shift_type.start_time
+        # Berechne Endzeit basierend auf Länge in Minuten
+        end_time = start_time + timedelta(minutes=shift_type.length)
+
+        shift_types_info.append(
+            {
+                "name": shift_type.name,
+                "start_time": start_time.strftime("%H:%M"),
+                "end_time": end_time.strftime("%H:%M"),
+                "display_name": f"{shift_type.name} ({start_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')})",
+            }
+        )
 
     data = []
     for shift_type_uid in sol.instance.shift_types:
@@ -51,7 +68,7 @@ def solution_to_html_data(sol: solution.Solution) -> dict:
         data.append(row)
 
     return {
-        "shift_types": shift_types,
+        "shift_types_info": shift_types_info,
         "num_days": sol.instance.number_of_days,
         "data": data,
     }
