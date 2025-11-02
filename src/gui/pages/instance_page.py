@@ -22,7 +22,7 @@ def show():
     st.title("📁 Instance")
     st.write("Lade und zeige Instanzdaten an.")
 
-    if st.session_state["solver_started"]:
+    if st.session_state["solver_running"]:
         st.warning(
             "Die Instanz kann nicht geändert werden, da der Solver bereits gestartet wurde."
         )

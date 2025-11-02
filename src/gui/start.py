@@ -20,8 +20,8 @@ def start_gui():
     # Page configuration
     st.set_page_config(page_title="Algorithm Lab", page_icon="🔬", layout="wide")
 
-    if "solver_started" not in st.session_state:
-        st.session_state["solver_started"] = False
+    if "solver_running" not in st.session_state:
+        st.session_state["solver_running"] = False
     if "instance" not in st.session_state:
         inst = parseTXT.parse_txt(instance_page.DEFAULT_PATH)
         st.session_state["instance"] = inst
