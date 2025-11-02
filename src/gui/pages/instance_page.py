@@ -7,6 +7,15 @@ from ...parseData import parseTXT
 DEFAULT_PATH = (
     Path(__file__).resolve().parent.parent.parent.parent / "data" / "Instance1.txt"
 )
+DATA_DIR = Path(__file__).resolve().parent.parent.parent.parent / "data"
+
+
+def get_instance_files():
+    """Holt alle .txt Dateien aus dem data Ordner"""
+    if DATA_DIR.exists():
+        txt_files = list(DATA_DIR.glob("*.txt"))
+        return sorted([f.name for f in txt_files])
+    return []
 
 
 def show():
@@ -18,20 +27,31 @@ def show():
             "Die Instanz kann nicht geändert werden, da der Solver bereits gestartet wurde."
         )
         return
-    # File upload or selection
-    uploaded_file = st.file_uploader("Wähle eine Instance-Datei", type=["txt"])
-    path = DEFAULT_PATH
 
-    if uploaded_file is not None:
-        # Save uploaded file temporarily and parse
-        st.success(f"Datei geladen: {uploaded_file.name}")
-        path = Path(uploaded_file.name)
-        if not path.exists():
-            st.error("Datei nicht gefunden.")
-        else:
-            inst = parseTXT.parse_txt(path)
-            st.session_state["instance"] = inst
-            st.success("Instanz in Session gespeichert!")
+    # Dropdown für Dateien aus dem data Ordner
+    instance_files = get_instance_files()
+
+    if instance_files:
+        # Standardauswahl auf Instance1.txt setzen, falls vorhanden
+        default_index = 0
+        if "Instance1.txt" in instance_files:
+            default_index = instance_files.index("Instance1.txt")
+
+        selected_file = st.selectbox(
+            "Wähle eine Instance aus dem data Ordner",
+            instance_files,
+            index=default_index,
+        )
+
+        if st.button("Instanz laden"):
+            path = DATA_DIR / selected_file
+            if path.exists():
+                inst = parseTXT.parse_txt(path)
+                st.session_state["instance"] = inst
+                st.success(f"Datei geladen: {selected_file}")
+            else:
+                st.error("Datei nicht gefunden.")
     else:
-        # Show default instance
-        st.info("nutze Standard-Instanz: Instance1.txt")
+        st.error("Keine Instanz-Dateien im data Ordner gefunden.")
+
+    st.divider()
