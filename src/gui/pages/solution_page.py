@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 from ... import solution
 
@@ -31,6 +32,74 @@ def soluation_to_dataframe(solution: solution.Solution) -> pd.DataFrame:
     df = pd.DataFrame(data, index=shift_types)
 
     return df
+
+
+def solution_to_html_data(sol: solution.Solution) -> dict:
+    """Konvertiert die Lösung in ein Format für die Custom HTML Komponente"""
+    days = [day for day in range(sol.instance.number_of_days)]
+    shift_types = [shift_type.name for shift_type in sol.instance.shift_types.values()]
+
+    data = []
+    for shift_type_uid in sol.instance.shift_types:
+        row = []
+        for day in days:
+            assigned_employees = []
+            for emp_id in sol.instance.employees:
+                if sol.is_employee_assigned(day, shift_type_uid, emp_id):
+                    assigned_employees.append(sol.instance.employees[emp_id].name)
+            row.append(assigned_employees)
+        data.append(row)
+
+    return {
+        "shift_types": shift_types,
+        "num_days": sol.instance.number_of_days,
+        "data": data,
+    }
+
+
+def render_shift_plan_component(sol: solution.Solution):
+    """Rendert die Custom HTML/JS Komponente für den Shift Plan"""
+    import json
+
+    # Pfad zu den HTML/JS Dateien
+    html_file = Path(__file__).parent / "shift_plan_table.html"
+    js_file = Path(__file__).parent / "shift_plan_table.js"
+
+    # Lese HTML und JS
+    with open(html_file, "r", encoding="utf-8") as f:
+        html_content = f.read()
+
+    with open(js_file, "r", encoding="utf-8") as f:
+        js_content = f.read()
+
+    # Konvertiere Lösung in JSON-Format
+    shift_plan_data = solution_to_html_data(sol)
+
+    # Erstelle den vollständigen HTML-Code mit eingebettetem JavaScript und Daten
+    full_html = f"""
+    {html_content}
+    <script>
+    {js_content}
+    
+    // Initialisiere die Tabelle mit den Daten
+    (function() {{
+        const shiftPlanData = {json.dumps(shift_plan_data)};
+        console.log('Data loaded:', shiftPlanData);
+        
+        // Warte kurz und initialisiere dann
+        setTimeout(function() {{
+            if (window.initShiftPlanTable) {{
+                window.initShiftPlanTable(shiftPlanData);
+            }} else {{
+                console.error('initShiftPlanTable function not found');
+            }}
+        }}, 100);
+    }})();
+    </script>
+    """
+
+    # Rendere als HTML Komponente
+    components.html(full_html, height=600, scrolling=True)
 
 
 def show():
@@ -77,4 +146,13 @@ def show():
     st.write("### Objective Value")
     st.write(f"**{sol.objective_value}**")
     st.write("### Shift Plan")
-    st.dataframe(soluation_to_dataframe(sol), key="shiftplan")
+
+    # Option zur Auswahl zwischen Custom Komponente und DataFrame
+    display_mode = st.radio(
+        "Anzeigemodus:", ["Custom HTML Tabelle", "Standard DataFrame"], horizontal=True
+    )
+
+    if display_mode == "Custom HTML Tabelle":
+        render_shift_plan_component(sol)
+    else:
+        st.dataframe(soluation_to_dataframe(sol), key="shiftplan")
