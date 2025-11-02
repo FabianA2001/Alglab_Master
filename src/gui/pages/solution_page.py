@@ -64,7 +64,21 @@ def solution_to_html_data(sol: solution.Solution) -> dict:
             for emp_id in sol.instance.employees:
                 if sol.is_employee_assigned(day, shift_type_uid, emp_id):
                     assigned_employees.append(sol.instance.employees[emp_id].name)
-            row.append(assigned_employees)
+
+            # Hole die bevorzugte Anzahl an Mitarbeitern für diese Schicht
+            shift = sol.instance.get_shift(day, shift_type_uid)
+            preferred_count = shift.preffert_number_employees
+            actual_count = len(assigned_employees)
+            difference = actual_count - preferred_count
+
+            row.append(
+                {
+                    "employees": assigned_employees,
+                    "preferred": preferred_count,
+                    "actual": actual_count,
+                    "difference": difference,
+                }
+            )
         data.append(row)
 
     return {

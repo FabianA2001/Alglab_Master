@@ -26,6 +26,11 @@ window.SHIFT_PLAN_CONFIG = {
         highlightBadgeBackground: '#ffeb3b',
         highlightBadgeText: '#000000',
         
+        // Differenz-Anzeige Farben
+        differencePositiveColor: '#ff9800',  // Orange für zu viele Mitarbeiter
+        differenceNegativeColor: '#f44336',  // Rot für zu wenige Mitarbeiter
+        differencePerfectColor: '#4CAF50',   // Grün für perfekte Anzahl
+        
         // Leere Zelle
         emptyCellText: '#999999',
         

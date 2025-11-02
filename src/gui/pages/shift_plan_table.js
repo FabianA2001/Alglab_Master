@@ -92,7 +92,34 @@
                 const td = document.createElement('td');
                 td.style.width = CONFIG.columns?.dayMinWidth || '200px';
                 td.style.maxWidth = CONFIG.columns?.dayMinWidth || '200px';
-                const employees = shiftPlanData.data[index][day];
+                const cellData = shiftPlanData.data[index][day];
+                
+                // Erstelle Container für die Zelle
+                const cellContainer = document.createElement('div');
+                
+                // Zeige Differenz-Information an der Spitze
+                if (cellData.preferred !== undefined) {
+                    const diffDiv = document.createElement('div');
+                    diffDiv.style.fontSize = '0.85em';
+                    diffDiv.style.marginBottom = '4px';
+                    diffDiv.style.fontWeight = 'bold';
+                    
+                    const diff = cellData.difference;
+                    if (diff > 0) {
+                        diffDiv.textContent = `+${diff} (${cellData.actual}/${cellData.preferred})`;
+                        diffDiv.style.color = CONFIG.colors?.differencePositiveColor || '#ff9800'; // Orange für zu viele
+                    } else if (diff < 0) {
+                        diffDiv.textContent = `${diff} (${cellData.actual}/${cellData.preferred})`;
+                        diffDiv.style.color = CONFIG.colors?.differenceNegativeColor || '#f44336'; // Rot für zu wenige
+                    } else {
+                        diffDiv.textContent = `✓ (${cellData.actual}/${cellData.preferred})`;
+                        diffDiv.style.color = CONFIG.colors?.differencePerfectColor || '#4CAF50'; // Grün für perfekt
+                    }
+                    
+                    cellContainer.appendChild(diffDiv);
+                }
+                
+                const employees = cellData.employees || cellData;
                 
                 if (employees && employees.length > 0) {
                     const employeeList = document.createElement('div');
@@ -122,12 +149,24 @@
                         employeeList.appendChild(badge);
                     });
                     
-                    td.appendChild(employeeList);
+                    cellContainer.appendChild(employeeList);
+                    td.appendChild(cellContainer);
                     totalAssignments += employees.length;
                 } else {
-                    td.textContent = CONFIG.text?.emptyCell || '-';
-                    td.style.color = CONFIG.colors?.emptyCellText || '#999';
-                    td.style.fontStyle = 'italic';
+                    // Zeige auch bei leeren Zellen die Differenz an
+                    if (cellData.preferred !== undefined && cellData.preferred > 0) {
+                        const diffDiv = document.createElement('div');
+                        diffDiv.style.fontSize = '0.85em';
+                        diffDiv.style.fontWeight = 'bold';
+                        diffDiv.textContent = `${cellData.difference} (${cellData.actual}/${cellData.preferred})`;
+                        diffDiv.style.color = CONFIG.colors?.differenceNegativeColor || '#f44336'; // Rot für fehlende Mitarbeiter
+                        cellContainer.appendChild(diffDiv);
+                        td.appendChild(cellContainer);
+                    } else {
+                        td.textContent = CONFIG.text?.emptyCell || '-';
+                        td.style.color = CONFIG.colors?.emptyCellText || '#999';
+                        td.style.fontStyle = 'italic';
+                    }
                 }
                 
                 tr.appendChild(td);
