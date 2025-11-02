@@ -4,10 +4,10 @@ import streamlit as st
 
 from ...parseData import parseTXT
 
-DEFAULT_PATH = (
-    Path(__file__).resolve().parent.parent.parent.parent / "data" / "Instance1.txt"
+DATA_DIR = (
+    Path(__file__).resolve().parent.parent.parent.parent / "data" / "instance_raw"
 )
-DATA_DIR = Path(__file__).resolve().parent.parent.parent.parent / "data"
+DEFAULT_PATH = DATA_DIR / "Instance1.txt"
 
 
 def get_instance_files():
