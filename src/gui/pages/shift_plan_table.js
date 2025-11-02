@@ -96,12 +96,13 @@
                 
                 // Erstelle Container für die Zelle
                 const cellContainer = document.createElement('div');
+                cellContainer.className = 'cell-container';
                 
                 // Zeige Differenz-Information an der Spitze
                 if (cellData.preferred !== undefined) {
                     const diffDiv = document.createElement('div');
+                    diffDiv.className = 'diff-info';
                     diffDiv.style.fontSize = '0.85em';
-                    diffDiv.style.marginBottom = '4px';
                     diffDiv.style.fontWeight = 'bold';
                     
                     const diff = cellData.difference;
@@ -156,11 +157,20 @@
                     // Zeige auch bei leeren Zellen die Differenz an
                     if (cellData.preferred !== undefined && cellData.preferred > 0) {
                         const diffDiv = document.createElement('div');
+                        diffDiv.className = 'diff-info';
                         diffDiv.style.fontSize = '0.85em';
                         diffDiv.style.fontWeight = 'bold';
                         diffDiv.textContent = `${cellData.difference} (${cellData.actual}/${cellData.preferred})`;
                         diffDiv.style.color = CONFIG.colors?.differenceNegativeColor || '#f44336'; // Rot für fehlende Mitarbeiter
                         cellContainer.appendChild(diffDiv);
+                        
+                        // Füge einen Platzhalter für "Keine Mitarbeiter" hinzu
+                        const emptyDiv = document.createElement('div');
+                        emptyDiv.textContent = CONFIG.text?.emptyCell || '-';
+                        emptyDiv.style.color = CONFIG.colors?.emptyCellText || '#999';
+                        emptyDiv.style.fontStyle = 'italic';
+                        cellContainer.appendChild(emptyDiv);
+                        
                         td.appendChild(cellContainer);
                     } else {
                         td.textContent = CONFIG.text?.emptyCell || '-';

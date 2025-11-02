@@ -138,6 +138,7 @@ def render_shift_plan_component(sol: solution.Solution):
     """
 
     # Rendere als HTML Komponente
+
     components.html(full_html, height=600, scrolling=True)
 
 
