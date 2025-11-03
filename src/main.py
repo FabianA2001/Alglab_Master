@@ -6,7 +6,6 @@ from ortools.sat.python import cp_model
 from .inputTypes import employee, instace, shiftType
 from .parseData import parseTXT
 from .shift_vars import Shift_vars
-from .solution import Solution
 from .solver import Solver
 
 
@@ -16,7 +15,7 @@ def sayHello(name="World") -> str:
 
 def get_tes_data() -> instace.Instance:
     test_file = Path.joinpath(
-        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance1.txt"
+        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance2.txt"
     )
     return parseTXT.parse_txt(test_file)
 
@@ -58,8 +57,9 @@ def main() -> None:
     # x = inst
     # # t_single_day_validation()
     # get_test_constraint_deactivation()
+    # get_test_solution_from_model()
+    # sol = Solution.from_json_file("Instance1")
     get_test_solution_from_model()
-    sol = Solution.from_json_file("Instance1")
 
 
 if __name__ == "__main__":

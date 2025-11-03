@@ -86,7 +86,7 @@ def show():
             st.session_state["solver_running"] = True
 
             # Start solver in a subprocess
-            executor = ThreadPoolExecutor(max_workers=1)
+            executor = ThreadPoolExecutor()
             future = executor.submit(solve_in_thread, instance, disabled_constraints)
 
             st.session_state["solver_executor"] = executor
