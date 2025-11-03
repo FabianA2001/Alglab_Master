@@ -21,23 +21,6 @@ def get_tes_data() -> instace.Instance:
     return parseTXT.parse_txt(test_file)
 
 
-def get_test_constraint_deactivation():
-    instance = get_tes_data()
-    vars = Shift_vars(instance)
-    print("active constraints: \n", vars.active_constraints)
-    for key in instance.employees.keys():
-        print(f"days_off_{instance.employees[key]}")
-        vars.deactivate_constraint(f"days_off_{instance.employees[key].uid}")
-    print("\n" * 5)
-    print("deactive constraints: \n", vars.active_constraints)
-    solution = Solver(instance, Shift_vars(instance)).solve_with_constraints(
-        list(vars.active_constraints.values())
-    )
-    solution.print_all_variables()
-    solution.print_all_variables_values()
-    print("obj value: ", solution.objective_value)
-
-
 def get_test_solution_from_model():
     instance = get_tes_data()
     vars = Shift_vars(instance)
@@ -75,7 +58,7 @@ def main() -> None:
     # x = inst
     # # t_single_day_validation()
     # get_test_constraint_deactivation()
-    # get_test_solution_from_model()
+    get_test_solution_from_model()
     sol = Solution.from_json_file("Instance1")
 
 

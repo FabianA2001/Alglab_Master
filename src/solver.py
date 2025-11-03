@@ -77,26 +77,6 @@ class Solver:
         status = solver.Solve(self.vars.model)
         return self.handle_results(status, solver, disabled_constraints)
 
-    def solve_with_constraints(
-        self,
-        constraints: list[cp_model.BoundedLinearExpression] = [],
-        log_search_progress: bool = True,
-        max_time_in_seconds: float = 60.0,
-        **solver_params,
-    ) -> Solution:
-        for constraint in constraints:
-            self.vars.model.Add(constraint)
-        solver = cp_model.CpSolver()
-        solver.parameters.log_search_progress = log_search_progress
-        solver.parameters.max_time_in_seconds = max_time_in_seconds
-
-        for key, value in solver_params.items():
-            setattr(solver.parameters, key, value)
-
-        self.vars.model.Minimize(self.objevtive_value())
-        status = solver.Solve(self.vars.model)
-        return self.handle_results(status, solver)
-
     def objevtive_value(self):
         objective_value = 0
         for employee_uid in self.instance.employees:

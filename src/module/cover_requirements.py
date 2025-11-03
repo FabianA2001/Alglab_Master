@@ -28,13 +28,4 @@ class Cover_requirements(ShiftAssignmentModule):
                     )
                     == instance.shifts[day][type_uid].preffert_number_employees
                 )
-                vars.add_active_constraint(
-                    f"cover_{day}_{type_uid}",
-                    (
-                        sum(assigned_shifts)
-                        - vars.above_prefferd_vars[(day, type_uid)]
-                        + vars.below_prefferd_vars[(day, type_uid)]
-                    )
-                    == instance.shifts[day][type_uid].preffert_number_employees,
-                )
         return 0

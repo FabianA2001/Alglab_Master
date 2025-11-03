@@ -8,7 +8,6 @@ from .shift_assignment_module import ShiftAssignmentModule
 
 
 class Max_weekend_days(ShiftAssignmentModule):
-
     def build(
         self,
         instance: instace.Instance,
@@ -22,43 +21,24 @@ class Max_weekend_days(ShiftAssignmentModule):
                     assigned_shifts.append(
                         # + 1 because of for range start with 0, - 1 because are weekends days are on 5 and 6
                         # not 6 and 7
-                        vars.vars[((7 * (weekend + 1) - 1 - 1),
-                                   type_uid, employee_uid)]
+                        vars.vars[((7 * (weekend + 1) - 1 - 1), type_uid, employee_uid)]
                     )
                     assigned_shifts.append(
-                        vars.vars[((7 * (weekend + 1) - 1),
-                                   type_uid, employee_uid)]
+                        vars.vars[((7 * (weekend + 1) - 1), type_uid, employee_uid)]
                     )
 
                 vars.model.Add(
-                    vars.weekend_vars[(weekend, employee_uid)
-                                      ] <= sum(assigned_shifts)
-                )
-                vars.add_active_constraint(
-                    f"max_weekends_days_{weekend}_{employee_uid}_right",
-                    vars.weekend_vars[(weekend, employee_uid)
-                                      ] <= sum(assigned_shifts),
+                    vars.weekend_vars[(weekend, employee_uid)] <= sum(assigned_shifts)
                 )
                 vars.model.Add(
                     # x
                     sum(assigned_shifts)
                     <= 2 * (vars.weekend_vars[(weekend, employee_uid)])
                 )
-                vars.add_active_constraint(
-                    f"max_weekends_days_{weekend}_{employee_uid}_left",
-                    sum(assigned_shifts)
-                    <= 2 * (vars.weekend_vars[(weekend, employee_uid)]),
-                )
-                assigned_weekends.append(
-                    vars.weekend_vars[(weekend, employee_uid)])
+                assigned_weekends.append(vars.weekend_vars[(weekend, employee_uid)])
             vars.model.Add(
                 sum(assigned_weekends)
                 <= instance.employees[employee_uid].max_number_weekends
-            )
-            vars.add_active_constraint(
-                f"max_weekends_days_{employee_uid}",
-                sum(assigned_weekends)
-                <= instance.employees[employee_uid].max_number_weekends,
             )
         return 0
 

@@ -25,11 +25,5 @@ class Shift_rotation_constraint(ShiftAssignmentModule):
                             vars.vars[(day, type_uid, employee_uid)],
                             vars.vars[(day + 1, btype_uid, employee_uid)],
                         )
-                        vars.add_active_constraint(
-                            f"invalid_shifts_combination_{type_uid}_{btype_uid}_{employee_uid}",
-                            vars.vars[(day, type_uid, employee_uid)]
-                            + vars.vars[(day + 1, btype_uid, employee_uid)]
-                            <= 1,
-                        )
 
         return 0

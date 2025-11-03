@@ -30,9 +30,4 @@ class Max_Cons_Shifts(ShiftAssignmentModule):
                     sum(assigned_shifts)
                     <= instance.employees[employee_uid].max_number_consecutive_shifts
                 )
-                vars.add_active_constraint(
-                    f"max_cons_shifts_{day}_{employee_uid}",
-                    sum(assigned_shifts)
-                    <= instance.employees[employee_uid].max_number_consecutive_shifts,
-                )
         return 0
