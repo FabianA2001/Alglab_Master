@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 from ... import solution
 
@@ -33,6 +34,114 @@ def soluation_to_dataframe(solution: solution.Solution) -> pd.DataFrame:
     return df
 
 
+def solution_to_html_data(sol: solution.Solution) -> dict:
+    """Konvertiert die Lösung in ein Format für die Custom HTML Komponente"""
+    from datetime import timedelta
+
+    days = [day for day in range(sol.instance.number_of_days)]
+
+    # Erstelle erweiterte Shift-Type-Informationen mit Start- und Endzeit
+    shift_types_info = []
+    for shift_type in sol.instance.shift_types.values():
+        start_time = shift_type.start_time
+        # Berechne Endzeit basierend auf Länge in Minuten
+        end_time = start_time + timedelta(minutes=shift_type.length)
+
+        shift_types_info.append(
+            {
+                "name": shift_type.name,
+                "start_time": start_time.strftime("%H:%M"),
+                "end_time": end_time.strftime("%H:%M"),
+                "display_name": f"{shift_type.name} ({start_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')})",
+            }
+        )
+
+    data = []
+    for shift_type_uid in sol.instance.shift_types:
+        row = []
+        for day in days:
+            assigned_employees = []
+            for emp_id in sol.instance.employees:
+                if sol.is_employee_assigned(day, shift_type_uid, emp_id):
+                    assigned_employees.append(sol.instance.employees[emp_id].name)
+
+            # Hole die bevorzugte Anzahl an Mitarbeitern für diese Schicht
+            shift = sol.instance.get_shift(day, shift_type_uid)
+            preferred_count = shift.preffert_number_employees
+            actual_count = len(assigned_employees)
+            difference = actual_count - preferred_count
+
+            row.append(
+                {
+                    "employees": assigned_employees,
+                    "preferred": preferred_count,
+                    "actual": actual_count,
+                    "difference": difference,
+                }
+            )
+        data.append(row)
+
+    return {
+        "shift_types_info": shift_types_info,
+        "num_days": sol.instance.number_of_days,
+        "data": data,
+    }
+
+
+def render_shift_plan_component(sol: solution.Solution):
+    """Rendert die Custom HTML/JS Komponente für den Shift Plan"""
+    import json
+
+    # Pfad zu den HTML/JS Dateien
+    html_file = Path(__file__).parent / "shift_plan_table.html"
+    js_file = Path(__file__).parent / "shift_plan_table.js"
+    config_file = Path(__file__).parent / "shift_plan_config.js"
+
+    # Lese HTML, JS und Config
+    with open(html_file, "r", encoding="utf-8") as f:
+        html_content = f.read()
+
+    with open(js_file, "r", encoding="utf-8") as f:
+        js_content = f.read()
+
+    with open(config_file, "r", encoding="utf-8") as f:
+        config_content = f.read()
+
+    # Konvertiere Lösung in JSON-Format
+    shift_plan_data = solution_to_html_data(sol)
+
+    # Erstelle den vollständigen HTML-Code mit eingebettetem JavaScript und Daten
+    full_html = f"""
+    {html_content}
+    <script>
+    // Lade die Konfiguration
+    {config_content}
+    
+    // Lade das Haupt-JavaScript
+    {js_content}
+    
+    // Initialisiere die Tabelle mit den Daten
+    (function() {{
+        const shiftPlanData = {json.dumps(shift_plan_data)};
+        console.log('Data loaded:', shiftPlanData);
+        
+        // Warte kurz und initialisiere dann
+        setTimeout(function() {{
+            if (window.initShiftPlanTable) {{
+                window.initShiftPlanTable(shiftPlanData);
+            }} else {{
+                console.error('initShiftPlanTable function not found');
+            }}
+        }}, 100);
+    }})();
+    </script>
+    """
+
+    # Rendere als HTML Komponente
+
+    components.html(full_html, height=600, scrolling=True)
+
+
 def show():
     st.title("✅ Solution")
     # Check if solution exists in session state
@@ -48,6 +157,7 @@ def show():
         available_solutions = []
         if SOLUTION_DIR.exists():
             available_solutions = [f.stem for f in SOLUTION_DIR.glob("*.json")]
+            available_solutions.sort()
 
         if available_solutions:
             selected_solution = st.selectbox(
@@ -77,4 +187,13 @@ def show():
     st.write("### Objective Value")
     st.write(f"**{sol.objective_value}**")
     st.write("### Shift Plan")
-    st.dataframe(soluation_to_dataframe(sol), key="shiftplan")
+
+    # Option zur Auswahl zwischen Custom Komponente und DataFrame
+    display_mode = st.radio(
+        "Anzeigemodus:", ["Custom HTML Tabelle", "Standard DataFrame"], horizontal=True
+    )
+
+    if display_mode == "Custom HTML Tabelle":
+        render_shift_plan_component(sol)
+    else:
+        st.dataframe(soluation_to_dataframe(sol), key="shiftplan")
