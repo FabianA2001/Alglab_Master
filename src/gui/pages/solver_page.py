@@ -5,6 +5,7 @@ import streamlit as st
 
 from ... import shift_vars, solution, solver
 from ...inputTypes import instace
+from ..validation import show_active_constraints
 
 
 def solve_in_thread(
@@ -25,8 +26,14 @@ def show():
     st.write("Konfiguriere und starte den Solver.")
 
     if "solution" in st.session_state and st.session_state["solution"] is not None:
-        st.warning(
-            "Der Solver hat bereits eine Lösung gefunden. Bitte starte die Anwendung neu, um den Solver erneut zu verwenden."
+        st.success("✅ Der Solver hat eine Lösung gefunden!")
+
+        # Zeige die aktiven Constraints der aktuellen Lösung
+        sol = st.session_state["solution"]
+        show_active_constraints(sol)
+
+        st.info(
+            "💡 Gehe zur Solution-Seite um das Ergebnis zu sehen oder starte die Anwendung neu, um den Solver erneut zu verwenden."
         )
         return
 
