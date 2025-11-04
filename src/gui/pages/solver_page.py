@@ -76,6 +76,8 @@ def show():
             st.session_state["solver_executor"] = None
         if "solver_future" not in st.session_state:
             st.session_state["solver_future"] = None
+        if "solver_start_time" not in st.session_state:
+            st.session_state["solver_start_time"] = None
 
         # Run solver button
         if st.button(
@@ -84,6 +86,7 @@ def show():
             disabled=st.session_state["solver_running"],
         ):
             st.session_state["solver_running"] = True
+            st.session_state["solver_start_time"] = time.time()
 
             # Start solver in a subprocess
             executor = ThreadPoolExecutor()
@@ -102,9 +105,12 @@ def show():
                 try:
                     solution = future.result()
                     st.session_state["solution"] = solution
+                    elapsed_time = time.time() - st.session_state["solver_start_time"]
                     st.session_state["solver_running"] = False
                     st.session_state["solver_executor"].shutdown(wait=False)
-                    st.success("Lösung gefunden!")
+                    st.success(
+                        f"Lösung gefunden! (Laufzeit: {elapsed_time:.2f} Sekunden)"
+                    )
                     st.write("Gehe zur Solution-Seite um das Ergebnis zu sehen.")
                 except Exception as e:
                     st.error(f"Fehler beim Lösen: {str(e)}")
@@ -112,7 +118,10 @@ def show():
                     st.session_state["solver_executor"].shutdown(wait=False)
             else:
                 # Solver still running
-                st.info("Solver läuft im Hintergrund...")
+                elapsed_time = time.time() - st.session_state["solver_start_time"]
+                st.info(
+                    f"Solver läuft im Hintergrund... (Laufzeit: {elapsed_time:.1f} Sekunden)"
+                )
                 time.sleep(0.5)
                 st.rerun()
 
