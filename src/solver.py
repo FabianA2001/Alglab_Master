@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from ortools.sat.python import cp_model
 
 from . import shift_vars
@@ -22,6 +24,8 @@ class Solver:
     def __init__(self, instance: instace.Instance, vars: shift_vars.Shift_vars):
         self.instance = instance
         self.vars = vars
+        self.solve_time = 0
+        self.start_solve_time: datetime = datetime(2005, 1, 1, 0, 0)
 
     def solve(
         self,
@@ -74,7 +78,9 @@ class Solver:
             setattr(solver.parameters, key, value)
 
         self.vars.model.Minimize(self.objevtive_value())
+        self.start_solve_time = datetime.now()
         status = solver.Solve(self.vars.model)
+        self.solve_time = (datetime.now() - self.start_solve_time).total_seconds()
         return self.handle_results(status, solver, disabled_constraints)
 
     def objevtive_value(self):
@@ -124,6 +130,7 @@ class Solver:
             solution.objective_value = solver.ObjectiveValue()
             solution.instance = self.instance
             solution.disabled_constraints = disabled_constraints
+            solution.solve_time = self.solve_time
             return solution  # Return the populated solution
         elif status == cp_model.INFEASIBLE:
             self.process_infeasible_solution()
