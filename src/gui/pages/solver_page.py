@@ -6,7 +6,7 @@ import streamlit as st
 from ... import shift_vars, solution, solver
 from ...inputTypes import instace
 from ..validation import show_active_constraints
-from . import overview
+from . import overview_page
 
 
 def solve_in_thread(
@@ -112,7 +112,7 @@ def show():
                 # Solver finished
                 try:
                     solution = future.result()
-                    overview.update_table(solution)
+                    overview_page.update_table(solution)
                     st.session_state["solution"] = solution
                     elapsed_time = time.time() - st.session_state["solver_start_time"]
                     st.session_state["solver_running"] = False
