@@ -4,7 +4,7 @@ import streamlit as st
 
 from .. import shift_vars, solution, solver
 from ..parseData import parseTXT
-from .pages import instance_page, solution_page, solver_page
+from .pages import instance_page, overview, solution_page, solver_page
 
 
 def get_solution() -> solution.Solution:
@@ -28,7 +28,7 @@ def start_gui():
 
     # Navigation
     st.sidebar.title("Navigation")
-    page = st.sidebar.radio("Gehe zu:", ["Instance", "Solver", "Solution"])
+    page = st.sidebar.radio("Gehe zu:", ["Instance", "Solver", "Solution", "Overview"])
 
     # Import and display selected page
     if page == "Instance":
@@ -37,6 +37,8 @@ def start_gui():
         solver_page.show()
     elif page == "Solution":
         solution_page.show()
+    elif page == "Overview":
+        overview.show()
 
 
 if __name__ == "__main__":
