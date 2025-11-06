@@ -102,7 +102,7 @@ def show():
                         else "Keine",
                     }
                 )
-            st.dataframe(shift_data, use_container_width=True, hide_index=True)
+            st.dataframe(shift_data, width="stretch", hide_index=True)
         else:
             st.info("Keine Schichttypen definiert.")
 
@@ -133,7 +133,7 @@ def show():
                         "Gesperrte Tage": len(emp.blocked_shifts),
                     }
                 )
-            st.dataframe(emp_data, use_container_width=True, hide_index=True)
+            st.dataframe(emp_data, width="stretch", hide_index=True)
         else:
             st.info("Keine Mitarbeiter definiert.")
 
