@@ -66,7 +66,7 @@ def show_instance_information(instance):
                     else "Keine",
                 }
             )
-        st.dataframe(shift_data, use_container_width=True, hide_index=True)
+        st.dataframe(shift_data, hide_index=True)
     else:
         st.info("Keine Schichttypen definiert.")
 
@@ -94,10 +94,10 @@ def show_instance_information(instance):
                     "Max Wochenenden": emp.max_number_weekends
                     if emp.max_number_weekends < 1000000
                     else "∞",
-                    "Gesperrte Tage": len(emp.blocked_shifts),
+                    "Gesperrte Tage": emp.blocked_shifts,
                 }
             )
-        st.dataframe(emp_data, use_container_width=True, hide_index=True)
+        st.dataframe(emp_data, hide_index=True)
     else:
         st.info("Keine Mitarbeiter definiert.")
 
