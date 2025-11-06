@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import streamlit as st
@@ -10,11 +11,19 @@ DATA_DIR = (
 DEFAULT_PATH = DATA_DIR / "Instance1.txt"
 
 
+def natural_sort_key(filename):
+    """Erstellt einen Sortierschlüssel für natürliche Sortierung von Dateinamen"""
+    return [
+        int(text) if text.isdigit() else text.lower()
+        for text in re.split(r"(\d+)", filename)
+    ]
+
+
 def get_instance_files():
     """Holt alle .txt Dateien aus dem data Ordner"""
     if DATA_DIR.exists():
         txt_files = list(DATA_DIR.glob("*.txt"))
-        return sorted([f.name for f in txt_files])
+        return sorted([f.name for f in txt_files], key=natural_sort_key)
     return []
 
 
