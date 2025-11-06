@@ -83,7 +83,6 @@ def show_constraint_violations(sol: Solution):
                     st.write(f"- {violation}")
 
     if all_valid:
-        st.balloons()
-        st.success("🎉 Alle Constraints sind erfüllt!")
+        st.success("Alle Constraints sind erfüllt!")
     else:
-        st.warning("⚠️ Es gibt Constraint-Verletzungen in dieser Lösung.")
+        st.warning("Es gibt Constraint-Verletzungen in dieser Lösung.")
