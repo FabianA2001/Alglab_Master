@@ -57,8 +57,17 @@ def show():
         return
 
     # Erstelle eine Tabelle mit den Daten
+    import re
+
+    def natural_sort_key(text):
+        """Erstellt einen Schlüssel für natürliche Sortierung (z.B. Instance1, Instance2, Instance10)"""
+        return [int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", text)]
+
     table_data = []
-    for instance_name, (objective_value, solve_time) in data.items():
+    # Sortiere die Instanzen nach natürlichem Schlüssel
+    for instance_name, (objective_value, solve_time) in sorted(
+        data.items(), key=lambda x: natural_sort_key(x[0])
+    ):
         # Konvertiere Sekunden in Stunden, Minuten, Sekunden
         hours = int(solve_time // 3600)
         minutes = int((solve_time % 3600) // 60)
