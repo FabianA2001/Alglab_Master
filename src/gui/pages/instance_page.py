@@ -5,6 +5,12 @@ import streamlit as st
 
 from ...parseData import parseTXT
 
+from ...inputTypes import employee, instace, shiftType
+
+from ..modifiers import instance_modifier
+
+from datetime import datetime
+
 DATA_DIR = (
     Path(__file__).resolve().parent.parent.parent.parent / "data" / "instance_raw"
 )
@@ -76,6 +82,40 @@ def show_instance_information(instance):
                 }
             )
         st.dataframe(shift_data, hide_index=True)
+        shift_df = st.data_editor(shift_data, hide_index=True, key="shift_data_editor")
+        if st.button("Change shifts types"):
+            shift_types_dict: dict[shiftType.TypeUid, shiftType.ShiftType] = {}
+            for shift_dict in shift_df:
+                print(shift_dict)
+                hour = shift_dict["Startzeit"].split(":")[0]
+                minute = shift_dict["Startzeit"].split(":")[1]
+                forbidden = shift_dict["Gesperrt nach"].split(", ")
+                blocked_shifts_after = set()
+                if not (forbidden == ["Keine"]):
+                    for fs in forbidden:
+                        blocked_shifts_after.add(hash(int(fs)))
+                shift_types_dict[hash(shift_dict["Name"])] = shiftType.ShiftType(
+                    # TODO add case where a new shift type is added
+                    # uid=hash(shift_dict["Name"])
+                    uid=hash(shift_dict["Name"]),
+                    length=shift_dict["Dauer (Min)"],
+                    blocked_shifts_after=blocked_shifts_after,
+                    start_time=datetime(2005, 1, 1, int(hour), int(minute)),
+                    name=shift_dict["Name"],
+                )
+            st.session_state["instance"] = instance_modifier.create_new_instance(
+                instance=st.session_state["instance"],
+                shift_types=shift_types_dict,
+                name="test_instance_shifts_types",
+            )
+            updated_shift_data = shift_df
+            st.write("Updated Shift Data:", updated_shift_data)
+            print(
+                "instance in show instance information: \n",
+                st.session_state["instance"].shift_types,
+            )
+            st.session_state["instance_modified"] = True
+
     else:
         st.info("Keine Schichttypen definiert.")
 
@@ -107,6 +147,51 @@ def show_instance_information(instance):
                 }
             )
         st.dataframe(emp_data, hide_index=True)
+        emp_data = st.data_editor(emp_data, hide_index=True, key="employee_data_editor")
+        if st.button("Change employees content"):
+            employee_types_dict: dict[employee.EmployeeUid, employee.Employee] = {}
+            for emp_dict in emp_data:
+                employee_instance = employee.Employee(
+                    uid=hash(
+                        emp_dict["Name"]
+                    ),  # Make sure you use the correct attribute here
+                    name=emp_dict["Name"],
+                    blocked_shifts=emp_dict["Gesperrte Tage"],
+                    # TODO make it possible to changge max number of shifts per type
+                    max_numbers_of_shifts=instance.employees[
+                        hash(emp_dict["Name"])
+                    ].max_numbers_of_shifts,  # Assuming this is a dictionary of shift types
+                    min_minutes_assigned=emp_dict["Min Minuten"],
+                    max_minutes_assigned=(
+                        emp_dict["Max Minuten"]
+                        if emp_dict["Max Minuten"] != "∞"
+                        else 1000000
+                    ),
+                    min_number_consecutive_shifts=emp_dict["Min aufeinander"],
+                    max_number_consecutive_shifts=(
+                        emp_dict["Max aufeinander"]
+                        if emp_dict["Max aufeinander"] != "∞"
+                        else 1000000
+                    ),
+                    min_number_consecutive_days_off=emp_dict["Min Tage frei"],
+                    max_number_weekends=(
+                        emp_dict["Max Wochenenden"]
+                        if emp_dict["Max Wochenenden"] != "∞"
+                        else 1000000
+                    ),
+                )
+                employee_types_dict[hash(emp_dict["Name"])] = employee_instance
+                st.session_state["instance"] = instance_modifier.create_new_instance(
+                    instance=st.session_state["instance"],
+                    employees=employee_types_dict,
+                    name="test_instance_employee",
+                )
+                st.write("Updated Shift Data:", emp_data)
+                print(
+                    "instance in show instance information: \n",
+                    st.session_state["instance"].employees,
+                )
+                st.session_state["instance_modified"] = True
     else:
         st.info("Keine Mitarbeiter definiert.")
 
@@ -280,11 +365,14 @@ def show():
         )
         show_select = False
 
-    if show_select:
+    if show_select and "instance_modified" not in st.session_state:
         show_select_instance()
+        print("in get instance from files\n")
 
     # Zeige die geladene Instanz an
     if "instance" in st.session_state and st.session_state["instance"] is not None:
+        print("instance in show: \n")
+        print(st.session_state["instance"].shift_types)
         show_instance_information(st.session_state["instance"])
     else:
         st.info("Bitte lade zuerst eine Instanz.")
