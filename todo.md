@@ -8,17 +8,7 @@
 
 - pre commit
 
-- add report, expand Solution class
-    - check all Constrindes
-    - inst
-    - solution
-    - git tag (optional)
-    - aktive constrings
-    - solver status
-    - solve time
-    - opjektiv value
-    -
-    - Refactor Validation from gui to solver
+- rename solution to report
 
 - gui edit Timeout
 
