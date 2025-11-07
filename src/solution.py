@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, Tuple
 
@@ -52,6 +53,13 @@ class Solution(BaseModel):
     )
     solve_time: float = Field(
         default_factory=float, description="Time taken to solve the instance in seconds"
+    )
+    solve_status: int = Field(
+        default_factory=int, description="Status code returned by the solver"
+    )
+    timestamp: datetime = Field(
+        default_factory=datetime.now,
+        description="Timestamp when the solution was created",
     )
 
     @computed_field
