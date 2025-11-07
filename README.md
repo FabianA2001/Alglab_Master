@@ -16,3 +16,10 @@
 
 ### GUI
 `streamlit run run_gui.py`
+
+
+### Branches
+
+- Dev Branch
+- Merge Main in Dev Branch
+- Pull request
