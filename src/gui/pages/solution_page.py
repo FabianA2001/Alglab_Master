@@ -5,7 +5,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from ... import solution
-from ..validation import show_active_constraints, show_constraint_violations
+from .show_constraints import show_active_constraints, show_constraint_violations
 
 SOLUTION_DIR = (
     Path(__file__).resolve().parent.parent.parent.parent / "data" / "solutions"
