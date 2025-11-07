@@ -24,19 +24,9 @@ class MinMaxWorkTime(ShiftAssignmentModule):
                 assigned_minutes
                 <= instance.employees[employee_uid].max_minutes_assigned
             )
-            vars.add_active_constraint(
-                f"max_work_time_{employee_uid}",
-                assigned_minutes
-                <= instance.employees[employee_uid].max_minutes_assigned,
-            )
             vars.model.Add(
                 assigned_minutes
                 >= instance.employees[employee_uid].min_minutes_assigned
-            )
-            vars.add_active_constraint(
-                f"min_work_time_{employee_uid}",
-                assigned_minutes
-                >= instance.employees[employee_uid].min_minutes_assigned,
             )
 
         return 0

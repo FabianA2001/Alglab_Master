@@ -5,6 +5,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from ... import solution
+from ..validation import show_active_constraints, show_constraint_violations
 
 SOLUTION_DIR = (
     Path(__file__).resolve().parent.parent.parent.parent / "data" / "solutions"
@@ -186,6 +187,13 @@ def show():
 
     st.write("### Objective Value")
     st.write(f"**{sol.objective_value}**")
+
+    # Zeige aktive Constraints
+    show_active_constraints(sol)
+
+    # Constraint-Validierung anzeigen
+    show_constraint_violations(sol)
+
     st.write("### Shift Plan")
 
     # Option zur Auswahl zwischen Custom Komponente und DataFrame

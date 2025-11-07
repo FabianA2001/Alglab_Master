@@ -5,6 +5,8 @@ import streamlit as st
 
 from ... import shift_vars, solution, solver
 from ...inputTypes import instace
+from ..validation import show_active_constraints
+from . import overview_page
 
 
 def solve_in_thread(
@@ -25,8 +27,14 @@ def show():
     st.write("Konfiguriere und starte den Solver.")
 
     if "solution" in st.session_state and st.session_state["solution"] is not None:
-        st.warning(
-            "Der Solver hat bereits eine Lösung gefunden. Bitte starte die Anwendung neu, um den Solver erneut zu verwenden."
+        st.success("✅ Der Solver hat eine Lösung gefunden!")
+
+        # Zeige die aktiven Constraints der aktuellen Lösung
+        sol = st.session_state["solution"]
+        show_active_constraints(sol)
+
+        st.info(
+            "💡 Gehe zur Solution-Seite um das Ergebnis zu sehen oder starte die Anwendung neu, um den Solver erneut zu verwenden."
         )
         return
 
@@ -76,6 +84,8 @@ def show():
             st.session_state["solver_executor"] = None
         if "solver_future" not in st.session_state:
             st.session_state["solver_future"] = None
+        if "solver_start_time" not in st.session_state:
+            st.session_state["solver_start_time"] = None
 
         # Run solver button
         if st.button(
@@ -84,9 +94,10 @@ def show():
             disabled=st.session_state["solver_running"],
         ):
             st.session_state["solver_running"] = True
+            st.session_state["solver_start_time"] = time.time()
 
             # Start solver in a subprocess
-            executor = ThreadPoolExecutor(max_workers=1)
+            executor = ThreadPoolExecutor()
             future = executor.submit(solve_in_thread, instance, disabled_constraints)
 
             st.session_state["solver_executor"] = executor
@@ -101,10 +112,14 @@ def show():
                 # Solver finished
                 try:
                     solution = future.result()
+                    overview_page.update_table(solution)
                     st.session_state["solution"] = solution
+                    elapsed_time = time.time() - st.session_state["solver_start_time"]
                     st.session_state["solver_running"] = False
                     st.session_state["solver_executor"].shutdown(wait=False)
-                    st.success("Lösung gefunden!")
+                    st.success(
+                        f"Lösung gefunden! (Laufzeit: {elapsed_time:.2f} Sekunden)"
+                    )
                     st.write("Gehe zur Solution-Seite um das Ergebnis zu sehen.")
                 except Exception as e:
                     st.error(f"Fehler beim Lösen: {str(e)}")
@@ -112,7 +127,10 @@ def show():
                     st.session_state["solver_executor"].shutdown(wait=False)
             else:
                 # Solver still running
-                st.info("Solver läuft im Hintergrund...")
+                elapsed_time = time.time() - st.session_state["solver_start_time"]
+                st.info(
+                    f"Solver läuft im Hintergrund... (Laufzeit: {elapsed_time:.1f} Sekunden)"
+                )
                 time.sleep(0.5)
                 st.rerun()
 

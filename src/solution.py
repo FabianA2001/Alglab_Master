@@ -47,6 +47,9 @@ class Solution(BaseModel):
         default_factory=list,
         description="List of disabled solver constraints",
     )
+    solve_time: float = Field(
+        default_factory=float, description="Time taken to solve the instance in seconds"
+    )
 
     @field_validator("vars", mode="before")
     @classmethod

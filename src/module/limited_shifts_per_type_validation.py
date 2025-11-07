@@ -20,9 +20,4 @@ class Limited_shifts_per_type_validation(ShiftAssignmentModule):
                     sum(assigned_shifts)
                     <= instance.employees[employee_uid].max_numbers_of_shifts[type_uid]
                 )
-                vars.add_active_constraint(
-                    f"limit_shift_{type_uid}_for_{employee_uid}",
-                    sum(assigned_shifts)
-                    <= instance.employees[employee_uid].max_numbers_of_shifts[type_uid],
-                )
         return 0

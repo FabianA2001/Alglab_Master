@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from ortools.sat.python import cp_model
 
 from . import shift_vars
@@ -22,6 +24,8 @@ class Solver:
     def __init__(self, instance: instace.Instance, vars: shift_vars.Shift_vars):
         self.instance = instance
         self.vars = vars
+        self.solve_time = 0
+        self.start_solve_time: datetime = datetime(2005, 1, 1, 0, 0)
 
     def solve(
         self,
@@ -74,28 +78,10 @@ class Solver:
             setattr(solver.parameters, key, value)
 
         self.vars.model.Minimize(self.objevtive_value())
+        self.start_solve_time = datetime.now()
         status = solver.Solve(self.vars.model)
+        self.solve_time = (datetime.now() - self.start_solve_time).total_seconds()
         return self.handle_results(status, solver, disabled_constraints)
-
-    def solve_with_constraints(
-        self,
-        constraints: list[cp_model.BoundedLinearExpression] = [],
-        log_search_progress: bool = True,
-        max_time_in_seconds: float = 60.0,
-        **solver_params,
-    ) -> Solution:
-        for constraint in constraints:
-            self.vars.model.Add(constraint)
-        solver = cp_model.CpSolver()
-        solver.parameters.log_search_progress = log_search_progress
-        solver.parameters.max_time_in_seconds = max_time_in_seconds
-
-        for key, value in solver_params.items():
-            setattr(solver.parameters, key, value)
-
-        self.vars.model.Minimize(self.objevtive_value())
-        status = solver.Solve(self.vars.model)
-        return self.handle_results(status, solver)
 
     def objevtive_value(self):
         objective_value = 0
@@ -144,6 +130,7 @@ class Solver:
             solution.objective_value = solver.ObjectiveValue()
             solution.instance = self.instance
             solution.disabled_constraints = disabled_constraints
+            solution.solve_time = self.solve_time
             return solution  # Return the populated solution
         elif status == cp_model.INFEASIBLE:
             self.process_infeasible_solution()

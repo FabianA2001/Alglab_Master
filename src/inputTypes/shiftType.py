@@ -19,8 +19,10 @@ class ShiftType(BaseModel):
         default_factory=set,
         description="List of blocked shift UIDs after this Shift Type",
     )
+    # TODO start_time default should be a hours and minutes and not a date
     start_time: datetime = Field(
         default=datetime(2005, 1, 1, 0, 0), description="Start time of the Shift"
     )
+
     def __str__(self) -> str:
         return f"ShiftType {self.name} (UID: ...{str(self.uid)[-3:]}, start time: {self.start_time} ,Length: {self.length} min, Blocked after: {self.blocked_shifts_after})"

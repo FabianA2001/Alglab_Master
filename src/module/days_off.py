@@ -18,7 +18,4 @@ class Days_off(ShiftAssignmentModule):
                     assigned_shifts.append(vars.vars[(day, type_uid, employee_uid)])
 
             vars.model.Add(sum(assigned_shifts) == 0)
-            vars.add_active_constraint(
-                f"days_off_{employee_uid}", sum(assigned_shifts) == 0
-            )
         return 0
