@@ -188,14 +188,14 @@ class Solver:
     def warm_start(
         self,
         solution: Solution,
-        total_above_dict: dict[(int, shiftType.TypeUid), int],
-        total_below_dict: dict[(int, shiftType.TypeUid), int],
+        total_above_dict: dict[tuple[int, shiftType.TypeUid], int],
+        total_below_dict: dict[tuple[int, shiftType.TypeUid], int],
     ) -> Solution:
         """Warm starts the solver with a given solution."""
         for day in range(self.instance.number_of_days):
             for type_uid in self.instance.shifts[day]:
                 for employee_uid in self.instance.employees:
-                    var_value = solution.vars[(day, type_uid, employee_uid)]
+                    var_value = solution.vars[(day, type_uid, employee_uid)] == 1
                     self.vars.model.AddHint(
                         self.vars.get_var(day, type_uid, employee_uid), var_value
                     )
