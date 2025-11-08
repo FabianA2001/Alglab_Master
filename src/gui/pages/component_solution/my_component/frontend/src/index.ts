@@ -2,30 +2,6 @@ import { Streamlit, RenderData } from "streamlit-component-lib"
 // does the order matter?
 import "./shift_plan_config.js"; // this will be ran when imported
 import shiftPlanTable, { initShiftPlanTable } from "./shift_plan_table.js"; // 
-// Add text and a button to the DOM. (You could also add these directly
-// to index.html.)
-const span = document.body.appendChild(document.createElement("span"))
-const textNode = span.appendChild(document.createTextNode(""))
-const button = span.appendChild(document.createElement("button"))
-button.textContent = "Click Me!"
-
-// Add a click handler to our button. It will send data back to Streamlit.
-let numClicks = 0
-let isFocused = false
-button.onclick = function (): void {
-  // Increment numClicks, and pass the new value back to
-  // Streamlit via `Streamlit.setComponentValue`.
-  numClicks += 1
-  Streamlit.setComponentValue(numClicks)
-}
-
-button.onfocus = function (): void {
-  isFocused = true
-}
-
-button.onblur = function (): void {
-  isFocused = false
-}
 
 /**
  * The component's render function. This will be called immediately after
@@ -35,21 +11,6 @@ button.onblur = function (): void {
 function onRender(event: Event): void {
   // Get the RenderData from the event
   const data = (event as CustomEvent<RenderData>).detail
-
-  // Maintain compatibility with older versions of Streamlit that don't send
-  // a theme object.
-  if (data.theme) {
-    // Use CSS vars to style our button border. Alternatively, the theme style
-    // is defined in the data.theme object.
-    const borderStyling = `1px solid var(${
-      isFocused ? "--primary-color" : "gray"
-    })`
-    button.style.border = borderStyling
-    button.style.outline = borderStyling
-  }
-
-  // Disable our button if necessary.
-  button.disabled = data.disabled
 
   // RenderData.args is the JSON dictionary of arguments sent from the
   // Python script.
@@ -87,10 +48,19 @@ function onRender(event: Event): void {
     }
     // Initialize the shift plan table with the provided solution data
     initShiftPlanTable(shift_plan_solution)
-  }
+    const searchInput = document.getElementById('searchInput') as HTMLInputElement;
 
-  // Show "Hello, name!" with a non-breaking space afterwards.
-  textNode.textContent = `Hello, ${name}! ` + String.fromCharCode(160)
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchValue = searchInput.value; // No more TypeScript error
+            console.log('Search Value:', searchValue);
+            // Send the value back to Streamlit
+            Streamlit.setComponentValue(searchValue);
+        });
+    } else {
+        console.error('Search input not found.');
+    }
+  }
 
   // We tell Streamlit to update our frameHeight after each render event, in
   // case it has changed. (This isn't strictly necessary for the example

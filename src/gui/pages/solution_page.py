@@ -149,7 +149,7 @@ def render_shift_plan_component(sol: solution.Solution):
         render_option="shift_plan_solution",
         data=json.dumps(shift_plan_data),
     )
-    st.markdown("You've clicked %s times!" % int(js_response))
+    st.markdown(f"The selected employee is: {js_response}")
 
 
 def show():
