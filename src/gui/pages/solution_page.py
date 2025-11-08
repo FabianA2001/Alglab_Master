@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
+from .component_solution import my_component
 
 from ... import solution
 from ..validation import show_active_constraints, show_constraint_violations
@@ -125,6 +126,7 @@ def render_shift_plan_component(sol: solution.Solution):
     (function() {{
         const shiftPlanData = {json.dumps(shift_plan_data)};
         console.log('Data loaded:', shiftPlanData);
+        console.log(shiftPlanData);
         
         // Warte kurz und initialisiere dann
         setTimeout(function() {{
@@ -141,6 +143,13 @@ def render_shift_plan_component(sol: solution.Solution):
     # Rendere als HTML Komponente
 
     components.html(full_html, height=600, scrolling=True)
+    st.subheader("Component?")
+    js_response = my_component.my_component(
+        "shift_plan_component",
+        render_option="shift_plan_solution",
+        data=json.dumps(shift_plan_data),
+    )
+    st.markdown("You've clicked %s times!" % int(js_response))
 
 
 def show():
