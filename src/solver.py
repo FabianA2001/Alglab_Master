@@ -3,7 +3,7 @@ from datetime import datetime
 from ortools.sat.python import cp_model
 
 from . import shift_vars
-from .inputTypes import instace
+from .inputTypes import instace, shiftType
 from .module import (
     cover_requirements,
     days_off,
@@ -184,3 +184,28 @@ class Solver:
         """Handles the case when the model is invalid."""
         print("The model provided is invalid and cannot be solved.")
         print("The model provided is invalid and cannot be solved.")
+
+    def warm_start(
+        self,
+        solution: Solution,
+        total_above_dict: dict[tuple[int, shiftType.TypeUid], int],
+        total_below_dict: dict[tuple[int, shiftType.TypeUid], int],
+    ) -> Solution:
+        """Warm starts the solver with a given solution."""
+        for day in range(self.instance.number_of_days):
+            for type_uid in self.instance.shifts[day]:
+                for employee_uid in self.instance.employees:
+                    var_value = solution.vars[(day, type_uid, employee_uid)] == 1
+                    self.vars.model.AddHint(
+                        self.vars.get_var(day, type_uid, employee_uid), var_value
+                    )
+        for day in range(self.instance.number_of_days):
+            for type_uid in self.instance.shifts[day]:
+                self.instance.get_shift(
+                    day, type_uid
+                ).weight_above_preferred = total_above_dict[day, type_uid]
+                self.instance.get_shift(
+                    day, type_uid
+                ).weight_below_preferred = total_below_dict[day, type_uid]
+
+        return self.solve()
