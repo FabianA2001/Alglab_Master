@@ -79,8 +79,7 @@ function renderTable(shiftPlanData) {
         // Name (bold)
         const nameDiv = document.createElement('div');
         nameDiv.textContent = shiftTypeInfo.name;
-        nameDiv.style.fontWeight = 'bold';
-        nameDiv.style.marginBottom = '4px';
+        nameDiv.className = 'shift-name';
         shiftTypeContainer.appendChild(nameDiv);
         
         // Start time

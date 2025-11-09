@@ -46,16 +46,24 @@
     position: sticky;
     top: 0;
     z-index: 10;
+    color: black; /* Added this line */
 }
 
 .shift-plan-table th.shift-type-header {
     background-color: #4CAF50;
-    color: white;
+    color: black;
     font-weight: bold;
 }
 
 .shift-plan-table tr:hover {
     background-color: #f9f9f9;
+}
+
+.shift-name {
+    font-weight: bold; /* Optional if you want it here instead */
+    margin-bottom: 4px; /* Optional if you want it here instead */
+    /* Add other styles as needed */
+    color: black; /* Example: set text color */
 }
 
 .employee-list {
