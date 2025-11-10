@@ -13,6 +13,7 @@ export var dataDict = {};
 
 export function reset_dataDict() {
     dataDict = {};
+    reset_cover_requirement_options();
 }
 
 /**
@@ -150,6 +151,7 @@ function renderTable(shiftPlanData) {
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.id = checkboxId; // Assign the unique ID
+                checkbox.className = 'cover-requirement-checkbox';
 
                 // Create text field
                 const textField = document.createElement('input');
@@ -158,6 +160,9 @@ function renderTable(shiftPlanData) {
                 textField.disabled = true; // Initially disabled
                 textField.style.width = '100%'; // Make text field occupy full width of the cell
                 textField.id = textFieldId; // Assign the unique ID
+                textField.className = 'cover-requirement-textfield';
+                textField.value = cellData.weight;
+                console.log("Initial text field value:", cellData.weight);
 
                 // Event listener for the checkbox
                 checkbox.addEventListener('change', () => {
@@ -318,4 +323,16 @@ function updateData(dayIndex, shiftType) {
     }
     console.log("checkbox dict after")
     console.log(dataDict)
+}
+
+function reset_cover_requirement_options() {
+    // Select all checkboxes created for the shifts
+    const checkboxes = document.querySelectorAll('input[type="checkbox"].cover-requirement-checkbox');
+    const textfields = document.querySelectorAll('input[type="number"].cover-requirement-textfield');
+    checkboxes.forEach((checkbox) => {
+        checkbox.checked = false;
+    });
+    textfields.forEach((textfield) => {
+        textfield.disabled = true;
+    });
 }

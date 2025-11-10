@@ -80,6 +80,9 @@ def solution_to_html_data(sol: solution.Solution) -> dict:
                     "preferred": preferred_count,
                     "actual": actual_count,
                     "difference": difference,
+                    "weight": sol.instance.shifts[day][
+                        shift_type_uid
+                    ].weight_below_preferred,
                 }
             )
         data.append(row)
@@ -151,19 +154,21 @@ def render_shift_plan_component(sol: solution.Solution):
         data=json.dumps(shift_plan_data),
     )
     st.markdown(f"The selected employee is: {response_cover_requirement}")
+    # TODO better session_states need to be introduced, in order for this to work properly
+    # if response_cover_requirement != {}:
+    #     st.session_state["instance"] = sol.instance
+    #     for day, shift_type_dict in response_cover_requirement.items():
+    #         for shift_type, value in shift_type_dict.items():
+    #             # TODO what about weight_above_preferred?
+    #             st.session_state["instance"].shifts[int(day)][
+    #                 hash_string(shift_type)
+    #             ].weight_below_preferred = int(value)
 
-    if response_cover_requirement != {}:
-        st.session_state["instance"] = sol.instance
-        for day, shift_type_dict in response_cover_requirement.items():
-            for shift_type, value in shift_type_dict.items():
-                # TODO what about weight_above_preferred?
-                st.session_state["instance"].shifts[int(day)][
-                    hash_string(shift_type)
-                ].weight_below_preferred = int(value)
-            st.info("Instance is being updated")
-        st.success("Instance updated with new cover requirements from component.")
-        st.info("Resetting solver")
-        st.session_state["solution"] = None
+    #    st.info("Instance is being updated")
+    # st.success("Instance updated with new cover requirements from component.")
+    # st.info("Resetting solver")
+
+    # st.session_state["solution"] = None
 
 
 def show():
