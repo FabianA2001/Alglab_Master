@@ -37,7 +37,7 @@
 
 .diff-info {
     padding-bottom: 6px;
-    border-bottom: 1px solid #e0e0e0;
+    text-align: center;
 }
 
 .shift-plan-table th {
@@ -114,4 +114,9 @@
 
 .highlight {
     background-color: #fff9c4 !important;
+}
+.upper-part {
+    margin-top: 5px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #e0e0e0;
 }

@@ -2,11 +2,14 @@
 'use strict';
 
 // Verwende die Konfiguration (wird von außen geladen)
+//TODO replace config (SHIFT_PLAN_CONFIG) with css
 const CONFIG = window.SHIFT_PLAN_CONFIG || {};
 console.log('CONFIG loaded in main script:', CONFIG);
 console.log('Column widths:', CONFIG.columns);
 
 let filteredEmployee = '';
+
+const dataDict = {};
 
 /**
  * 
@@ -130,8 +133,55 @@ function renderTable(shiftPlanData) {
                 }
                 
                 cellContainer.appendChild(diffDiv);
+
+                // Create container for the upper part
+                const upperPart = document.createElement('div');
+                upperPart.className = 'upper-part';
+
+                // Unique identifiers using day and shiftType
+                const checkboxId = `checkbox-${day}-${shiftTypeInfo.name}`;
+                const textFieldId = `textfield-${day}-${shiftTypeInfo.name}`;
+
+                // Create checkbox
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = checkboxId; // Assign the unique ID
+
+                // Create text field
+                const textField = document.createElement('input');
+                textField.type = 'number';
+                textField.min = '0';
+                textField.disabled = true; // Initially disabled
+                textField.style.width = '100%'; // Make text field occupy full width of the cell
+                textField.id = textFieldId; // Assign the unique ID
+
+                // Event listener for the checkbox
+                checkbox.addEventListener('change', () => {
+                    textField.disabled = !checkbox.checked; // Enable/disable text field
+                });
+
+                // Append checkbox and text field to upper part
+                upperPart.appendChild(checkbox);
+                upperPart.appendChild(textField);
+
+                // Positioning the upper part in the cell
+                cellContainer.appendChild(upperPart);
+                cellContainer.style.display = 'flex'; // Flexbox to align checkbox and text field
+                cellContainer.style.flexDirection = 'column'; // Position them vertically
+                upperPart.style.display = 'flex'; // Flexbox to align checkbox and input
+                upperPart.style.alignItems = 'center'; // Center items vertically
+
+                // Append the cell container to the day cell
+                td.appendChild(diffDiv);
+
+                checkbox.addEventListener('change', () => updateData(day, shiftTypeInfo.name));
+                textField.addEventListener('input', () => {
+                    if (checkbox.checked) {
+                        dataDict[`${day}_${shiftTypeInfo.name}`].value = parseInt(textField.value) || 0;
+                        console.log("in textfield: ", dataDict)
+                    }
+                });
             }
-            
             const employees = cellData.employees || cellData;
             
             if (employees && employees.length > 0) {
@@ -247,3 +297,23 @@ export function initShiftPlanTable(data) {
         }
     }
 };
+
+// Function to update the dictionary based on checkbox and text field
+function updateData(dayIndex, shiftType) {
+    console.log("checkbox dict before")
+    console.log(dataDict)
+    const checkbox = document.querySelector(`#checkbox-${dayIndex}-${shiftType}`);
+    const textField = document.querySelector(`#textfield-${dayIndex}-${shiftType}`);
+    
+    if (checkbox.checked) {
+        // Add entry if checkbox is checked
+        dataDict[`${dayIndex}_${shiftType}`] = {
+            value: parseInt(textField.value) || 0
+        };
+    } else {
+        // Remove entry if checkbox is unchecked
+        delete dataDict[`${dayIndex}_${shiftType}`];
+    }
+    console.log("checkbox dict after")
+    console.log(dataDict)
+}
