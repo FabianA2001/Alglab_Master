@@ -150,6 +150,7 @@ def render_shift_plan_component(sol: solution.Solution):
         data=json.dumps(shift_plan_data),
     )
     st.markdown(f"The selected employee is: {js_response}")
+    print(js_response)
 
 
 def show():

@@ -1,7 +1,7 @@
 import { Streamlit, RenderData } from "streamlit-component-lib"
 // does the order matter?
 import "./shift_plan_config.js"; // this will be ran when imported
-import shiftPlanTable, { initShiftPlanTable } from "./shift_plan_table.js"; // 
+import shiftPlanTable, { dataDict, initShiftPlanTable } from "./shift_plan_table.js"; // 
 
 /**
  * The component's render function. This will be called immediately after
@@ -40,9 +40,18 @@ function onRender(event: Event): void {
             </table>
           </div>
           <div class="table-info" id="tableInfo"></div>
+          
+          <button id="submit_cover_change">Submit Cover Changes</button>
         </div>
       `;
-
+      // Reference to the button
+      const button = document.getElementById('submit_cover_change');
+      if (button) {
+        // Define the onPressed function
+        button.onclick = function() {
+          Streamlit.setComponentValue(dataDict);    
+        };
+      }
       // Insert the HTML into the body or a specific container
       document.body.insertAdjacentHTML('beforeend', shiftPlanAppHTML);
     }
@@ -55,7 +64,7 @@ function onRender(event: Event): void {
             const searchValue = searchInput.value; // No more TypeScript error
             console.log('Search Value:', searchValue);
             // Send the value back to Streamlit
-            Streamlit.setComponentValue(searchValue);
+            //Streamlit.setComponentValue(searchValue);
         });
     } else {
         console.error('Search input not found.');

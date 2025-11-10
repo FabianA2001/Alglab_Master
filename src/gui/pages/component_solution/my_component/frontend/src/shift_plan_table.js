@@ -9,7 +9,7 @@ console.log('Column widths:', CONFIG.columns);
 
 let filteredEmployee = '';
 
-const dataDict = {};
+export const dataDict = {};
 
 /**
  * 
