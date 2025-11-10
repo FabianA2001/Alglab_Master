@@ -11,6 +11,14 @@ from ..modifiers import instance_modifier
 
 from datetime import datetime
 
+import hashlib
+
+
+def hash_string(s: str) -> int:
+    """Erstellt einen konsistenten Hash-Wert für einen gegebenen String."""
+    return int(hashlib.md5(s.encode()).hexdigest(), 16)
+
+
 DATA_DIR = (
     Path(__file__).resolve().parent.parent.parent.parent / "data" / "instance_raw"
 )
@@ -93,11 +101,11 @@ def show_instance_information(instance):
                 blocked_shifts_after = set()
                 if not (forbidden == ["Keine"]):
                     for fs in forbidden:
-                        blocked_shifts_after.add(hash(int(fs)))
-                shift_types_dict[hash(shift_dict["Name"])] = shiftType.ShiftType(
+                        blocked_shifts_after.add(hash_string(fs))
+                shift_types_dict[hash_string(shift_dict["Name"])] = shiftType.ShiftType(
                     # TODO add case where a new shift type is added
                     # uid=hash(shift_dict["Name"])
-                    uid=hash(shift_dict["Name"]),
+                    uid=hash_string(shift_dict["Name"]),
                     length=shift_dict["Dauer (Min)"],
                     blocked_shifts_after=blocked_shifts_after,
                     start_time=datetime(2005, 1, 1, int(hour), int(minute)),
@@ -152,14 +160,14 @@ def show_instance_information(instance):
             employee_types_dict: dict[employee.EmployeeUid, employee.Employee] = {}
             for emp_dict in emp_data:
                 employee_instance = employee.Employee(
-                    uid=hash(
+                    uid=hash_string(
                         emp_dict["Name"]
                     ),  # Make sure you use the correct attribute here
                     name=emp_dict["Name"],
                     blocked_shifts=emp_dict["Gesperrte Tage"],
                     # TODO make it possible to changge max number of shifts per type
                     max_numbers_of_shifts=instance.employees[
-                        hash(emp_dict["Name"])
+                        hash_string(emp_dict["Name"])
                     ].max_numbers_of_shifts,  # Assuming this is a dictionary of shift types
                     min_minutes_assigned=emp_dict["Min Minuten"],
                     max_minutes_assigned=(
@@ -180,7 +188,7 @@ def show_instance_information(instance):
                         else 1000000
                     ),
                 )
-                employee_types_dict[hash(emp_dict["Name"])] = employee_instance
+                employee_types_dict[hash_string(emp_dict["Name"])] = employee_instance
                 st.session_state["instance"] = instance_modifier.create_new_instance(
                     instance=st.session_state["instance"],
                     employees=employee_types_dict,

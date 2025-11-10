@@ -74,7 +74,7 @@ def my_component(name, key=None, render_option="default", data=None):
     # "default" is a special argument that specifies the initial return
     # value of the component before the user has interacted with it.
     component_value = _component_func(
-        name=name, key=key, render_option=render_option, data=data, default=0
+        name=name, key=key, render_option=render_option, data=data, default={}
     )
 
     # We could modify the value returned from the component if we wanted.

@@ -9,7 +9,11 @@ console.log('Column widths:', CONFIG.columns);
 
 let filteredEmployee = '';
 
-export const dataDict = {};
+export var dataDict = {};
+
+export function reset_dataDict() {
+    dataDict = {};
+}
 
 /**
  * 
@@ -307,9 +311,7 @@ function updateData(dayIndex, shiftType) {
     if (checkbox.checked) {
         // Add entry if checkbox is checked
         dataDict[dayIndex] = {}
-        dataDict[dayIndex][shiftType] = {
-            value: parseInt(textField.value) || 0
-        };
+        dataDict[dayIndex][shiftType] = 1000;
     } else {
         // Remove entry if checkbox is unchecked
         delete dataDict[dayIndex][shiftType];

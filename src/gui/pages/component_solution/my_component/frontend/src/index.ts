@@ -1,7 +1,7 @@
 import { Streamlit, RenderData } from "streamlit-component-lib"
 // does the order matter?
 import "./shift_plan_config.js"; // this will be ran when imported
-import shiftPlanTable, { dataDict, initShiftPlanTable } from "./shift_plan_table.js"; // 
+import shiftPlanTable, { dataDict, initShiftPlanTable, reset_dataDict } from "./shift_plan_table.js"; // 
 
 /**
  * The component's render function. This will be called immediately after
@@ -54,6 +54,7 @@ function onRender(event: Event): void {
                     // Define the onPressed function
                     button.onclick = function () {
                         Streamlit.setComponentValue(dataDict);
+                        reset_dataDict(); // Reset the dataDict after submission
                     };
                     observer.disconnect(); // Stop observing once the button is found
                 }

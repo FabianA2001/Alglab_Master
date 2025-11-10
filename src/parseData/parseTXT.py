@@ -2,6 +2,12 @@ from collections import defaultdict
 from pathlib import Path
 
 from ..inputTypes import employee, instace, shiftType
+import hashlib
+
+
+def hash_string(s: str) -> int:
+    """Erstellt einen konsistenten Hash-Wert für einen gegebenen String."""
+    return int(hashlib.md5(s.encode()).hexdigest(), 16)
 
 
 def parse_txt(txt_file_path: Path) -> instace.Instance:
@@ -37,10 +43,10 @@ def parse_txt(txt_file_path: Path) -> instace.Instance:
             forbidden = parts[2].split("|") if parts[2] else []
             blocked_shifts_after = set()
             for fs in forbidden:
-                blocked_shifts_after.add(hash(fs))
+                blocked_shifts_after.add(hash_string(fs))
             shifts.append(
                 shiftType.ShiftType(
-                    uid=hash(shift_id),
+                    uid=hash_string(shift_id),
                     length=length,
                     blocked_shifts_after=blocked_shifts_after,
                     name=shift_id,
@@ -58,12 +64,12 @@ def parse_txt(txt_file_path: Path) -> instace.Instance:
                         max_shifts[shift] = int(count)
                     else:
                         raise ValueError("Invalid shift constraint format")
-            id = hash(staff_id)
+            id = hash_string(staff_id)
             staff[id] = employee.Employee(
                 uid=id,
                 name=staff_id,
                 max_numbers_of_shifts={
-                    hash(shift): count for shift, count in max_shifts.items()
+                    hash_string(shift): count for shift, count in max_shifts.items()
                 },
                 max_minutes_assigned=int(parts[2]),
                 min_minutes_assigned=int(parts[3]),
@@ -77,23 +83,23 @@ def parse_txt(txt_file_path: Path) -> instace.Instance:
             parts = line.split(",")
             employee_id = parts[0]
             day_indexes = set(int(d) for d in parts[1:])
-            staff[hash(employee_id)].blocked_shifts = day_indexes
+            staff[hash_string(employee_id)].blocked_shifts = day_indexes
 
         elif current_section == "SECTION_SHIFT_ON_REQUESTS":
             parts = line.split(",")
-            shift_on_requests[(int(parts[1]), hash(parts[2]))][hash(parts[0])] = int(
-                parts[3]
-            )
+            shift_on_requests[(int(parts[1]), hash_string(parts[2]))][
+                hash_string(parts[0])
+            ] = int(parts[3])
 
         elif current_section == "SECTION_SHIFT_OFF_REQUESTS":
             parts = line.split(",")
-            shift_off_requests[(int(parts[1]), hash(parts[2]))][hash(parts[0])] = int(
-                parts[3]
-            )
+            shift_off_requests[(int(parts[1]), hash_string(parts[2]))][
+                hash_string(parts[0])
+            ] = int(parts[3])
 
         elif current_section == "SECTION_COVER":
             parts = line.split(",")
-            cover_requirements[(int(parts[0]), hash(parts[1]))] = (
+            cover_requirements[(int(parts[0]), hash_string(parts[1]))] = (
                 int(parts[2]),
                 int(parts[3]),
                 int(parts[4]),

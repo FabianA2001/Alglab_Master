@@ -7,6 +7,7 @@ from .component_solution import my_component
 
 from ... import solution
 from ..validation import show_active_constraints, show_constraint_violations
+import hashlib
 
 SOLUTION_DIR = (
     Path(__file__).resolve().parent.parent.parent.parent / "data" / "solutions"
@@ -144,13 +145,25 @@ def render_shift_plan_component(sol: solution.Solution):
 
     components.html(full_html, height=600, scrolling=True)
     st.subheader("Component?")
-    js_response = my_component.my_component(
+    response_cover_requirement = my_component.my_component(
         "shift_plan_component",
         render_option="shift_plan_solution",
         data=json.dumps(shift_plan_data),
     )
-    st.markdown(f"The selected employee is: {js_response}")
-    print(js_response)
+    st.markdown(f"The selected employee is: {response_cover_requirement}")
+
+    if response_cover_requirement != {}:
+        st.session_state["instance"] = sol.instance
+        for day, shift_type_dict in response_cover_requirement.items():
+            for shift_type, value in shift_type_dict.items():
+                # TODO what about weight_above_preferred?
+                st.session_state["instance"].shifts[int(day)][
+                    hash_string(shift_type)
+                ].weight_below_preferred = int(value)
+            st.info("Instance is being updated")
+        st.success("Instance updated with new cover requirements from component.")
+        st.info("Resetting solver")
+        st.session_state["solution"] = None
 
 
 def show():
@@ -215,3 +228,8 @@ def show():
         render_shift_plan_component(sol)
     else:
         st.dataframe(soluation_to_dataframe(sol), key="shiftplan")
+
+
+def hash_string(s: str) -> int:
+    """Erstellt einen konsistenten Hash-Wert für einen gegebenen String."""
+    return int(hashlib.md5(s.encode()).hexdigest(), 16)
