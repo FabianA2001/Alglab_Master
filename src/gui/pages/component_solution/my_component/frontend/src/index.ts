@@ -9,19 +9,19 @@ import shiftPlanTable, { dataDict, initShiftPlanTable } from "./shift_plan_table
  * component gets new data from Python.
  */
 function onRender(event: Event): void {
-  // Get the RenderData from the event
-  const data = (event as CustomEvent<RenderData>).detail
+    // Get the RenderData from the event
+    const data = (event as CustomEvent<RenderData>).detail
 
-  // RenderData.args is the JSON dictionary of arguments sent from the
-  // Python script.
-  let name = data.args["name"]
-  console.log("Render data received:", data.args)
-  if (data.args["render_option"] == "shift_plan_solution"){
-    let shift_plan_solution = JSON.parse(data.args["data"])
-    console.log("Shift plan solution received:", shift_plan_solution)
-    if (!document.getElementById('shift-plan-app')) {
-      // Dynamically add the HTML for the shift plan app
-      const shiftPlanAppHTML = `
+    // RenderData.args is the JSON dictionary of arguments sent from the
+    // Python script.
+    let name = data.args["name"]
+    console.log("Render data received:", data.args)
+    if (data.args["render_option"] == "shift_plan_solution") {
+        let shift_plan_solution = JSON.parse(data.args["data"])
+        console.log("Shift plan solution received:", shift_plan_solution)
+        if (!document.getElementById('shift-plan-app')) {
+            // Dynamically add the HTML for the shift plan app
+            const shiftPlanAppHTML = `
         <div id="shift-plan-app">
           <div class="filter-container">
             <input 
@@ -44,38 +44,45 @@ function onRender(event: Event): void {
           <button id="submit_cover_change">Submit Cover Changes</button>
         </div>
       `;
-      // Reference to the button
-      const button = document.getElementById('submit_cover_change');
-      if (button) {
-        // Define the onPressed function
-        button.onclick = function() {
-          Streamlit.setComponentValue(dataDict);    
-        };
-      }
-      // Insert the HTML into the body or a specific container
-      document.body.insertAdjacentHTML('beforeend', shiftPlanAppHTML);
-    }
-    // Initialize the shift plan table with the provided solution data
-    initShiftPlanTable(shift_plan_solution)
-    const searchInput = document.getElementById('searchInput') as HTMLInputElement;
+            // Insert the HTML into the body or a specific container
+            document.body.insertAdjacentHTML('beforeend', shiftPlanAppHTML);
 
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            const searchValue = searchInput.value; // No more TypeScript error
-            console.log('Search Value:', searchValue);
-            // Send the value back to Streamlit
-            //Streamlit.setComponentValue(searchValue);
-        });
-    } else {
-        console.error('Search input not found.');
-    }
-  }
+            const observer = new MutationObserver(() => {
+                const button = document.getElementById('submit_cover_change');
+                if (button) {
+                    console.log("Button found, setting onclick function.");
+                    // Define the onPressed function
+                    button.onclick = function () {
+                        Streamlit.setComponentValue(dataDict);
+                    };
+                    observer.disconnect(); // Stop observing once the button is found
+                }
+            });
 
-  // We tell Streamlit to update our frameHeight after each render event, in
-  // case it has changed. (This isn't strictly necessary for the example
-  // because our height stays fixed, but this is a low-cost function, so
-  // there's no harm in doing it redundantly.)
-  Streamlit.setFrameHeight()
+            // Start observing the document for child additions
+            observer.observe(document.body, { childList: true, subtree: true });
+        }
+        // Initialize the shift plan table with the provided solution data
+        initShiftPlanTable(shift_plan_solution)
+        const searchInput = document.getElementById('searchInput') as HTMLInputElement;
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                const searchValue = searchInput.value; // No more TypeScript error
+                console.log('Search Value:', searchValue);
+                // Send the value back to Streamlit
+                //Streamlit.setComponentValue(searchValue);
+            });
+        } else {
+            console.error('Search input not found.');
+        }
+    }
+
+    // We tell Streamlit to update our frameHeight after each render event, in
+    // case it has changed. (This isn't strictly necessary for   the example
+    // because our height stays fixed, but this is a low-cost function, so
+    // there's no harm in doing it redundantly.)
+    Streamlit.setFrameHeight()
 }
 
 // Attach our `onRender` handler to Streamlit's render event.

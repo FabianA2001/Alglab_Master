@@ -177,8 +177,7 @@ function renderTable(shiftPlanData) {
                 checkbox.addEventListener('change', () => updateData(day, shiftTypeInfo.name));
                 textField.addEventListener('input', () => {
                     if (checkbox.checked) {
-                        dataDict[`${day}_${shiftTypeInfo.name}`].value = parseInt(textField.value) || 0;
-                        console.log("in textfield: ", dataDict)
+                        dataDict[day][shiftTypeInfo.name] = parseInt(textField.value) || 0;
                     }
                 });
             }
@@ -307,12 +306,13 @@ function updateData(dayIndex, shiftType) {
     
     if (checkbox.checked) {
         // Add entry if checkbox is checked
-        dataDict[`${dayIndex}_${shiftType}`] = {
+        dataDict[dayIndex] = {}
+        dataDict[dayIndex][shiftType] = {
             value: parseInt(textField.value) || 0
         };
     } else {
         // Remove entry if checkbox is unchecked
-        delete dataDict[`${dayIndex}_${shiftType}`];
+        delete dataDict[dayIndex][shiftType];
     }
     console.log("checkbox dict after")
     console.log(dataDict)
