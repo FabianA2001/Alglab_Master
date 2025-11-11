@@ -1,11 +1,12 @@
 """Shift and worktime related constraint validation functions."""
 
-from typing import List, Tuple
+from typing import TYPE_CHECKING, List, Tuple
 
-from ...solution import Solution
+if TYPE_CHECKING:
+    from ..solution import Solution
 
 
-def check_lim_shifts_type_constraint(sol: Solution) -> Tuple[bool, List[str]]:
+def check_lim_shifts_type_constraint(sol: "Solution") -> Tuple[bool, List[str]]:
     """Prüft ob die Limited Shifts per Type Constraint erfüllt ist."""
     violations = []
     for employee_uid in sol.instance.employees:
@@ -29,7 +30,7 @@ def check_lim_shifts_type_constraint(sol: Solution) -> Tuple[bool, List[str]]:
     return len(violations) == 0, violations
 
 
-def check_max_cons_shifts_constraint(sol: Solution) -> Tuple[bool, List[str]]:
+def check_max_cons_shifts_constraint(sol: "Solution") -> Tuple[bool, List[str]]:
     """Prüft ob die Max Consecutive Shifts Constraint erfüllt ist."""
     violations = []
     for employee_uid in sol.instance.employees:
@@ -51,7 +52,7 @@ def check_max_cons_shifts_constraint(sol: Solution) -> Tuple[bool, List[str]]:
     return len(violations) == 0, violations
 
 
-def check_min_cons_shifts_constraint(sol: Solution) -> Tuple[bool, List[str]]:
+def check_min_cons_shifts_constraint(sol: "Solution") -> Tuple[bool, List[str]]:
     """Prüft ob die Min Consecutive Shifts Constraint erfüllt ist."""
     violations = []
     for employee_uid in sol.instance.employees:
@@ -92,7 +93,7 @@ def check_min_cons_shifts_constraint(sol: Solution) -> Tuple[bool, List[str]]:
     return len(violations) == 0, violations
 
 
-def check_min_max_worktime_constraint(sol: Solution) -> Tuple[bool, List[str]]:
+def check_min_max_worktime_constraint(sol: "Solution") -> Tuple[bool, List[str]]:
     """Prüft ob die Min/Max Worktime Constraint erfüllt ist."""
     violations = []
     for employee_uid in sol.instance.employees:

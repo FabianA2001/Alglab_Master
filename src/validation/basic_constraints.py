@@ -1,11 +1,12 @@
 """Basic constraint validation functions."""
 
-from typing import List, Tuple
+from typing import TYPE_CHECKING, List, Tuple
 
-from ...solution import Solution
+if TYPE_CHECKING:
+    from ..solution import Solution
 
 
-def check_cover_requirements_constraint(sol: Solution) -> Tuple[bool, List[str]]:
+def check_cover_requirements_constraint(sol: "Solution") -> Tuple[bool, List[str]]:
     """Prüft ob die Cover Requirements Constraint erfüllt ist."""
     violations = []
     for day in range(sol.instance.number_of_days):
@@ -30,7 +31,7 @@ def check_cover_requirements_constraint(sol: Solution) -> Tuple[bool, List[str]]
     return len(violations) == 0, violations
 
 
-def check_days_off_constraint(sol: Solution) -> Tuple[bool, List[str]]:
+def check_days_off_constraint(sol: "Solution") -> Tuple[bool, List[str]]:
     """Prüft ob die Days Off Constraint erfüllt ist."""
     violations = []
     for employee_uid in sol.instance.employees:
@@ -46,7 +47,7 @@ def check_days_off_constraint(sol: Solution) -> Tuple[bool, List[str]]:
     return len(violations) == 0, violations
 
 
-def check_single_day_constraint(sol: Solution) -> Tuple[bool, List[str]]:
+def check_single_day_constraint(sol: "Solution") -> Tuple[bool, List[str]]:
     """Prüft ob die Single Day Constraint erfüllt ist."""
     violations = []
     for employee_uid in sol.instance.employees:
@@ -69,7 +70,7 @@ def check_single_day_constraint(sol: Solution) -> Tuple[bool, List[str]]:
     return len(violations) == 0, violations
 
 
-def check_shift_rotation_constraint(sol: Solution) -> Tuple[bool, List[str]]:
+def check_shift_rotation_constraint(sol: "Solution") -> Tuple[bool, List[str]]:
     """Prüft ob die Shift Rotation Constraint erfüllt ist."""
     violations = []
     for employee_uid in sol.instance.employees:
