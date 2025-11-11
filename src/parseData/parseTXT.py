@@ -2,12 +2,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from ..inputTypes import employee, instace, shiftType
-import hashlib
-
-
-def hash_string(s: str) -> int:
-    """Erstellt einen konsistenten Hash-Wert für einen gegebenen String."""
-    return int(hashlib.md5(s.encode()).hexdigest(), 16)
+from ..help_functions import hash_string
 
 
 def parse_txt(txt_file_path: Path) -> instace.Instance:
