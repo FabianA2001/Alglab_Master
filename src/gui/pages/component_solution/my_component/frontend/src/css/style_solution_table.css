@@ -7,6 +7,8 @@
 .shift-plan-container {
     width: 100%;
     overflow-x: auto;
+    overflow-y: auto;
+    max-height: 400px;
     background: white;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -19,15 +21,6 @@
     table-layout: fixed;
 }
 
-.shift-plan-table th,
-.shift-plan-table td {
-    padding: 12px;
-    text-align: left;
-    border: 1px solid #e0e0e0;
-    overflow: hidden;
-    position: relative;
-    vertical-align: top;
-}
 
 .cell-container {
     display: flex;
@@ -36,23 +29,21 @@
 }
 
 .diff-info {
+    font-size: 0.85em;
+    font-weight: bold;
     padding-bottom: 6px;
     text-align: center;
 }
 
-.shift-plan-table th {
-    background-color: #f5f5f5;
-    font-weight: 600;
+.shift-plan-table td,
+.shift-plan-table th{
+    padding: 12px;
+    text-align: left;
+    border: 1px solid #e0e0e0;
+    overflow: hidden;
     position: sticky;
-    top: 0;
-    z-index: 10;
-    color: black; /* Added this line */
-}
-
-.shift-plan-table th.shift-type-header {
-    background-color: #4CAF50;
     color: black;
-    font-weight: bold;
+    vertical-align: top;
 }
 
 .shift-plan-table tr:hover {
@@ -60,35 +51,63 @@
 }
 
 .shift-name {
-    font-weight: bold; /* Optional if you want it here instead */
-    margin-bottom: 4px; /* Optional if you want it here instead */
-    /* Add other styles as needed */
-    color: black; /* Example: set text color */
+    font-weight: bold;
+    margin-bottom: 4px;
+    color: black; 
 }
 
 .employee-list {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+    justify-content: center; /* Center horizontally */
+}
+
+
+.shift-plan-table .shift-type-header {
+    width: 120px; /* Minimum width for shift type header */
+    max-width: 120px; 
+    background-color: #4CAF50; /* Shift type header background */
+    color: #ffffff; /* Shift type header text color */
+    font-weight: bold;
+}
+
+.day-header {
+    width: 100px; /* Minimum width for day headers */
+    max-width: 100px; 
+    background-color: #f5f5f5; /* Day header background */
+    text-align: center;
+    font-weight: 600;
+    justify-content: center;
 }
 
 .employee-badge {
     background-color: #e3f2fd;
     color: #1976d2;
-    padding: 4px 8px;
+    padding: 4px 8px; /* Badge padding */
+    border-radius: 4px; /* Badge border radius */
+    font-size: 0.85em; /* Badge font size */
+}
+
+.shift-time {
+    font-size: 0.9em; /* Font size for start/end times */
+    color: #555; /* Color for time text */
+}
+
+.cover-weight {
+    display: flex; /* Flex for checkbox and text field align */
+    align-items: center; /* Center items vertically */
+    margin-top: 5px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.filter-input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
     border-radius: 4px;
-    font-size: 0.85em;
-    white-space: nowrap;
-}
-
-.empty-cell {
-    color: #999;
-    font-style: italic;
-}
-
-.day-header {
-    text-align: center;
-    font-weight: 600;
+    font-size: 0.9em;
+    width: 300px;
 }
 
 .table-info {
@@ -102,21 +121,4 @@
     display: flex;
     gap: 12px;
     align-items: center;
-}
-
-.filter-input {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 0.9em;
-    width: 300px;
-}
-
-.highlight {
-    background-color: #fff9c4 !important;
-}
-.upper-part {
-    margin-top: 5px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid #e0e0e0;
 }

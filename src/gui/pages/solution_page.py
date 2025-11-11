@@ -155,26 +155,24 @@ def render_shift_plan_component(sol: solution.Solution):
     )
     st.markdown(f"The selected employee is: {response_cover_requirement}")
     # TODO better session_states need to be introduced, in order for this to work properly
-    # if response_cover_requirement != {}:
-    #     st.session_state["instance"] = sol.instance
-    #     for day, shift_type_dict in response_cover_requirement.items():
-    #         for shift_type, value in shift_type_dict.items():
-    #             # TODO what about weight_above_preferred?
-    #             st.session_state["instance"].shifts[int(day)][
-    #                 hash_string(shift_type)
-    #             ].weight_below_preferred = int(value)
-
-    #    st.info("Instance is being updated")
-    # st.success("Instance updated with new cover requirements from component.")
-    # st.info("Resetting solver")
-
-    # st.session_state["solution"] = None
+    if response_cover_requirement != {}:
+        for day, shift_type_dict in response_cover_requirement.items():
+            for shift_type, value in shift_type_dict.items():
+                # TODO what about weight_above_preferred?
+                sol.instance.shifts[int(day)][
+                    hash_string(shift_type)
+                ].weight_below_preferred = int(value)
+            st.info("Instance is being updated")
+        st.session_state["instance"] = sol.instance
+    st.success("Instance updated with new cover requirements from component.")
+    st.info("Resetting solver")
+    st.session_state["Reset_Solver"] = True
 
 
 def show():
     st.title("✅ Solution")
     # Check if solution exists in session state
-    if "solution" not in st.session_state:
+    if "solution" not in st.session_state or st.session_state["solution"] is None:
         st.warning(
             "Keine Lösung verfügbar. Bitte zuerst den Solver ausführen oder eine Lösung auswählen."
         )
