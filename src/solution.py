@@ -1,10 +1,14 @@
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, Tuple
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
 
 from .inputTypes import employee, instace, shift
 from .module.solverConstraints import SolverConstraints
+
+if TYPE_CHECKING:
+    pass  # Forward reference für Solution wird später definiert
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "solutions"
 
@@ -50,6 +54,18 @@ class Solution(BaseModel):
     solve_time: float = Field(
         default_factory=float, description="Time taken to solve the instance in seconds"
     )
+    solve_status: int = Field(
+        default_factory=int, description="Status code returned by the solver"
+    )
+    timestamp: datetime = Field(
+        default_factory=datetime.now,
+        description="Timestamp when the solution was created",
+    )
+
+    @computed_field
+    @property
+    def checkt_constraints(self) -> tuple[bool, dict[str, tuple[bool, list[str]]]]:
+        return _check_all_constraints(self)
 
     @field_validator("vars", mode="before")
     @classmethod
@@ -294,3 +310,62 @@ class Solution(BaseModel):
         print(f"Solution geladen aus: {path}")
 
         return solution
+
+
+# Standalone constraint checking functions
+# (moved here to avoid circular imports)
+def _get_all_constraint_checks() -> list[
+    Tuple[str, Callable[["Solution"], Tuple[bool, list[str]]]]
+]:
+    """Gibt eine Liste aller Constraint-Check-Funktionen zurück."""
+    from .validation.basic_constraints import (
+        check_cover_requirements_constraint,
+        check_days_off_constraint,
+        check_shift_rotation_constraint,
+        check_single_day_constraint,
+    )
+    from .validation.shift_constraints import (
+        check_lim_shifts_type_constraint,
+        check_max_cons_shifts_constraint,
+        check_min_cons_shifts_constraint,
+        check_min_max_worktime_constraint,
+    )
+    from .validation.weekend_constraints import (
+        check_max_weekend_days_constraint,
+        check_min_cons_days_constraint,
+    )
+
+    return [
+        ("Cover Requirements", check_cover_requirements_constraint),
+        ("Days Off", check_days_off_constraint),
+        ("Limited Shifts per Type", check_lim_shifts_type_constraint),
+        ("Max Consecutive Shifts", check_max_cons_shifts_constraint),
+        ("Max Weekend Days", check_max_weekend_days_constraint),
+        ("Min Consecutive Days Off", check_min_cons_days_constraint),
+        ("Min Consecutive Shifts", check_min_cons_shifts_constraint),
+        ("Min/Max Worktime", check_min_max_worktime_constraint),
+        ("Single Day Assignment", check_single_day_constraint),
+        ("Shift Rotation", check_shift_rotation_constraint),
+    ]
+
+
+def _check_all_constraints(
+    solution: "Solution",
+) -> Tuple[bool, dict[str, tuple[bool, list[str]]]]:
+    """
+    Prüft alle Constraints und gibt Ergebnisse zurück.
+
+    Returns:
+        Tuple[bool, dict]: (alle_erfüllt, {constraint_name: (name,is_valid, violations)})
+    """
+    constraints = _get_all_constraint_checks()
+    results: dict[str, tuple[bool, list[str]]] = {}
+    all_valid = True
+
+    for constraint_name, check_func in constraints:
+        is_valid, violations = check_func(solution)
+        results[constraint_name] = (is_valid, violations)
+        if not is_valid:
+            all_valid = False
+
+    return all_valid, results

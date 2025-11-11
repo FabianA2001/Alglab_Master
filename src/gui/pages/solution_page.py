@@ -6,7 +6,7 @@ import streamlit.components.v1 as components
 from .component_solution import my_component
 
 from ... import solution
-from ..validation import show_active_constraints, show_constraint_violations
+from .show_constraints import show_active_constraints, show_constraint_violations
 import hashlib
 
 SOLUTION_DIR = (
