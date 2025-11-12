@@ -102,10 +102,8 @@ def render_shift_plan_component(sol: solution.Solution, read_only: bool = False)
                 instance.shifts[int(day)][
                     hash_string(shift_type)
                 ].weight_below_preferred = int(value)
-            st.info("Instance is being updated")
         st.session_state[SSN.instance.name] = instance
         st.success("Instance updated with new cover requirements from component.")
-        st.info("Resetting solver")
         st.session_state[SSN.allow_resolve.name] = True
 
 
