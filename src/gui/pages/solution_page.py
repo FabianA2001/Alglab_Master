@@ -90,10 +90,10 @@ def render_shift_plan_component(sol: solution.Solution, read_only: bool = False)
         render_option="shift_plan_solution",
         data=json.dumps(shift_plan_data),
     )
+    # TODO Disable button when read_only is True
     if read_only:
         return
     st.markdown(f"The selected employee is: {response_cover_requirement}")
-    # TODO better session_states need to be introduced, in order for this to work properly
     if response_cover_requirement != {}:
         instance = sol.instance.model_copy()
         for day, shift_type_dict in response_cover_requirement.items():
