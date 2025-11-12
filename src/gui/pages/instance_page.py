@@ -85,7 +85,6 @@ def show_instance_information(instance):
         if st.button("Change shifts types"):
             shift_types_dict: dict[shiftType.TypeUid, shiftType.ShiftType] = {}
             for shift_dict in shift_df:
-                print(shift_dict)
                 forbidden = shift_dict["Gesperrt nach"].split(", ")
                 blocked_shifts_after = set()
                 if not (forbidden == ["Keine"]):
@@ -109,10 +108,6 @@ def show_instance_information(instance):
             )
             updated_shift_data = shift_df
             st.write("Updated Shift Data:", updated_shift_data)
-            print(
-                "instance in show instance information: \n",
-                st.session_state[SSN.instance.name].shift_types,
-            )
             st.session_state[SSN.instance_modified.name] = True
 
     else:
@@ -188,10 +183,6 @@ def show_instance_information(instance):
                     )
                 )
                 st.write("Updated Shift Data:", emp_data)
-                print(
-                    "instance in show instance information: \n",
-                    st.session_state[SSN.instance.name].employees,
-                )
                 st.session_state[SSN.instance_modified.name] = True
     else:
         st.info("Keine Mitarbeiter definiert.")
@@ -354,10 +345,7 @@ def show():
     st.write("Lade und zeige Instanzdaten an.")
 
     show_select = True
-    if (
-        SSN.solution.name in st.session_state
-        and st.session_state[SSN.solution.name] is not None
-    ):
+    if st.session_state[SSN.solutions.name] != []:
         st.warning(
             "Der Solver hat bereits eine Lösung gefunden. Bitte starte die Anwendung neu, um den Solver erneut zu verwenden."
         )
@@ -371,15 +359,12 @@ def show():
 
     if show_select and SSN.instance_modified.name not in st.session_state:
         show_select_instance()
-        print("in get instance from files\n")
 
     # Zeige die geladene Instanz an
     if (
         SSN.instance.name in st.session_state
         and st.session_state[SSN.instance.name] is not None
     ):
-        print("instance in show: \n")
-        print(st.session_state[SSN.instance.name].shift_types)
         show_instance_information(st.session_state[SSN.instance.name])
     else:
         st.info("Bitte lade zuerst eine Instanz.")

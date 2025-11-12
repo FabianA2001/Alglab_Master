@@ -21,11 +21,14 @@ def start_gui():
     # Page configuration
     st.set_page_config(page_title="Algorithm Lab", page_icon="🔬", layout="wide")
 
+    # set default global session state variables
     if SSN.solver_running.name not in st.session_state:
         st.session_state[SSN.solver_running.name] = False
     if SSN.instance.name not in st.session_state:
         inst = parseTXT.parse_txt(instance_page.DEFAULT_PATH)
         st.session_state[SSN.instance.name] = inst
+    if SSN.solutions.name not in st.session_state:
+        st.session_state[SSN.solutions.name] = []
 
     # Navigation
     st.sidebar.title("Navigation")

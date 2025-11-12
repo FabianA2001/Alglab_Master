@@ -3,8 +3,8 @@ import enum
 
 class Session_state_Names(enum.Enum):
     instance = enum.auto()
-    solution = enum.auto()
-    reset_solver = enum.auto()
+    solutions = enum.auto()
+    allow_resolve = enum.auto()
     disabled_constraints_value = enum.auto()
     solver_running = enum.auto()
     solver_executor = enum.auto()

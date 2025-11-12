@@ -78,7 +78,7 @@ def solution_to_html_data(sol: solution.Solution) -> dict:
     }
 
 
-def render_shift_plan_component(sol: solution.Solution):
+def render_shift_plan_component(sol: solution.Solution, read_only: bool = False):
     """Rendert die Custom HTML/JS Komponente für den Shift Plan"""
     import json
 
@@ -90,28 +90,31 @@ def render_shift_plan_component(sol: solution.Solution):
         render_option="shift_plan_solution",
         data=json.dumps(shift_plan_data),
     )
+    if read_only:
+        return
     st.markdown(f"The selected employee is: {response_cover_requirement}")
     # TODO better session_states need to be introduced, in order for this to work properly
     if response_cover_requirement != {}:
+        instance = sol.instance.model_copy()
         for day, shift_type_dict in response_cover_requirement.items():
             for shift_type, value in shift_type_dict.items():
                 # TODO what about weight_above_preferred?
-                sol.instance.shifts[int(day)][
+                instance.shifts[int(day)][
                     hash_string(shift_type)
                 ].weight_below_preferred = int(value)
             st.info("Instance is being updated")
-        st.session_state[SSN.instance.name] = sol.instance
+        st.session_state[SSN.instance.name] = instance
         st.success("Instance updated with new cover requirements from component.")
         st.info("Resetting solver")
-        st.session_state[SSN.reset_solver.name] = True
+        st.session_state[SSN.allow_resolve.name] = True
 
 
 def show():
     st.title("✅ Solution")
     # Check if solution exists in session state
     if (
-        SSN.solution.name not in st.session_state
-        or st.session_state[SSN.solution.name] is None
+        SSN.solutions.name not in st.session_state
+        or st.session_state[SSN.solutions.name] == []
     ):
         st.warning(
             "Keine Lösung verfügbar. Bitte zuerst den Solver ausführen oder eine Lösung auswählen."
@@ -139,7 +142,7 @@ def show():
                     loaded_solution = solution.Solution.from_json_file(
                         selected_solution
                     )
-                    st.session_state[SSN.solution.name] = loaded_solution
+                    st.session_state[SSN.solutions.name].append(loaded_solution)
                     st.success(f"Lösung '{selected_solution}' erfolgreich geladen!")
                     st.rerun()
                 except Exception as e:
@@ -148,8 +151,7 @@ def show():
             st.info("Keine gespeicherten Lösungen gefunden.")
 
         return
-
-    sol = st.session_state[SSN.solution.name]
+    sol = st.session_state[SSN.solutions.name][-1]
 
     st.write("### Objective Value")
     st.write(f"**{sol.objective_value}**")
@@ -163,3 +165,8 @@ def show():
     st.write("### Shift Plan")
 
     render_shift_plan_component(sol)
+
+    st.write("### Vorherige Lösungen (absteigend)")
+
+    for sol in reversed(st.session_state[SSN.solutions.name][:-1]):
+        render_shift_plan_component(sol, read_only=True)

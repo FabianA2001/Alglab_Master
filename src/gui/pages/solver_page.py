@@ -27,14 +27,14 @@ def show():
     st.write("Konfiguriere und starte den Solver.")
 
     if (
-        SSN.solution.name in st.session_state
-        and st.session_state[SSN.solution.name] is not None
-        and SSN.reset_solver.name not in st.session_state
+        st.session_state[SSN.solutions.name] != []
+        and not st.session_state[SSN.allow_resolve.name]
+        and not st.session_state[SSN.solver_running.name]
     ):
         st.success("✅ Der Solver hat eine Lösung gefunden!")
 
         # Zeige die aktiven Constraints der aktuellen Lösung
-        sol = st.session_state[SSN.solution.name]
+        sol = st.session_state[SSN.solutions.name][-1]
         show_active_constraints(sol)
 
         st.info(
@@ -98,6 +98,7 @@ def show():
             disabled=st.session_state[SSN.solver_running.name],
         ):
             st.session_state[SSN.solver_running.name] = True
+            st.session_state[SSN.allow_resolve.name] = False
             st.session_state[SSN.solver_start_time.name] = time.time()
 
             # Start solver in a subprocess
@@ -116,7 +117,7 @@ def show():
                 # Solver finished
                 try:
                     solution = future.result()
-                    st.session_state[SSN.solution.name] = solution
+                    st.session_state[SSN.solutions.name].append(solution)
                     elapsed_time = (
                         time.time() - st.session_state[SSN.solver_start_time.name]
                     )
