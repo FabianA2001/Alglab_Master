@@ -122,3 +122,22 @@
     gap: 12px;
     align-items: center;
 }
+
+#submit_cover_change {
+    background-color: #4CAF50; /* Green background */
+    color: white; /* White text color */
+    padding: 10px 20px; /* Vertical and horizontal padding */
+    border: none; /* No border */
+    border-radius: 5px; /* Rounded corners */
+    font-size: 16px; /* Font size */
+    cursor: pointer; /* Pointer cursor on hover */
+    transition: background-color 0.3s ease; /* Smooth transition */
+}
+
+#submit_cover_change:hover {
+    background-color: #318b35; /* Darker green on hover */
+}
+
+#submit_cover_change:active {
+    background-color: #318b35; /* Even darker when clicked */
+}
