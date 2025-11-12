@@ -1,18 +1,13 @@
 import re
+from datetime import datetime
 from pathlib import Path
 
 import streamlit as st
 
-from ...parseData import parseTXT
-
-from ...inputTypes import employee, instace, shiftType
-
-from ..modifiers import instance_modifier
-
-from datetime import datetime
-
 from ...help_functions import hash_string
-
+from ...inputTypes import employee, shiftType
+from ...parseData import parseTXT
+from ..modifiers import instance_modifier
 
 DATA_DIR = (
     Path(__file__).resolve().parent.parent.parent.parent / "data" / "instance_raw"
@@ -90,8 +85,6 @@ def show_instance_information(instance):
             shift_types_dict: dict[shiftType.TypeUid, shiftType.ShiftType] = {}
             for shift_dict in shift_df:
                 print(shift_dict)
-                hour = shift_dict["Startzeit"].split(":")[0]
-                minute = shift_dict["Startzeit"].split(":")[1]
                 forbidden = shift_dict["Gesperrt nach"].split(", ")
                 blocked_shifts_after = set()
                 if not (forbidden == ["Keine"]):
@@ -103,7 +96,9 @@ def show_instance_information(instance):
                     uid=hash_string(shift_dict["Name"]),
                     length=shift_dict["Dauer (Min)"],
                     blocked_shifts_after=blocked_shifts_after,
-                    start_time=datetime(2005, 1, 1, int(hour), int(minute)),
+                    start_time=datetime.strptime(
+                        shift_dict["Startzeit"], "%H:%M"
+                    ).time(),
                     name=shift_dict["Name"],
                 )
             st.session_state["instance"] = instance_modifier.create_new_instance(

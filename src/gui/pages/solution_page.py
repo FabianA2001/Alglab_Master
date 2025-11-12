@@ -1,3 +1,4 @@
+from datetime import time
 from pathlib import Path
 
 import streamlit as st
@@ -12,9 +13,16 @@ SOLUTION_DIR = (
 )
 
 
+def add_minutes_to_time(start_time: time, minutes: int) -> time:
+    """Addiert Minuten zu einer time und gibt die neue time zurück."""
+    total_minutes = start_time.hour * 60 + start_time.minute + minutes
+    hours = (total_minutes // 60) % 24
+    mins = total_minutes % 60
+    return time(hours, mins)
+
+
 def solution_to_html_data(sol: solution.Solution) -> dict:
     """Konvertiert die Lösung in ein Format für die Custom HTML Komponente"""
-    from datetime import timedelta
 
     days = [day for day in range(sol.instance.number_of_days)]
 
@@ -23,7 +31,7 @@ def solution_to_html_data(sol: solution.Solution) -> dict:
     for shift_type in sol.instance.shift_types.values():
         start_time = shift_type.start_time
         # Berechne Endzeit basierend auf Länge in Minuten
-        end_time = start_time + timedelta(minutes=shift_type.length)
+        end_time = add_minutes_to_time(start_time, shift_type.length)
 
         shift_types_info.append(
             {
