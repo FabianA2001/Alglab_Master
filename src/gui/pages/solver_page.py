@@ -117,7 +117,9 @@ def show():
                 try:
                     solution = future.result()
                     st.session_state[SSN.solution.name] = solution
-                    elapsed_time = time.time() - st.session_state[SSN.solver_start_time.name]
+                    elapsed_time = (
+                        time.time() - st.session_state[SSN.solver_start_time.name]
+                    )
                     st.session_state[SSN.solver_running.name] = False
                     st.session_state[SSN.solver_executor.name].shutdown(wait=False)
                     st.success(
@@ -130,7 +132,9 @@ def show():
                     st.session_state[SSN.solver_executor.name].shutdown(wait=False)
             else:
                 # Solver still running
-                elapsed_time = time.time() - st.session_state[SSN.solver_start_time.name]
+                elapsed_time = (
+                    time.time() - st.session_state[SSN.solver_start_time.name]
+                )
                 st.info(
                     f"Solver läuft im Hintergrund... (Laufzeit: {elapsed_time:.1f} Sekunden)"
                 )
