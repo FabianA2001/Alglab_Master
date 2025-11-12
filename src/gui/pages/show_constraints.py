@@ -60,3 +60,27 @@ def show_active_constraints(sol: Solution):
 
     if not inactive:
         st.info("ℹ️ Alle Constraints waren beim Lösen aktiv.")
+
+
+def show_constraint_violations(sol: Solution):
+    """Zeigt alle Constraint-Verletzungen auf der Streamlit-Seite an."""
+    st.write("### 🔍 Constraint-Validierung")
+
+    all_valid, constraints = sol.checkt_constraints
+
+    for name, (is_valid, violations) in constraints.items():
+        if is_valid:
+            st.success(f"✅ **{name}**: Erfüllt")
+        else:
+            all_valid = False
+            with st.expander(
+                f"❌ **{name}**: {len(violations)} Verletzung(en)",
+                expanded=True,
+            ):
+                for violation in violations:
+                    st.write(f"- {violation}")
+
+    if all_valid:
+        st.success("Alle Constraints sind erfüllt!")
+    else:
+        st.warning("Es gibt Constraint-Verletzungen in dieser Lösung.")

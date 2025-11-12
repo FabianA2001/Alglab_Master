@@ -1,11 +1,12 @@
 """Weekend and days-off related constraint validation functions."""
 
-from typing import List, Tuple
+from typing import TYPE_CHECKING, List, Tuple
 
-from ...solution import Solution
+if TYPE_CHECKING:
+    from ..solution import Solution
 
 
-def check_max_weekend_days_constraint(sol: Solution) -> Tuple[bool, List[str]]:
+def check_max_weekend_days_constraint(sol: "Solution") -> Tuple[bool, List[str]]:
     """Prüft ob die Max Weekend Days Constraint erfüllt ist."""
     violations = []
     for employee_uid in sol.instance.employees:
@@ -47,7 +48,7 @@ def check_max_weekend_days_constraint(sol: Solution) -> Tuple[bool, List[str]]:
     return len(violations) == 0, violations
 
 
-def check_min_cons_days_constraint(sol: Solution) -> Tuple[bool, List[str]]:
+def check_min_cons_days_constraint(sol: "Solution") -> Tuple[bool, List[str]]:
     """Prüft ob die Min Consecutive Days Off Constraint erfüllt ist."""
     violations = []
     for employee_uid in sol.instance.employees:

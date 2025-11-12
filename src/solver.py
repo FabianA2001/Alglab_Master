@@ -128,9 +128,11 @@ class Solver:
             else:
                 print("Feasible solution found but not optimal.")
             solution.objective_value = solver.ObjectiveValue()
+            solution.solve_status = status
             solution.instance = self.instance
             solution.disabled_constraints = disabled_constraints
             solution.solve_time = self.solve_time
+            solution.timestamp = datetime.now()
             return solution  # Return the populated solution
         elif status == cp_model.INFEASIBLE:
             self.process_infeasible_solution()

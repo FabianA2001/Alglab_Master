@@ -5,8 +5,7 @@ import streamlit as st
 
 from ... import shift_vars, solution, solver
 from ...inputTypes import instace
-from ..validation import show_active_constraints
-from . import overview_page
+from .show_constraints import show_active_constraints
 
 
 def solve_in_thread(
@@ -26,7 +25,11 @@ def show():
     st.title("⚙️ Solver")
     st.write("Konfiguriere und starte den Solver.")
 
-    if "solution" in st.session_state and st.session_state["solution"] is not None:
+    if (
+        "solution" in st.session_state
+        and st.session_state["solution"] is not None
+        and "Reset_Solver" not in st.session_state
+    ):
         st.success("✅ Der Solver hat eine Lösung gefunden!")
 
         # Zeige die aktiven Constraints der aktuellen Lösung
@@ -112,7 +115,6 @@ def show():
                 # Solver finished
                 try:
                     solution = future.result()
-                    overview_page.update_table(solution)
                     st.session_state["solution"] = solution
                     elapsed_time = time.time() - st.session_state["solver_start_time"]
                     st.session_state["solver_running"] = False
