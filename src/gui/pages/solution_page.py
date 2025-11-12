@@ -95,7 +95,7 @@ def render_shift_plan_component(sol: solution.Solution, read_only: bool = False)
         return
     st.markdown(f"The selected employee is: {response_cover_requirement}")
     if response_cover_requirement != {}:
-        instance = sol.instance.model_copy()
+        instance = sol.instance.model_copy(deep=True)
         for day, shift_type_dict in response_cover_requirement.items():
             for shift_type, value in shift_type_dict.items():
                 # TODO what about weight_above_preferred?
