@@ -45,10 +45,10 @@ def show():
     # Solver configuration
     st.subheader("Solver Einstellungen")
 
-    if SSN.disabled_constraints_value.name not in st.session_state:
-        st.session_state[SSN.disabled_constraints_value.name] = {}
+    if SSN.disabled_constraints.name not in st.session_state:
+        st.session_state[SSN.disabled_constraints.name] = {}
     disabled_constraints_value: dict[solver.SolverConstraints, bool] = st.session_state[
-        SSN.disabled_constraints_value.name
+        SSN.disabled_constraints.name
     ]
 
     def toggle_constraint(mode: solver.SolverConstraints):
