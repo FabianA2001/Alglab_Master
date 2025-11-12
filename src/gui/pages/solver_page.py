@@ -25,7 +25,11 @@ def show():
     st.title("⚙️ Solver")
     st.write("Konfiguriere und starte den Solver.")
 
-    if "solution" in st.session_state and st.session_state["solution"] is not None:
+    if (
+        "solution" in st.session_state
+        and st.session_state["solution"] is not None
+        and "Reset_Solver" not in st.session_state
+    ):
         st.success("✅ Der Solver hat eine Lösung gefunden!")
 
         # Zeige die aktiven Constraints der aktuellen Lösung

@@ -2,16 +2,18 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
+from .component_solution import my_component
 
 from ... import solution
 from .show_constraints import show_active_constraints, show_constraint_violations
+from ...help_functions import hash_string
 
 SOLUTION_DIR = (
     Path(__file__).resolve().parent.parent.parent.parent / "data" / "solutions"
 )
 
 
+# TODO remove the dataframe functionality?
 def soluation_to_dataframe(solution: solution.Solution) -> pd.DataFrame:
     # Diese Funktion sollte die Lösung in ein DataFrame umwandeln
     days = [day for day in range(solution.instance.number_of_days)]
@@ -78,6 +80,9 @@ def solution_to_html_data(sol: solution.Solution) -> dict:
                     "preferred": preferred_count,
                     "actual": actual_count,
                     "difference": difference,
+                    "weight": sol.instance.shifts[day][
+                        shift_type_uid
+                    ].weight_below_preferred,
                 }
             )
         data.append(row)
@@ -93,60 +98,34 @@ def render_shift_plan_component(sol: solution.Solution):
     """Rendert die Custom HTML/JS Komponente für den Shift Plan"""
     import json
 
-    # Pfad zu den HTML/JS Dateien
-    html_file = Path(__file__).parent / "shift_plan_table.html"
-    js_file = Path(__file__).parent / "shift_plan_table.js"
-    config_file = Path(__file__).parent / "shift_plan_config.js"
-
-    # Lese HTML, JS und Config
-    with open(html_file, "r", encoding="utf-8") as f:
-        html_content = f.read()
-
-    with open(js_file, "r", encoding="utf-8") as f:
-        js_content = f.read()
-
-    with open(config_file, "r", encoding="utf-8") as f:
-        config_content = f.read()
-
     # Konvertiere Lösung in JSON-Format
     shift_plan_data = solution_to_html_data(sol)
 
-    # Erstelle den vollständigen HTML-Code mit eingebettetem JavaScript und Daten
-    full_html = f"""
-    {html_content}
-    <script>
-    // Lade die Konfiguration
-    {config_content}
-    
-    // Lade das Haupt-JavaScript
-    {js_content}
-    
-    // Initialisiere die Tabelle mit den Daten
-    (function() {{
-        const shiftPlanData = {json.dumps(shift_plan_data)};
-        console.log('Data loaded:', shiftPlanData);
-        
-        // Warte kurz und initialisiere dann
-        setTimeout(function() {{
-            if (window.initShiftPlanTable) {{
-                window.initShiftPlanTable(shiftPlanData);
-            }} else {{
-                console.error('initShiftPlanTable function not found');
-            }}
-        }}, 100);
-    }})();
-    </script>
-    """
-
-    # Rendere als HTML Komponente
-
-    components.html(full_html, height=600, scrolling=True)
+    response_cover_requirement = my_component.my_component(
+        "shift_plan_component",
+        render_option="shift_plan_solution",
+        data=json.dumps(shift_plan_data),
+    )
+    st.markdown(f"The selected employee is: {response_cover_requirement}")
+    # TODO better session_states need to be introduced, in order for this to work properly
+    if response_cover_requirement != {}:
+        for day, shift_type_dict in response_cover_requirement.items():
+            for shift_type, value in shift_type_dict.items():
+                # TODO what about weight_above_preferred?
+                sol.instance.shifts[int(day)][
+                    hash_string(shift_type)
+                ].weight_below_preferred = int(value)
+            st.info("Instance is being updated")
+        st.session_state["instance"] = sol.instance
+        st.success("Instance updated with new cover requirements from component.")
+        st.info("Resetting solver")
+        st.session_state["Reset_Solver"] = True
 
 
 def show():
     st.title("✅ Solution")
     # Check if solution exists in session state
-    if "solution" not in st.session_state:
+    if "solution" not in st.session_state or st.session_state["solution"] is None:
         st.warning(
             "Keine Lösung verfügbar. Bitte zuerst den Solver ausführen oder eine Lösung auswählen."
         )
