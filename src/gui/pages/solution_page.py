@@ -1,40 +1,15 @@
 from pathlib import Path
 
-import pandas as pd
 import streamlit as st
-from .component_solution import my_component
 
 from ... import solution
-from .show_constraints import show_active_constraints, show_constraint_violations
 from ...help_functions import hash_string
+from .component_solution import my_component
+from .show_constraints import show_active_constraints, show_constraint_violations
 
 SOLUTION_DIR = (
     Path(__file__).resolve().parent.parent.parent.parent / "data" / "solutions"
 )
-
-
-# TODO remove the dataframe functionality?
-def soluation_to_dataframe(solution: solution.Solution) -> pd.DataFrame:
-    # Diese Funktion sollte die Lösung in ein DataFrame umwandeln
-    days = [day for day in range(solution.instance.number_of_days)]
-    shift_types = [
-        shift_type.name for shift_type in solution.instance.shift_types.values()
-    ]
-    # blank_data = {day: [[] for _ in shift_types] for day in days}
-    data = []
-    for shift_type_uid in solution.instance.shift_types:
-        row = []
-        for day in days:
-            assigned_employees = []
-            for emp_id in solution.instance.employees:
-                if solution.is_employee_assigned(day, shift_type_uid, emp_id):
-                    assigned_employees.append(solution.instance.employees[emp_id].name)
-            row.append(assigned_employees)
-        data.append(row)
-
-    df = pd.DataFrame(data, index=shift_types)
-
-    return df
 
 
 def solution_to_html_data(sol: solution.Solution) -> dict:
@@ -175,12 +150,4 @@ def show():
 
     st.write("### Shift Plan")
 
-    # Option zur Auswahl zwischen Custom Komponente und DataFrame
-    display_mode = st.radio(
-        "Anzeigemodus:", ["Custom HTML Tabelle", "Standard DataFrame"], horizontal=True
-    )
-
-    if display_mode == "Custom HTML Tabelle":
-        render_shift_plan_component(sol)
-    else:
-        st.dataframe(soluation_to_dataframe(sol), key="shiftplan")
+    render_shift_plan_component(sol)
