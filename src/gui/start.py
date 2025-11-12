@@ -5,6 +5,7 @@ import streamlit as st
 from .. import shift_vars, solution, solver
 from ..parseData import parseTXT
 from .pages import instance_page, overview_page, solution_page, solver_page
+from .pages.session_state_names import Session_state_Names as SSN
 
 
 def get_solution() -> solution.Solution:
@@ -20,11 +21,11 @@ def start_gui():
     # Page configuration
     st.set_page_config(page_title="Algorithm Lab", page_icon="🔬", layout="wide")
 
-    if "solver_running" not in st.session_state:
-        st.session_state["solver_running"] = False
-    if "instance" not in st.session_state:
+    if SSN.solver_running.name not in st.session_state:
+        st.session_state[SSN.solver_running.name] = False
+    if SSN.instance.name not in st.session_state:
         inst = parseTXT.parse_txt(instance_page.DEFAULT_PATH)
-        st.session_state["instance"] = inst
+        st.session_state[SSN.instance.name] = inst
 
     # Navigation
     st.sidebar.title("Navigation")
