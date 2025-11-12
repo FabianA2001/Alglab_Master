@@ -10,3 +10,4 @@ class Session_state_Names(enum.Enum):
     solver_executor = enum.auto()
     solver_future = enum.auto()
     solver_start_time = enum.auto()
+    solver_timeout = enum.auto()
