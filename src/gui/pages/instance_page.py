@@ -108,7 +108,7 @@ def show_instance_information(instance):
             )
             updated_shift_data = shift_df
             st.write("Updated Shift Data:", updated_shift_data)
-            st.session_state[SSN.instance_modified.name] = True
+            st.session_state[SSN.allow_resolve.name] = True
 
     else:
         st.info("Keine Schichttypen definiert.")
@@ -183,7 +183,7 @@ def show_instance_information(instance):
                     )
                 )
                 st.write("Updated Shift Data:", emp_data)
-                st.session_state[SSN.instance_modified.name] = True
+                st.session_state[SSN.allow_resolve.name] = True
     else:
         st.info("Keine Mitarbeiter definiert.")
 
@@ -357,14 +357,11 @@ def show():
         )
         show_select = False
 
-    if show_select and SSN.instance_modified.name not in st.session_state:
+    if show_select:
         show_select_instance()
 
     # Zeige die geladene Instanz an
-    if (
-        SSN.instance.name in st.session_state
-        and st.session_state[SSN.instance.name] is not None
-    ):
+    if st.session_state[SSN.instance.name] is not None:
         show_instance_information(st.session_state[SSN.instance.name])
     else:
         st.info("Bitte lade zuerst eine Instanz.")

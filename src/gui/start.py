@@ -29,6 +29,8 @@ def start_gui():
         st.session_state[SSN.instance.name] = inst
     if SSN.solutions.name not in st.session_state:
         st.session_state[SSN.solutions.name] = []
+    if SSN.allow_resolve.name not in st.session_state:
+        st.session_state[SSN.allow_resolve.name] = True
 
     # Navigation
     st.sidebar.title("Navigation")
