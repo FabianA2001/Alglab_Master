@@ -8,6 +8,7 @@ from ...help_functions import hash_string
 from ...inputTypes import employee, shiftType
 from ...parseData import parseTXT
 from ..modifiers import instance_modifier
+from .session_state_names import Session_state_Names as SSN
 
 DATA_DIR = (
     Path(__file__).resolve().parent.parent.parent.parent / "data" / "instance_raw"
@@ -101,8 +102,8 @@ def show_instance_information(instance):
                     ).time(),
                     name=shift_dict["Name"],
                 )
-            st.session_state["instance"] = instance_modifier.create_new_instance(
-                instance=st.session_state["instance"],
+            st.session_state[SSN.instance.name] = instance_modifier.create_new_instance(
+                instance=st.session_state[SSN.instance.name],
                 shift_types=shift_types_dict,
                 name="test_instance_shifts_types",
             )
@@ -110,9 +111,9 @@ def show_instance_information(instance):
             st.write("Updated Shift Data:", updated_shift_data)
             print(
                 "instance in show instance information: \n",
-                st.session_state["instance"].shift_types,
+                st.session_state[SSN.instance.name].shift_types,
             )
-            st.session_state["instance_modified"] = True
+            st.session_state[SSN.instance_modified.name] = True
 
     else:
         st.info("Keine Schichttypen definiert.")
@@ -179,17 +180,19 @@ def show_instance_information(instance):
                     ),
                 )
                 employee_types_dict[hash_string(emp_dict["Name"])] = employee_instance
-                st.session_state["instance"] = instance_modifier.create_new_instance(
-                    instance=st.session_state["instance"],
-                    employees=employee_types_dict,
-                    name="test_instance_employee",
+                st.session_state[SSN.instance.name] = (
+                    instance_modifier.create_new_instance(
+                        instance=st.session_state[SSN.instance.name],
+                        employees=employee_types_dict,
+                        name="test_instance_employee",
+                    )
                 )
                 st.write("Updated Shift Data:", emp_data)
                 print(
                     "instance in show instance information: \n",
-                    st.session_state["instance"].employees,
+                    st.session_state[SSN.instance.name].employees,
                 )
-                st.session_state["instance_modified"] = True
+                st.session_state[SSN.instance_modified.name] = True
     else:
         st.info("Keine Mitarbeiter definiert.")
 
@@ -338,7 +341,7 @@ def show_select_instance():
         path = DATA_DIR / selected_file
         if path.exists():
             inst = parseTXT.parse_txt(path)
-            st.session_state["instance"] = inst
+            st.session_state[SSN.instance.name] = inst
             st.success(f"Datei geladen: {selected_file}")
         else:
             st.error("Datei nicht gefunden.")
@@ -351,26 +354,32 @@ def show():
     st.write("Lade und zeige Instanzdaten an.")
 
     show_select = True
-    if "solution" in st.session_state and st.session_state["solution"] is not None:
+    if (
+        SSN.solution.name in st.session_state
+        and st.session_state[SSN.solution.name] is not None
+    ):
         st.warning(
             "Der Solver hat bereits eine Lösung gefunden. Bitte starte die Anwendung neu, um den Solver erneut zu verwenden."
         )
         show_select = False
 
-    if st.session_state["solver_running"]:
+    if st.session_state[SSN.solver_running.name]:
         st.warning(
             "Die Instanz kann nicht geändert werden, da der Solver bereits gestartet wurde."
         )
         show_select = False
 
-    if show_select and "instance_modified" not in st.session_state:
+    if show_select and SSN.instance_modified.name not in st.session_state:
         show_select_instance()
         print("in get instance from files\n")
 
     # Zeige die geladene Instanz an
-    if "instance" in st.session_state and st.session_state["instance"] is not None:
+    if (
+        SSN.instance.name in st.session_state
+        and st.session_state[SSN.instance.name] is not None
+    ):
         print("instance in show: \n")
-        print(st.session_state["instance"].shift_types)
-        show_instance_information(st.session_state["instance"])
+        print(st.session_state[SSN.instance.name].shift_types)
+        show_instance_information(st.session_state[SSN.instance.name])
     else:
         st.info("Bitte lade zuerst eine Instanz.")

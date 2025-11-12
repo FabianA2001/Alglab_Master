@@ -6,6 +6,7 @@ import streamlit as st
 from ... import solution
 from ...help_functions import hash_string
 from .component_solution import my_component
+from .session_state_names import Session_state_Names as SSN
 from .show_constraints import show_active_constraints, show_constraint_violations
 
 SOLUTION_DIR = (
@@ -99,16 +100,19 @@ def render_shift_plan_component(sol: solution.Solution):
                     hash_string(shift_type)
                 ].weight_below_preferred = int(value)
             st.info("Instance is being updated")
-        st.session_state["instance"] = sol.instance
+        st.session_state[SSN.instance.name] = sol.instance
         st.success("Instance updated with new cover requirements from component.")
         st.info("Resetting solver")
-        st.session_state["Reset_Solver"] = True
+        st.session_state[SSN.reset_solver.name] = True
 
 
 def show():
     st.title("✅ Solution")
     # Check if solution exists in session state
-    if "solution" not in st.session_state or st.session_state["solution"] is None:
+    if (
+        SSN.solution.name not in st.session_state
+        or st.session_state[SSN.solution.name] is None
+    ):
         st.warning(
             "Keine Lösung verfügbar. Bitte zuerst den Solver ausführen oder eine Lösung auswählen."
         )
@@ -135,7 +139,7 @@ def show():
                     loaded_solution = solution.Solution.from_json_file(
                         selected_solution
                     )
-                    st.session_state["solution"] = loaded_solution
+                    st.session_state[SSN.solution.name] = loaded_solution
                     st.success(f"Lösung '{selected_solution}' erfolgreich geladen!")
                     st.rerun()
                 except Exception as e:
@@ -145,7 +149,7 @@ def show():
 
         return
 
-    sol = st.session_state["solution"]
+    sol = st.session_state[SSN.solution.name]
 
     st.write("### Objective Value")
     st.write(f"**{sol.objective_value}**")
