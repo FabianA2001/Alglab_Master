@@ -15,8 +15,9 @@ def solve_warm_start(**kwargs) -> solution.Solution:
     # TODO warm start implement
     old_solution = kwargs["old_solution"]
     sol = solver.Solver(instance, shift_vars.Shift_vars(instance))
-    sol = sol.solve(
-        log_search_progress=False,
+    sol = sol.warm_start(
+        old_solution,
+        instance,
         disabled_constraints=disabled_constraints,
         max_time_in_seconds=kwargs["timeout_seconds"],
     )

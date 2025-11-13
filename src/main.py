@@ -7,6 +7,17 @@ from .inputTypes import employee, instace, shiftType
 from .parseData import parseTXT
 from .shift_vars import Shift_vars
 from .solver import Solver
+from src.help_functions import compare_solutions
+from src.solution import Solution
+
+
+def try_compare_solutions():
+    sol_a = Solution.from_json_file("Instance1")
+    sol_b = Solution.from_json_file("Instance2")
+
+    result = compare_solutions(sol_a, sol_b, include_details=True)
+    print(f"Mitarbeiter mit Änderungen: {result['employees_with_changes']}")
+    print(f"Insgesamt geänderte Tagesschichten: {result['total_changed_days']}")
 
 
 def sayHello(name="World") -> str:
@@ -15,7 +26,7 @@ def sayHello(name="World") -> str:
 
 def get_tes_data() -> instace.Instance:
     test_file = Path.joinpath(
-        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance2.txt"
+        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance1.txt"
     )
     return parseTXT.parse_txt(test_file)
 
@@ -60,6 +71,7 @@ def main() -> None:
     # get_test_solution_from_model()
     # sol = Solution.from_json_file("Instance1")
     get_test_solution_from_model()
+    try_compare_solutions()
 
 
 if __name__ == "__main__":
