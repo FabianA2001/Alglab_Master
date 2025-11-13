@@ -133,11 +133,8 @@ def show():
         st.warning(
             "Keine Lösung verfügbar. Bitte zuerst den Solver ausführen oder eine Lösung auswählen."
         )
-        st.info("Gehe zur Solver-Seite um eine Lösung zu berechnen.")
-        # Dropdown-Menü für fertige Lösungen
-        st.write("### Gespeicherte Lösungen laden")
 
-    # Liste aller verfügbaren Lösungsdateien
+    # TODO Discuss if always show solution selector or only when no solution in session state
     available_solutions = []
     if SOLUTION_DIR.exists():
         available_solutions = [f.stem for f in SOLUTION_DIR.glob("*.json")]
@@ -153,9 +150,6 @@ def show():
             on_change=on_change_solution,
         )
 
-        if st.session_state[SSN.solutions.name] == []:
-            st.info("Bitte wähle eine Lösung aus dem Dropdown-Menü.")
-            return
     else:
         st.info("Keine gespeicherten Lösungen gefunden.")
         return
