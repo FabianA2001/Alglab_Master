@@ -11,7 +11,7 @@ from src.help_functions import compare_solutions
 from src.solution import Solution
 
 
-def test_compare_solutions():
+def try_compare_solutions():
     sol_a = Solution.from_json_file("Instance1")
     sol_b = Solution.from_json_file("Instance2")
 
@@ -71,7 +71,7 @@ def main() -> None:
     # get_test_solution_from_model()
     # sol = Solution.from_json_file("Instance1")
     get_test_solution_from_model()
-    test_compare_solutions()
+    try_compare_solutions()
 
 
 if __name__ == "__main__":
