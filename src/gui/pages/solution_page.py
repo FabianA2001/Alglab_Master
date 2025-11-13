@@ -1,45 +1,42 @@
+from datetime import time
 from pathlib import Path
 
-import pandas as pd
 import streamlit as st
-from .component_solution import my_component
 
 from ... import solution
-from .show_constraints import show_active_constraints, show_constraint_violations
 from ...help_functions import hash_string
+from .component_solution import my_component
+from .session_state_names import Session_state_Names as SSN
+from .show_constraints import show_active_constraints, show_constraint_violations
 
 SOLUTION_DIR = (
     Path(__file__).resolve().parent.parent.parent.parent / "data" / "solutions"
 )
 
 
-# TODO remove the dataframe functionality?
-def soluation_to_dataframe(solution: solution.Solution) -> pd.DataFrame:
-    # Diese Funktion sollte die Lösung in ein DataFrame umwandeln
-    days = [day for day in range(solution.instance.number_of_days)]
-    shift_types = [
-        shift_type.name for shift_type in solution.instance.shift_types.values()
-    ]
-    # blank_data = {day: [[] for _ in shift_types] for day in days}
-    data = []
-    for shift_type_uid in solution.instance.shift_types:
-        row = []
-        for day in days:
-            assigned_employees = []
-            for emp_id in solution.instance.employees:
-                if solution.is_employee_assigned(day, shift_type_uid, emp_id):
-                    assigned_employees.append(solution.instance.employees[emp_id].name)
-            row.append(assigned_employees)
-        data.append(row)
+def on_change_solution():
+    try:
+        loaded_solution = solution.Solution.from_json_file(
+            st.session_state.solution_selectbox
+        )
+        st.session_state[SSN.solutions.name].append(loaded_solution)
+        st.success(
+            f"Lösung '{st.session_state.solution_selectbox}' erfolgreich geladen!"
+        )
+    except Exception as e:
+        st.error(f"Fehler beim Laden der Lösung: {e}")
 
-    df = pd.DataFrame(data, index=shift_types)
 
-    return df
+def add_minutes_to_time(start_time: time, minutes: int) -> time:
+    """Addiert Minuten zu einer time und gibt die neue time zurück."""
+    total_minutes = start_time.hour * 60 + start_time.minute + minutes
+    hours = (total_minutes // 60) % 24
+    mins = total_minutes % 60
+    return time(hours, mins)
 
 
 def solution_to_html_data(sol: solution.Solution) -> dict:
     """Konvertiert die Lösung in ein Format für die Custom HTML Komponente"""
-    from datetime import timedelta
 
     days = [day for day in range(sol.instance.number_of_days)]
 
@@ -48,7 +45,7 @@ def solution_to_html_data(sol: solution.Solution) -> dict:
     for shift_type in sol.instance.shift_types.values():
         start_time = shift_type.start_time
         # Berechne Endzeit basierend auf Länge in Minuten
-        end_time = start_time + timedelta(minutes=shift_type.length)
+        end_time = add_minutes_to_time(start_time, shift_type.length)
 
         shift_types_info.append(
             {
@@ -94,75 +91,70 @@ def solution_to_html_data(sol: solution.Solution) -> dict:
     }
 
 
-def render_shift_plan_component(sol: solution.Solution):
+def render_shift_plan_component(
+    sol: solution.Solution, read_only: bool = False, index=0
+):
     """Rendert die Custom HTML/JS Komponente für den Shift Plan"""
     import json
 
     # Konvertiere Lösung in JSON-Format
     shift_plan_data = solution_to_html_data(sol)
-
+    extra_options = {"read_only": read_only}
     response_cover_requirement = my_component.my_component(
-        "shift_plan_component",
+        f"shift_plan_component_{index}",
         render_option="shift_plan_solution",
         data=json.dumps(shift_plan_data),
+        extra_options=json.dumps(extra_options),
     )
+    if read_only:
+        return
     st.markdown(f"The selected employee is: {response_cover_requirement}")
-    # TODO better session_states need to be introduced, in order for this to work properly
     if response_cover_requirement != {}:
+        instance = sol.instance.model_copy(deep=True)
         for day, shift_type_dict in response_cover_requirement.items():
             for shift_type, value in shift_type_dict.items():
                 # TODO what about weight_above_preferred?
-                sol.instance.shifts[int(day)][
+                instance.shifts[int(day)][
                     hash_string(shift_type)
                 ].weight_below_preferred = int(value)
-            st.info("Instance is being updated")
-        st.session_state["instance"] = sol.instance
+                instance.name = instance.name + "eddited_cover_requirements"
+        st.session_state[SSN.instance.name] = instance
         st.success("Instance updated with new cover requirements from component.")
-        st.info("Resetting solver")
-        st.session_state["Reset_Solver"] = True
+        st.session_state[SSN.allow_resolve.name] = True
 
 
 def show():
     st.title("✅ Solution")
     # Check if solution exists in session state
-    if "solution" not in st.session_state or st.session_state["solution"] is None:
+    if (
+        SSN.solutions.name not in st.session_state
+        or st.session_state[SSN.solutions.name] == []
+    ):
         st.warning(
             "Keine Lösung verfügbar. Bitte zuerst den Solver ausführen oder eine Lösung auswählen."
         )
-        st.info("Gehe zur Solver-Seite um eine Lösung zu berechnen.")
-        # Dropdown-Menü für fertige Lösungen
-        st.write("### Gespeicherte Lösungen laden")
 
-        # Liste aller verfügbaren Lösungsdateien
-        available_solutions = []
-        if SOLUTION_DIR.exists():
-            available_solutions = [f.stem for f in SOLUTION_DIR.glob("*.json")]
-            available_solutions.sort()
+    # TODO Discuss if always show solution selector or only when no solution in session state
+    available_solutions = []
+    if SOLUTION_DIR.exists():
+        available_solutions = [f.stem for f in SOLUTION_DIR.glob("*.json")]
+        available_solutions.sort()
 
-        if available_solutions:
-            selected_solution = st.selectbox(
-                "Wähle eine gespeicherte Lösung:",
-                options=[""] + available_solutions,
-                index=0,
-                help="Wähle eine Lösung aus dem Dropdown-Menü",
-            )
+    if available_solutions:
+        st.selectbox(
+            "Wähle eine gespeicherte Lösung:",
+            options=[""] + available_solutions,
+            key="solution_selectbox",
+            index=0,
+            help="Wähle eine Lösung aus dem Dropdown-Menü",
+            on_change=on_change_solution,
+        )
 
-            if selected_solution:
-                try:
-                    loaded_solution = solution.Solution.from_json_file(
-                        selected_solution
-                    )
-                    st.session_state["solution"] = loaded_solution
-                    st.success(f"Lösung '{selected_solution}' erfolgreich geladen!")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Fehler beim Laden der Lösung: {e}")
-        else:
-            st.info("Keine gespeicherten Lösungen gefunden.")
-
+    else:
+        st.info("Keine gespeicherten Lösungen gefunden.")
         return
 
-    sol = st.session_state["solution"]
+    sol = st.session_state[SSN.solutions.name][-1]
 
     st.write("### Objective Value")
     st.write(f"**{sol.objective_value}**")
@@ -175,12 +167,8 @@ def show():
 
     st.write("### Shift Plan")
 
-    # Option zur Auswahl zwischen Custom Komponente und DataFrame
-    display_mode = st.radio(
-        "Anzeigemodus:", ["Custom HTML Tabelle", "Standard DataFrame"], horizontal=True
-    )
+    render_shift_plan_component(sol)
 
-    if display_mode == "Custom HTML Tabelle":
-        render_shift_plan_component(sol)
-    else:
-        st.dataframe(soluation_to_dataframe(sol), key="shiftplan")
+    st.write("### Vorherige Lösungen (absteigend)")
+    for i, sol in enumerate(reversed(st.session_state[SSN.solutions.name][:-1])):
+        render_shift_plan_component(sol, read_only=True, index=i + 1)
