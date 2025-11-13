@@ -4,46 +4,75 @@ from concurrent.futures import ThreadPoolExecutor
 import streamlit as st
 
 from ... import shift_vars, solution, solver
-from ...inputTypes import instace
 from .session_state_names import Session_state_Names as SSN
-from .show_constraints import show_active_constraints
 
 
-def solve_in_thread(
-    instance: instace.Instance,
-    disabled_constraints: list[solver.SolverConstraints] = [],
-    timeout_seconds: float = 60.0,
-) -> solution.Solution:
+def solve_warm_start(**kwargs) -> solution.Solution:
     """Führt den Solver in einem separaten Thread aus"""
+    instance = kwargs["instance"]
+    disabled_constraints = kwargs["disabled_constraints"]
+
+    # TODO warm start implement
+    old_solution = kwargs["old_solution"]
     sol = solver.Solver(instance, shift_vars.Shift_vars(instance))
     sol = sol.solve(
         log_search_progress=False,
         disabled_constraints=disabled_constraints,
-        max_time_in_seconds=timeout_seconds,
+        max_time_in_seconds=kwargs["timeout_seconds"],
+    )
+
+    sol.to_json_file(instance.name)
+    return sol
+
+
+def solve(**kwargs) -> solution.Solution:
+    """Führt den Solver in einem separaten Thread aus"""
+    instance = kwargs["instance"]
+    disabled_constraints = kwargs["disabled_constraints"]
+    sol = solver.Solver(instance, shift_vars.Shift_vars(instance))
+    sol = sol.solve(
+        log_search_progress=False,
+        disabled_constraints=disabled_constraints,
+        max_time_in_seconds=kwargs["timeout_seconds"],
     )
     sol.to_json_file(instance.name)
     return sol
+
+
+def run_solver_in_thread(solve_funktion=solve, **kwargs):
+    # Speichere den aktuellen Timeout-Wert
+    st.session_state[SSN.solver_running.name] = True
+    st.session_state[SSN.allow_resolve.name] = False
+    st.session_state[SSN.solver_start_time.name] = time.time()
+
+    # Start solver in a subprocess
+    executor = ThreadPoolExecutor()
+    future = executor.submit(solve_funktion, **kwargs)
+
+    st.session_state[SSN.solver_executor.name] = executor
+    st.session_state[SSN.solver_future.name] = future
+    st.rerun()
 
 
 def show():
     st.title("⚙️ Solver")
     st.write("Konfiguriere und starte den Solver.")
 
-    if (
-        st.session_state[SSN.solutions.name] != []
-        and not st.session_state[SSN.allow_resolve.name]
-        and not st.session_state[SSN.solver_running.name]
-    ):
-        st.success("✅ Der Solver hat eine Lösung gefunden!")
+    # if (
+    #     st.session_state[SSN.solutions.name] != []
+    #     and not st.session_state[SSN.allow_resolve.name]
+    #     and not st.session_state[SSN.solver_running.name]
+    # ):
+    #     st.success("✅ Der Solver hat eine Lösung gefunden!")
 
-        # Zeige die aktiven Constraints der aktuellen Lösung
-        sol = st.session_state[SSN.solutions.name][-1]
-        show_active_constraints(sol)
+    #     # Zeige die aktiven Constraints der aktuellen Lösung
+    #     sol = st.session_state[SSN.solutions.name][-1]
+    #     show_active_constraints(sol)
 
-        st.info(
-            "💡 Gehe zur Solution-Seite um das Ergebnis zu sehen oder starte die Anwendung neu, um den Solver erneut zu verwenden."
-        )
-        return
+    #     st.info(
+    #         "💡 Gehe zur Solution-Seite um das Ergebnis zu sehen oder starte die Anwendung neu, um den Solver erneut zu verwenden."
+    #     )
+    #     return
 
     # Solver configuration
     st.subheader("Solver Einstellungen")
@@ -61,6 +90,7 @@ def show():
         help="Maximale Zeit in Sekunden, die der Solver laufen soll. Standard: 60 Sekunden (1 Minute)",
         key="timeout_input",
     )
+    st.session_state[SSN.solver_timeout.name] = timeout_seconds
 
     if SSN.disabled_constraints.name not in st.session_state:
         st.session_state[SSN.disabled_constraints.name] = {}
@@ -91,14 +121,13 @@ def show():
     toggle_constraint(solver.SolverConstraints.shift_assignment_single_day_validation)
     toggle_constraint(solver.SolverConstraints.shift_rotation_constraint)
 
+    st.session_state[SSN.disabled_constraints.name] = disabled_constraints_value
     disabled_constraints: list[solver.SolverConstraints] = []
     for key, value in disabled_constraints_value.items():
         if not value:
             disabled_constraints.append(key)
 
     if SSN.instance.name in st.session_state:
-        instance = st.session_state[SSN.instance.name]
-
         # Initialize solver state
         if SSN.solver_running.name not in st.session_state:
             st.session_state[SSN.solver_running.name] = False
@@ -109,31 +138,37 @@ def show():
         if SSN.solver_start_time.name not in st.session_state:
             st.session_state[SSN.solver_start_time.name] = None
 
-        # Run solver button
-        if st.button(
-            "Solver starten",
-            type="primary",
-            disabled=st.session_state[SSN.solver_running.name],
-            key="start_solver_button",
+        if (
+            len(st.session_state[SSN.solutions.name]) == 0
+            or st.session_state[SSN.allow_resolve.name]
         ):
-            # Speichere den aktuellen Timeout-Wert
-            st.session_state[SSN.solver_timeout.name] = timeout_seconds
-            st.session_state[SSN.solver_running.name] = True
-            st.session_state[SSN.allow_resolve.name] = False
-            st.session_state[SSN.solver_start_time.name] = time.time()
+            if st.button(
+                "Solver starten",
+                type="primary",
+                disabled=st.session_state[SSN.solver_running.name],
+                key="start_solver_button",
+            ):
+                run_solver_in_thread(
+                    solve_funktion=solve,
+                    instance=st.session_state[SSN.instance.name],
+                    disabled_constraints=disabled_constraints,
+                    timeout_seconds=st.session_state[SSN.solver_timeout.name],
+                )
 
-            # Start solver in a subprocess
-            executor = ThreadPoolExecutor()
-            future = executor.submit(
-                solve_in_thread,
-                instance,
-                disabled_constraints,
-                timeout_seconds,
-            )
-
-            st.session_state[SSN.solver_executor.name] = executor
-            st.session_state[SSN.solver_future.name] = future
-            st.rerun()
+        if len(st.session_state[SSN.solutions.name]) > 0:
+            if st.button(
+                "Warm start",
+                type="primary",
+                disabled=st.session_state[SSN.solver_running.name],
+                key="warm_start_solver_button",
+            ):
+                run_solver_in_thread(
+                    solve_funktion=solve_warm_start,
+                    instance=st.session_state[SSN.instance.name],
+                    disabled_constraints=disabled_constraints,
+                    old_solution=st.session_state[SSN.solutions.name][-1],
+                    timeout_seconds=st.session_state[SSN.solver_timeout.name],
+                )
 
         # Check if solver is running
         if st.session_state[SSN.solver_running.name]:
