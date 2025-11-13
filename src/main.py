@@ -8,20 +8,16 @@ from .parseData import parseTXT
 from .shift_vars import Shift_vars
 from .solver import Solver
 from src.help_functions import compare_solutions
+from src.solution import Solution
 
 
 def test_compare_solutions():
-    res = compare_solutions(
-        "data/solutions/Instance1.json",
-        "data/solutions/Instance2.json",
-        include_details=True,
-    )
+    sol_a = Solution.from_json_file("Instance1")
+    sol_b = Solution.from_json_file("Instance2")
 
-    print("Mitarbeiter mit Änderungen:", res["employees_with_changes"])
-    print("Insgesamt geänderte Tagesschichten:", res["total_changed_days"])
-    # Details:
-    # for emp_uid, info in res["per_employee_changes"].items():
-    #     print(emp_uid, info["name"], "-> geänderte Tage:", info["num_changed_days"])
+    result = compare_solutions(sol_a, sol_b, include_details=True)
+    print(f"Mitarbeiter mit Änderungen: {result['employees_with_changes']}")
+    print(f"Insgesamt geänderte Tagesschichten: {result['total_changed_days']}")
 
 
 def sayHello(name="World") -> str:

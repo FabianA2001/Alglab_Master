@@ -7,11 +7,9 @@ def hash_string(s: str) -> int:
     return int(hashlib.md5(s.encode()).hexdigest(), 16)
 
 
-def compare_solutions(
-    path_a: str, path_b: str, *, include_details: bool = True
-) -> dict:
+def compare_solutions(solution_a, solution_b, *, include_details: bool = True) -> dict:
     """
-    Vergleicht zwei Solution-JSON-Dateien und liefert zusammenfassende Informationen
+    Vergleicht zwei Solution-Objekte und liefert zusammenfassende Informationen
     darüber, wie viele Mitarbeitende an wie vielen Tagen andere Schichten hätten.
 
     Rückgabe (Beispiel):
@@ -26,60 +24,33 @@ def compare_solutions(
     }
 
     Args:
-        path_a: Pfad zur ersten Solution-Datei (ältere Version)
-        path_b: Pfad zur zweiten Solution-Datei (neuere Version)
+        solution_a: Solution-Objekt (ältere Version)
+        solution_b: Solution-Objekt (neuere Version)
         include_details: Falls True, werden pro-Employee-Details und per-day counts
                          mitgeliefert. Sonst nur summary counts.
     """
-    import json
-    from pathlib import Path
 
-    def _load(path: str) -> dict:
-        p = Path(path)
-        with p.open("r", encoding="utf-8") as f:
-            return json.load(f)
-
-    def _build_assignments(data: dict) -> tuple[dict, int, dict]:
+    def _build_assignments(solution) -> tuple[dict, int, dict]:
         """Gibt zurück: assignments(emp_uid -> {day: shift_uid}), number_of_days, employee_names"""
-        vars_map = data.get("vars", {})
+        vars_map = solution.vars
         assignments: dict[int, dict[int, int]] = {}
-        # keys may be strings like 'day,shift_uid,employee_uid' or already tuples
-        for k, v in vars_map.items():
+        # vars ist ein dict mit tuple-keys (day, shift_uid, emp_uid) -> value
+        for (day, shift_uid, emp_uid), v in vars_map.items():
             if not v:
-                continue
-            if isinstance(k, str):
-                parts = k.split(",")
-            else:
-                # likely a list/tuple from deserialized pydantic
-                parts = list(k)
-            if len(parts) != 3:
-                continue
-            try:
-                day = int(parts[0])
-                shift_uid = int(parts[1])
-                emp_uid = int(parts[2])
-            except Exception:
                 continue
             if v == 1:
                 assignments.setdefault(emp_uid, {})[day] = shift_uid
 
-        num_days = data.get("instance", {}).get("number_of_days")
+        num_days = solution.instance.number_of_days
         # employee names mapping
         emp_names = {}
-        for k, info in data.get("instance", {}).get("employees", {}).items():
-            try:
-                uid = int(k)
-            except Exception:
-                uid = int(info.get("uid")) if info.get("uid") is not None else k
-            emp_names[uid] = info.get("name")
+        for emp_uid, emp_obj in solution.instance.employees.items():
+            emp_names[emp_uid] = emp_obj.name
 
         return assignments, num_days or 0, emp_names
 
-    a = _load(path_a)
-    b = _load(path_b)
-
-    assign_a, days_a, names_a = _build_assignments(a)
-    assign_b, days_b, names_b = _build_assignments(b)
+    assign_a, days_a, names_a = _build_assignments(solution_a)
+    assign_b, days_b, names_b = _build_assignments(solution_b)
 
     max_days = max(days_a or 0, days_b or 0)
 
@@ -125,7 +96,6 @@ def compare_solutions(
         "total_changed_days": total_changed_days,
     }
     # if include_details:
-    #     result = {}
     #     result["per_employee_changes"] = per_employee_changes
     #     result["per_day_changes"] = per_day_changes
 
