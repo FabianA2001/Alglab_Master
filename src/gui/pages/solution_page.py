@@ -4,7 +4,7 @@ from pathlib import Path
 import streamlit as st
 
 from ... import solution
-from ...help_functions import hash_string
+from ...help_functions import compare_solutions, hash_string
 from .component_solution import my_component
 from .session_state_names import Session_state_Names as SSN
 from .show_constraints import show_active_constraints, show_constraint_violations
@@ -123,17 +123,55 @@ def render_shift_plan_component(
         st.session_state[SSN.allow_resolve.name] = True
 
 
+def show_compare_solutions():
+    if len(st.session_state[SSN.solutions.name]) < 2:
+        st.info("Es sind mindestens zwei Lösungen erforderlich, um sie zu vergleichen.")
+        return
+    com = compare_solutions(
+        st.session_state[SSN.solutions.name][-2],
+        st.session_state[SSN.solutions.name][-1],
+        include_details=True,
+    )
+
+    # Zeige Zusammenfassung in einer Tabelle
+    st.write("### Lösungsvergleich")
+    summary_data = {
+        "Metrik": ["Mitarbeiter mit Änderungen", "Gesamtzahl geänderter Tage"],
+        "Wert": [
+            com.get("employees_with_changes", 0),
+            com.get("total_changed_days", 0),
+        ],
+    }
+    st.table(summary_data)
+
+    # Zeige Details pro Mitarbeiter, falls vorhanden
+    if "per_employee_changes" in com and com["per_employee_changes"]:
+        st.write("#### Änderungen pro Mitarbeiter")
+        employee_data = []
+        for emp_uid, emp_data in com["per_employee_changes"].items():
+            employee_data.append(
+                {
+                    "Mitarbeiter ID": emp_uid,
+                    "Name": emp_data.get("name", "Unbekannt"),
+                    "Anzahl geänderter Tage": emp_data.get("num_changed_days", 0),
+                }
+            )
+        st.dataframe(employee_data, use_container_width=True)
+
+    # Zeige Details pro Tag, falls vorhanden
+    if "per_day_changes" in com and com["per_day_changes"]:
+        st.write("#### Änderungen pro Tag")
+        day_data = []
+        for day, count in sorted(com["per_day_changes"].items()):
+            if count > 0:  # Nur Tage mit Änderungen anzeigen
+                day_data.append({"Tag": day, "Anzahl Änderungen": count})
+        if day_data:
+            st.dataframe(day_data, use_container_width=True)
+
+
 def show():
     st.title("✅ Solution")
     # Check if solution exists in session state
-    if (
-        SSN.solutions.name not in st.session_state
-        or st.session_state[SSN.solutions.name] == []
-    ):
-        st.warning(
-            "Keine Lösung verfügbar. Bitte zuerst den Solver ausführen oder eine Lösung auswählen."
-        )
-
     # TODO Discuss if always show solution selector or only when no solution in session state
     available_solutions = []
     if SOLUTION_DIR.exists():
@@ -154,6 +192,15 @@ def show():
         st.info("Keine gespeicherten Lösungen gefunden.")
         return
 
+    if (
+        SSN.solutions.name not in st.session_state
+        or st.session_state[SSN.solutions.name] == []
+    ):
+        st.warning(
+            "Keine Lösung verfügbar. Bitte zuerst den Solver ausführen oder eine Lösung auswählen."
+        )
+        return
+
     sol = st.session_state[SSN.solutions.name][-1]
 
     st.write("### Objective Value")
@@ -172,3 +219,5 @@ def show():
     st.write("### Vorherige Lösungen (absteigend)")
     for i, sol in enumerate(reversed(st.session_state[SSN.solutions.name][:-1])):
         render_shift_plan_component(sol, read_only=True, index=i + 1)
+
+    show_compare_solutions()
