@@ -190,24 +190,16 @@ class Solver:
     def warm_start(
         self,
         solution: Solution,
-        total_above_dict: dict[tuple[int, shiftType.TypeUid], int],
-        total_below_dict: dict[tuple[int, shiftType.TypeUid], int],
+        instance: instace.Instance,
+        disabled_constraints: list[SolverConstraints] = [],
     ) -> Solution:
         """Warm starts the solver with a given solution."""
-        for day in range(self.instance.number_of_days):
-            for type_uid in self.instance.shifts[day]:
-                for employee_uid in self.instance.employees:
+        self.instance = instance
+        for day in range(instance.number_of_days):
+            for type_uid in instance.shifts[day]:
+                for employee_uid in instance.employees:
                     var_value = solution.vars[(day, type_uid, employee_uid)] == 1
                     self.vars.model.AddHint(
                         self.vars.get_var(day, type_uid, employee_uid), var_value
                     )
-        for day in range(self.instance.number_of_days):
-            for type_uid in self.instance.shifts[day]:
-                self.instance.get_shift(
-                    day, type_uid
-                ).weight_above_preferred = total_above_dict[day, type_uid]
-                self.instance.get_shift(
-                    day, type_uid
-                ).weight_below_preferred = total_below_dict[day, type_uid]
-
-        return self.solve()
+        return self.solve(disabled_constraints=disabled_constraints)
