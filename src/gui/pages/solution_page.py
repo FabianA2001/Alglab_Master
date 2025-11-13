@@ -14,6 +14,19 @@ SOLUTION_DIR = (
 )
 
 
+def on_change_solution():
+    try:
+        loaded_solution = solution.Solution.from_json_file(
+            st.session_state.solution_selectbox
+        )
+        st.session_state[SSN.solutions.name].append(loaded_solution)
+        st.success(
+            f"Lösung '{st.session_state.solution_selectbox}' erfolgreich geladen!"
+        )
+    except Exception as e:
+        st.error(f"Fehler beim Laden der Lösung: {e}")
+
+
 def add_minutes_to_time(start_time: time, minutes: int) -> time:
     """Addiert Minuten zu einer time und gibt die neue time zurück."""
     total_minutes = start_time.hour * 60 + start_time.minute + minutes
@@ -78,19 +91,21 @@ def solution_to_html_data(sol: solution.Solution) -> dict:
     }
 
 
-def render_shift_plan_component(sol: solution.Solution, read_only: bool = False):
+def render_shift_plan_component(
+    sol: solution.Solution, read_only: bool = False, index=0
+):
     """Rendert die Custom HTML/JS Komponente für den Shift Plan"""
     import json
 
     # Konvertiere Lösung in JSON-Format
     shift_plan_data = solution_to_html_data(sol)
-
+    extra_options = {"read_only": read_only}
     response_cover_requirement = my_component.my_component(
-        "shift_plan_component",
+        f"shift_plan_component_{index}",
         render_option="shift_plan_solution",
         data=json.dumps(shift_plan_data),
+        extra_options=json.dumps(extra_options),
     )
-    # TODO Disable button when read_only is True
     if read_only:
         return
     st.markdown(f"The selected employee is: {response_cover_requirement}")
@@ -102,6 +117,7 @@ def render_shift_plan_component(sol: solution.Solution, read_only: bool = False)
                 instance.shifts[int(day)][
                     hash_string(shift_type)
                 ].weight_below_preferred = int(value)
+                instance.name = instance.name + "eddited_cover_requirements"
         st.session_state[SSN.instance.name] = instance
         st.success("Instance updated with new cover requirements from component.")
         st.session_state[SSN.allow_resolve.name] = True
@@ -121,34 +137,29 @@ def show():
         # Dropdown-Menü für fertige Lösungen
         st.write("### Gespeicherte Lösungen laden")
 
-        # Liste aller verfügbaren Lösungsdateien
-        available_solutions = []
-        if SOLUTION_DIR.exists():
-            available_solutions = [f.stem for f in SOLUTION_DIR.glob("*.json")]
-            available_solutions.sort()
+    # Liste aller verfügbaren Lösungsdateien
+    available_solutions = []
+    if SOLUTION_DIR.exists():
+        available_solutions = [f.stem for f in SOLUTION_DIR.glob("*.json")]
+        available_solutions.sort()
 
-        if available_solutions:
-            selected_solution = st.selectbox(
-                "Wähle eine gespeicherte Lösung:",
-                options=[""] + available_solutions,
-                index=0,
-                help="Wähle eine Lösung aus dem Dropdown-Menü",
-            )
+    if available_solutions:
+        st.selectbox(
+            "Wähle eine gespeicherte Lösung:",
+            options=[""] + available_solutions,
+            key="solution_selectbox",
+            index=0,
+            help="Wähle eine Lösung aus dem Dropdown-Menü",
+            on_change=on_change_solution,
+        )
 
-            if selected_solution:
-                try:
-                    loaded_solution = solution.Solution.from_json_file(
-                        selected_solution
-                    )
-                    st.session_state[SSN.solutions.name].append(loaded_solution)
-                    st.success(f"Lösung '{selected_solution}' erfolgreich geladen!")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Fehler beim Laden der Lösung: {e}")
-        else:
-            st.info("Keine gespeicherten Lösungen gefunden.")
-
+        if st.session_state[SSN.solutions.name] == []:
+            st.info("Bitte wähle eine Lösung aus dem Dropdown-Menü.")
+            return
+    else:
+        st.info("Keine gespeicherten Lösungen gefunden.")
         return
+
     sol = st.session_state[SSN.solutions.name][-1]
 
     st.write("### Objective Value")
@@ -165,6 +176,5 @@ def show():
     render_shift_plan_component(sol)
 
     st.write("### Vorherige Lösungen (absteigend)")
-
-    for sol in reversed(st.session_state[SSN.solutions.name][:-1]):
-        render_shift_plan_component(sol, read_only=True)
+    for i, sol in enumerate(reversed(st.session_state[SSN.solutions.name][:-1])):
+        render_shift_plan_component(sol, read_only=True, index=i + 1)
