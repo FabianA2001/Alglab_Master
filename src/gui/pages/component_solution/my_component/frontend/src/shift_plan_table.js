@@ -274,3 +274,12 @@ export function reset_dataDict() {
     dataDict = {};
     reset_cover_requirement_options();
 }
+
+export function set_coverage_unchangable() {
+    const checkboxes = document.querySelectorAll('input[type="checkbox"].cover-requirement-checkbox');
+    console.log("checkboxes")
+    console.log(checkboxes)
+    checkboxes.forEach((checkbox) => {
+        checkbox.disabled = true;
+    });
+}
