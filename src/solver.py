@@ -3,7 +3,7 @@ from datetime import datetime
 from ortools.sat.python import cp_model
 
 from . import shift_vars
-from .inputTypes import instace, shiftType
+from .inputTypes import instace
 from .module import (
     cover_requirements,
     days_off,
@@ -192,6 +192,7 @@ class Solver:
         solution: Solution,
         instance: instace.Instance,
         disabled_constraints: list[SolverConstraints] = [],
+        max_time_in_seconds: float = 60.0,
     ) -> Solution:
         """Warm starts the solver with a given solution."""
         self.instance = instance
@@ -202,4 +203,7 @@ class Solver:
                     self.vars.model.AddHint(
                         self.vars.get_var(day, type_uid, employee_uid), var_value
                     )
-        return self.solve(disabled_constraints=disabled_constraints)
+        return self.solve(
+            disabled_constraints=disabled_constraints,
+            max_time_in_seconds=max_time_in_seconds,
+        )

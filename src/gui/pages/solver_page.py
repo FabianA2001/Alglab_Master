@@ -16,7 +16,10 @@ def solve_warm_start(**kwargs) -> solution.Solution:
     old_solution = kwargs["old_solution"]
     sol = solver.Solver(instance, shift_vars.Shift_vars(instance))
     sol = sol.warm_start(
-        old_solution, instance, disabled_constraints=disabled_constraints
+        old_solution,
+        instance,
+        disabled_constraints=disabled_constraints,
+        max_time_in_seconds=kwargs["timeout_seconds"],
     )
 
     sol.to_json_file(instance.name)
