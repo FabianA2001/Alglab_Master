@@ -43,7 +43,9 @@ else:
 # `declare_component` and call it done. The wrapper allows us to customize
 # our component's API: we can pre-process its input args, post-process its
 # output value, and add a docstring for users.
-def my_component(name, key=None, render_option="default", data=None):
+def my_component(
+    name, key=None, render_option="default", data=None, extra_options=None
+):
     """Create a new instance of "my_component".
 
     Parameters
@@ -74,7 +76,12 @@ def my_component(name, key=None, render_option="default", data=None):
     # "default" is a special argument that specifies the initial return
     # value of the component before the user has interacted with it.
     component_value = _component_func(
-        name=name, key=key, render_option=render_option, data=data, default={}
+        name=name,
+        key=key,
+        render_option=render_option,
+        data=data,
+        extra_options=extra_options,
+        default={},
     )
 
     # We could modify the value returned from the component if we wanted.
