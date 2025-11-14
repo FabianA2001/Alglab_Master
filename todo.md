@@ -10,21 +10,24 @@
 
 - rename solution to report
 
-- gui edit Timeout
 
 - edit gui for solution edit:
-    - **edit weight/prioriti for cover requierments**
-        - edit weight
-        - button height priorite (change weight by x)
-        - *report info if shift changed*
-    - *(block emploeey an day d)*
-    - *(force emploeey an day d)*
+    - min weight (soft)
+    - max weight (soft)
+    - block emploeey X (hard)
+    - assing emploeey X (hard)
 
-- edit solution
-    - edit instance restart
-    - 
-    - lazey Constrined
-    - warm start
+    - (min assinged (hard))
+    - (max assinged (hard))
+
+- instance scaling 
+    - large neighborhood search
+
+- minimize changes
+
+- *better constraints*
+- *all shifts min half*
+
 
 
 https://d-krupke.github.io/cpsat-primer/test_driven_optimization.html#full-solver
