@@ -48,7 +48,7 @@ function onRender(event: Event): void {
               const observer_add_cover_button = new MutationObserver(() => {
               const tableInfo = document.getElementById("tableInfo");
                     if (tableInfo) {
-                        tableInfo.insertAdjacentHTML('afterend', `<button id="submit_cover_change">Submit Cover Changes</button>`); // Call the function to add the button
+                        tableInfo.insertAdjacentHTML('afterend', `<button id="submit_cover_change">Submit Changes</button>`); // Call the function to add the button
                         observer_add_cover_button.disconnect(); // Stop observing once the button is added
                     }
                 }

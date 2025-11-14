@@ -106,7 +106,7 @@ def render_shift_plan_component(
     # Konvertiere Lösung in JSON-Format
     shift_plan_data = solution_to_html_data(sol)
     extra_options = {"read_only": read_only}
-    response_cover_requirement = my_component.my_component(
+    solution_changes_response = my_component.my_component(
         f"shift_plan_component_{index}",
         render_option="shift_plan_solution",
         data=json.dumps(shift_plan_data),
@@ -114,10 +114,10 @@ def render_shift_plan_component(
     )
     if read_only:
         return
-    st.markdown(f"The selected employee is: {response_cover_requirement}")
-    if response_cover_requirement != {}:
+    st.markdown(f"The selected employee is: {solution_changes_response}")
+    if "cover_weights" in solution_changes_response:
         instance = sol.instance.model_copy(deep=True)
-        for day, shift_type_dict in response_cover_requirement.items():
+        for day, shift_type_dict in solution_changes_response["cover_weights"].items():
             for shift_type, value in shift_type_dict.items():
                 # TODO what about weight_above_preferred?
                 instance.shifts[int(day)][

@@ -58,14 +58,6 @@
     color: black; 
 }
 
-.employee-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    justify-content: center; /* Center horizontally */
-}
-
-
 .shift-plan-table .shift-type-header {
     width: 120px; /* Minimum width for shift type header */
     max-width: 120px; 
@@ -126,11 +118,7 @@
     border-bottom: 1px solid #e0e0e0;
 }
 
-.removed-employee-list {
-    display: flex; /* Flex for checkbox and text field align */
-    align-items: center; /* Center items vertically */
-    margin-top: 5px;
-    padding-bottom: 6px;
+.employee-list {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
