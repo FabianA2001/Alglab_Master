@@ -184,10 +184,74 @@ function renderTable(shiftPlanData) {
             // Create container for removed employees add it the end
             const removedEmployeeList = document.createElement('div');
             removedEmployeeList.className = 'removed-employee-list';
+            const employeeList = document.createElement('div');
+            employeeList.className = 'employee-list';
+
+            // Create a new employee badge container for adding employees
+            const addEmployeeContainer = document.createElement('div');
+            addEmployeeContainer.className = 'employee-badge-container';
+
+            // Create a button for adding employees
+            const addEmployeeButton = document.createElement('button');
+            addEmployeeButton.textContent = 'Add Employee';
+            addEmployeeButton.className = 'add-employee-button';
+
+            // Create a dropdown for employee selection
+            const selectionContainer = document.createElement('div');
+            selectionContainer.className = 'employee-selection-container';
+            selectionContainer.style.display = 'none'; // Initially hidden
+            selectionContainer.style.position = 'absolute'; // Position it absolutely
+
+            // Sample list of potential employees (replace with your employee data)
+            const employeeOptions = shiftPlanData.employee_names.filter(item => !employees.includes(item));
+
+            employeeOptions.forEach(empName => {
+                const option = document.createElement('div');
+                option.className = 'employee-option';
+                option.textContent = empName;
+
+                // Event listener to add the selected employee without removing functionality
+                option.addEventListener('click', () => {
+                    const badgeContainer = document.createElement('div');
+                    option.id = `option-${empName}`;
+                    badgeContainer.className = 'employee-badge-container';
+
+                    const badge = document.createElement('span');
+                    badge.className = 'added-employee-badge';
+                    badge.textContent = empName;
+
+                    const removeButton = document.createElement('span');
+                    removeButton.innerHTML = '&times;';
+                    removeButton.className = 'added-employee-remove-button';
+                    addEmployee(option, empName, day, shiftTypeInfo.name)
+
+                    // Event listener for removing employee
+                    removeButton.addEventListener('click', () => {
+                        removeEmployee(badgeContainer, empName, day, shiftTypeInfo.name);
+                        option.style.display = 'block';
+                    });
+
+                    badgeContainer.appendChild(badge);
+                    badgeContainer.appendChild(removeButton);
+                    employeeList.appendChild(badgeContainer);
+                    selectionContainer.style.display = 'none'; // Hide options after selection
+                });
+
+                selectionContainer.appendChild(option);
+            });
+
+            // Event listener for the Add Employee button
+            addEmployeeButton.addEventListener('click', () => {
+                // Toggle visibility of the selection container
+                selectionContainer.style.display = selectionContainer.style.display === 'none' ? 'block' : 'none';
+            });
+
+            // Append elements to the badge container
+            addEmployeeContainer.appendChild(addEmployeeButton);
+            addEmployeeContainer.appendChild(selectionContainer);
+            employeeList.appendChild(addEmployeeContainer);
 
             if (employees && employees.length > 0) {
-                const employeeList = document.createElement('div');
-                employeeList.className = 'employee-list';
 
                 employees.forEach((empName, index) => {
                     const badgeContainer = document.createElement('div');
@@ -204,7 +268,7 @@ function renderTable(shiftPlanData) {
 
                     // Event listener for removing employee
                     removeButton.addEventListener('click', () => {
-                        moveToRemovedList(badgeContainer, empName, removedEmployeeList, day, shiftTypeInfo.name);
+                        moveToRemovedList(badgeContainer, removedEmployeeList, empName, day, shiftTypeInfo.name);
                     });
 
                     badgeContainer.appendChild(badge);
@@ -300,7 +364,7 @@ export function set_coverage_unchangable() {
 }
 
 
-function moveToRemovedList(badge, empName, removedEmployeeList, day, shiftType) {
+function moveToRemovedList(badge, removedEmployeeList, empName, day, shiftType) {
     // Add employee to dataDict as removed
     if (!dataDict["removed_employees"]) {
         dataDict["removed_employees"] = {};
@@ -333,7 +397,7 @@ function moveToRemovedList(badge, empName, removedEmployeeList, day, shiftType) 
 
     // Event listener for re-adding employee
     reAddButton.addEventListener('click', () => {
-        reAddEmployee(removedBadge, empName, childBadge, parentList, day, shiftType);
+        reAddEmployee(removedBadge, childBadge, parentList, empName, day, shiftType);
     });
 
     // Append badge and button to the badge container
@@ -345,7 +409,7 @@ function moveToRemovedList(badge, empName, removedEmployeeList, day, shiftType) 
     console.log(dataDict)
 }
 
-function reAddEmployee(removedBadge, empName, childBadge, badgeParent, day, shiftType) {
+function reAddEmployee(removedBadge, childBadge, badgeParent, empName, day, shiftType) {
     // Remove from the removed employee list
     const badgeContainer = removedBadge.parentElement; // Get the existing badge container
     badgeContainer.remove(); // Remove the badge container from the removed list
@@ -356,9 +420,66 @@ function reAddEmployee(removedBadge, empName, childBadge, badgeParent, day, shif
         if (removedIndex > -1) {
             dataDict["removed_employees"][day][shiftType].splice(removedIndex, 1); // Remove from removed employees
         }
+        // Check if the inner list is empty
+        if (dataDict["removed_employees"][day][shiftType].length === 0) {
+            delete dataDict["removed_employees"][day][shiftType]; // Remove the day entry
+            
+            // Check if all days are removed
+            if (Object.keys(dataDict["removed_employees"][day]).length === 0) {
+                delete dataDict["removed_employees"][day]; // Remove the day entirely if empty
+            }
+        }
+
+        // Check if removed_employees is completely empty
+        if (Object.keys(dataDict["removed_employees"]).length === 0) {
+            delete dataDict["removed_employees"]; // Remove the added_employees object if empty
+        }
     }
     console.log(badgeParent)
     // Append the existing badge container back to the original employee list
     badgeParent.appendChild(childBadge);
     console.log(dataDict)
+}
+
+
+function addEmployee(option, empName, day, shiftType){
+    // Add employee to dataDict as removed
+    if (!dataDict["added_employees"]) {
+        dataDict["added_employees"] = {};
+    }
+    if (!dataDict["added_employees"][day]) {
+        dataDict["added_employees"][day] = {};
+    }
+    if (!dataDict["added_employees"][day][shiftType]) {
+        dataDict["added_employees"][day][shiftType] = [];
+    }
+    dataDict["added_employees"][day][shiftType].push(empName); // Add to removed employees list
+    console.log(dataDict["added_employees"])
+    option.style.display = 'none';
+}
+
+function removeEmployee(badgeContainer, empName, day, shiftType) {
+    badgeContainer.remove();
+        // Remove employee from dataDict
+    if (dataDict["added_employees"] && dataDict["added_employees"][day] && dataDict["added_employees"][day][shiftType]) {
+        const addedIndex = dataDict["added_employees"][day][shiftType].indexOf(empName);
+        if (addedIndex > -1) {
+            dataDict["added_employees"][day][shiftType].splice(addedIndex, 1); // Remove from added employees
+        }
+        // Check if the inner list is empty
+        if (dataDict["added_employees"][day][shiftType].length === 0) {
+            delete dataDict["added_employees"][day][shiftType]; // Remove the day entry
+            
+            // Check if all days are removed
+            if (Object.keys(dataDict["added_employees"][day]).length === 0) {
+                delete dataDict["added_employees"][day]; // Remove the day entirely if empty
+            }
+        }
+
+        // Check if added_employees is completely empty
+        if (Object.keys(dataDict["added_employees"]).length === 0) {
+            delete dataDict["added_employees"]; // Remove the added_employees object if empty
+        }
+    }
+    console.log(dataDict["added_employees"])
 }

@@ -84,10 +84,16 @@ def solution_to_html_data(sol: solution.Solution) -> dict:
             )
         data.append(row)
 
+    # create a list of employee names
+    employee_names = []
+    for employee in sol.instance.employees.values():
+        employee_names.append(employee.name)
+
     return {
         "shift_types_info": shift_types_info,
         "num_days": sol.instance.number_of_days,
         "data": data,
+        "employee_names": employee_names,
     }
 
 

@@ -7,8 +7,8 @@
 .shift-plan-container {
     width: 100%;
     overflow-x: auto;
-    overflow-y: auto;
-    max-height: 400px;
+    overflow-y: hidden;
+    max-height: none;
     background: white;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -83,18 +83,32 @@
     justify-content: center;
 }
 
-.employee-badge, .remove-employee-button {
+.employee-badge, .removed-employee-badge
+, .added-employee-badge, .remove-employee-button
+, .employee-option, .add-employee-button
+, .added-employee-remove-button
+, .re-add-employee-button{
     padding: 4px 8px; /* Badge padding */
     border-radius: 4px; /* Badge border radius */
     font-size: 0.85em; /* Badge font size */
     background-color: #e3f2fd; /* Light blue background for employee badges */
     color: #1976d2; /* Blue text color for employee badges */
 }
+.added-employee-badge, .added-employee-remove-button {
+    background-color: #b2e0b2; /* Soft mint green background */
+    color: #4a7c4a; /* Muted dark green text */
+}
+.employee-option, .add-employee-button, .added-employee-remove-button {
+    width: 110px; /* Minimum width for day headers */
+    max-width: 110px;
+    box-sizing: border-box; /* Include padding in width calculations */
+    cursor: pointer; /* Pointer cursor for interactivity */
+}
+.add-employee-button{
+    border: 1px solid #1976d2;
+}
 
 .removed-employee-badge, .re-add-employee-button {
-    padding: 4px 8px; /* Badge padding */
-    border-radius: 4px; /* Badge border radius */
-    font-size: 0.85em; /* Badge font size */
     background-color: #ffccbc; /* Light red background for removed badges */
     color: #c62828; /* Dark red text color for removed badges */
 }
@@ -117,6 +131,10 @@
     align-items: center; /* Center items vertically */
     margin-top: 5px;
     padding-bottom: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center; /* Center horizontally */
 }
 
 .filter-input {
@@ -167,7 +185,27 @@
     cursor: pointer;
 }
 
-.re-add-employee-button:hover {
-    background-color: #d1c4e9;
+.re-add-employee-button:hover, .employee-option:hover, .add-employee-button:hover {
+    background-color: #ffffff;
     cursor: pointer;
+}
+
+.employee-selection-container {
+    max-height: 100px; /* Set a maximum height for the dropdown */
+    overflow-y: auto; /* Enable vertical scrolling */
+    width: 110px; /* Set width to match child elements */
+    position: absolute; /* Ensure it overlaps correctly */
+    z-index: 10; /* Keep it above other elements */
+    border: 1px solid #ccc; /* Add a border for visibility */
+    background-color: rgb(255, 255, 255); /* Light background for contrast */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    scrollbar-width: thin; /* Thin scrollbar in Firefox */
+    scrollbar-color: #888 #e0e0e0; /* Thumb color, track color */
+}
+
+.employee-option, .add-employee-button, .added-employee-remove-button {
+    width: 100%; /* Full width within the parent */
+    max-width: 100%; /* Stay within container width */
+    box-sizing: border-box; /* Include padding in width calculations */
+    cursor: pointer; /* Pointer cursor for interactivity */
 }
