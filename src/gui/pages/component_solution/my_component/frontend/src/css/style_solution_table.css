@@ -79,7 +79,7 @@
 , .added-employee-badge, .remove-employee-button
 , .employee-option, .add-employee-button
 , .added-employee-remove-button
-, .re-add-employee-button{
+, .re-add-employee-button, .send-day-shift{
     padding: 4px 8px; /* Badge padding */
     border-radius: 4px; /* Badge border radius */
     font-size: 0.85em; /* Badge font size */
@@ -90,13 +90,13 @@
     background-color: #b2e0b2; /* Soft mint green background */
     color: #4a7c4a; /* Muted dark green text */
 }
-.employee-option, .add-employee-button, .added-employee-remove-button {
+.employee-option, .add-employee-button, .added-employee-remove-button, .send-day-shift{
     width: 110px; /* Minimum width for day headers */
     max-width: 110px;
     box-sizing: border-box; /* Include padding in width calculations */
     cursor: pointer; /* Pointer cursor for interactivity */
 }
-.add-employee-button{
+.add-employee-button, .send-day-shift{
     border: 1px solid #1976d2;
 }
 
@@ -173,7 +173,7 @@
     cursor: pointer;
 }
 
-.re-add-employee-button:hover, .employee-option:hover, .add-employee-button:hover {
+.re-add-employee-button:hover, .employee-option:hover, .add-employee-button:hover, .send-day-shift:hover {
     background-color: #ffffff;
     cursor: pointer;
 }
@@ -191,7 +191,7 @@
     scrollbar-color: #888 #e0e0e0; /* Thumb color, track color */
 }
 
-.employee-option, .add-employee-button, .added-employee-remove-button {
+.employee-option, .add-employee-button, .added-employee-remove-button, .send-day-shift {
     width: 100%; /* Full width within the parent */
     max-width: 100%; /* Stay within container width */
     box-sizing: border-box; /* Include padding in width calculations */

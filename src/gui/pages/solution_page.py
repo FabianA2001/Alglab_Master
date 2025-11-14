@@ -106,12 +106,22 @@ def render_shift_plan_component(
     # Konvertiere Lösung in JSON-Format
     shift_plan_data = solution_to_html_data(sol)
     extra_options = {"read_only": read_only}
+    if "counter" not in st.session_state:
+        st.session_state["counter"] = 0
     solution_changes_response = my_component.my_component(
         f"shift_plan_component_{index}",
         render_option="shift_plan_solution",
         data=json.dumps(shift_plan_data),
         extra_options=json.dumps(extra_options),
     )
+    if st.button(
+        "Reset Component",
+        type="primary",
+        disabled=st.session_state[SSN.solver_running.name],
+        key="Reset_Component",
+    ):
+        st.rerun()
+
     if read_only:
         return
     st.markdown(f"The selected employee is: {solution_changes_response}")

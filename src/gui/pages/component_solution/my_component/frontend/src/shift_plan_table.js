@@ -1,6 +1,6 @@
 // Shift Plan Table JavaScript
 'use strict';
-
+import { Streamlit} from "streamlit-component-lib"
 // Verwende die Konfiguration (wird von außen geladen)
 // Shift Plan Table Configuration
 const CONFIG = {
@@ -177,7 +177,6 @@ function renderTable(shiftPlanData) {
                     if (checkbox.checked) {
                         dataDict["cover_weights"][day][shiftTypeInfo.name] = parseInt(textField.value) || 0;
                     }
-                    console.log(dataDict)
                 });
             }
             const employees = cellData.employees || cellData;
@@ -290,7 +289,20 @@ function renderTable(shiftPlanData) {
             }
             // Removed employees list
             td.appendChild(removedEmployeeList);
+            
+            const submit_day_shift = document.createElement('button');
+            submit_day_shift.textContent = 'Send day and shift';
+            submit_day_shift.className = 'send-day-shift';
 
+            // Event listener for removing employee
+            submit_day_shift.addEventListener('click', () => {
+                dataDict["change_day_shift"] = {}
+                dataDict["change_day_shift"][day] = shiftTypeInfo.name;
+                Streamlit.setComponentValue(dataDict);
+                reset_dataDict();
+            });
+
+            td.appendChild(submit_day_shift)
             tr.appendChild(td);
         }
 
@@ -352,7 +364,7 @@ function reset_cover_requirement_options() {
 }
 
 export function reset_dataDict() {
-    dataDict = {};
+    dataDict = {"cover_weights": {}, "added_employees": {}, "removed_employees": {}};
     reset_cover_requirement_options();
 }
 
@@ -402,7 +414,6 @@ function moveToRemovedList(badge, removedEmployeeList, empName, day, shiftType) 
 
     // Append badge container to the removed employee list
     removedEmployeeList.appendChild(badgeContainer);
-    console.log(dataDict)
 }
 
 function reAddEmployee(removedBadge, childBadge, badgeParent, empName, day, shiftType) {
@@ -427,10 +438,8 @@ function reAddEmployee(removedBadge, childBadge, badgeParent, empName, day, shif
         }
 
     }
-    console.log(badgeParent)
     // Append the existing badge container back to the original employee list
     badgeParent.appendChild(childBadge);
-    console.log(dataDict)
 }
 
 
@@ -442,7 +451,6 @@ function addEmployee(option, empName, day, shiftType){
         dataDict["added_employees"][day][shiftType] = [];
     }
     dataDict["added_employees"][day][shiftType].push(empName); // Add to removed employees list
-    console.log(dataDict["added_employees"])
     option.style.display = 'none';
 }
 
@@ -465,5 +473,4 @@ function removeEmployee(badgeContainer, empName, day, shiftType) {
         }
 
     }
-    console.log(dataDict["added_employees"])
 }
