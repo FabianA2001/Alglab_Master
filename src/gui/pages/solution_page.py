@@ -165,6 +165,7 @@ def show_solution_employee_changes():
     for index, solution_dict in enumerate(solutions_list):
         # for the current solution the selected part
         solution_row = {}
+        shifts_count_difference = 0
         for day, shift_dict in solution_dict["selected"].items():
             for shift_uid, employee_list in shift_dict.items():
                 if index + 1 < len(solutions_list):
@@ -172,7 +173,7 @@ def show_solution_employee_changes():
                         "deselected"
                     ][day][shift_uid]
 
-                    solution_row[f"added_to_day_{day}_shift_{shift_uid}"] = [
+                    solution_row[f"added_to_{day}_{shift_uid}"] = [
                         item
                         for item in employee_list
                         if item in select_previous_solution_list
@@ -183,16 +184,24 @@ def show_solution_employee_changes():
                     seleted_previous_solution_list = solutions_list[index + 1][
                         "selected"
                     ][day][shift_uid]
-                    solution_row[f"removed_from_day_{day}_shift_{shift_uid}"] = ""
 
-                    solution_row[f"removed_from_day_{day}_shift_{shift_uid}"] = [
+                    solution_row[f"removed_from_{day}_{shift_uid}"] = [
                         item
                         for item in deseleted_current_solution_list
                         if item in seleted_previous_solution_list
                     ]
-                    all_columns.append(f"added_to_day_{day}_shift_{shift_uid}")
-                    all_columns.append(f"removed_from_day_{day}_shift_{shift_uid}")
 
+                    solution_row[f"employ_count_{day}_{shift_uid}"] = len(
+                        employee_list
+                    ) - len(seleted_previous_solution_list)
+                    shifts_count_difference += solution_row[
+                        f"employ_count_{day}_{shift_uid}"
+                    ]
+
+                    all_columns.append(f"added_to_{day}_{shift_uid}")
+                    all_columns.append(f"removed_from_{day}_{shift_uid}")
+                    all_columns.append(f"employ_count_{day}_{shift_uid}")
+        solution_row[f"shifts_count_difference"] = shifts_count_difference
         all_rows.append(solution_row)
 
     return (pd.DataFrame(all_rows), all_columns)
