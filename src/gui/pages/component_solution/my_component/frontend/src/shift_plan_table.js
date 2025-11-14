@@ -180,23 +180,36 @@ function renderTable(shiftPlanData) {
                 });
             }
             const employees = cellData.employees || cellData;
+            
+            // Create container for removed employees add it the end
+            const removedEmployeeList = document.createElement('div');
+            removedEmployeeList.className = 'removed-employee-list';
 
             if (employees && employees.length > 0) {
                 const employeeList = document.createElement('div');
                 employeeList.className = 'employee-list';
 
-                employees.forEach(empName => {
+                employees.forEach((empName, index) => {
+                    const badgeContainer = document.createElement('div');
+                    badgeContainer.className = 'employee-badge-container';
+
                     const badge = document.createElement('span');
                     badge.className = 'employee-badge';
                     badge.textContent = empName;
+                    badge.id = `badge-${shiftTypeInfo.name}-${day}-${index}`; // Unique ID for the badge
+                    
+                    const removeButton = document.createElement('span');
+                    removeButton.innerHTML = '&times;';
+                    removeButton.className = 'remove-employee-button';
 
-                    if (filteredEmployee && empName.toLowerCase().includes(filteredEmployee.toLowerCase())) {
-                        badge.style.backgroundColor = CONFIG.colors?.highlightBadgeBackground || '#ffeb3b';
-                        badge.style.color = CONFIG.colors?.highlightBadgeText || '#000';
-                        td.style.backgroundColor = CONFIG.colors?.highlightBackground || '#fff9c4';
-                    }
+                    // Event listener for removing employee
+                    removeButton.addEventListener('click', () => {
+                        moveToRemovedList(badgeContainer, empName, removedEmployeeList, day, shiftTypeInfo.name);
+                    });
 
-                    employeeList.appendChild(badge);
+                    badgeContainer.appendChild(badge);
+                    badgeContainer.appendChild(removeButton);
+                    employeeList.appendChild(badgeContainer);
                 });
 
                 cellContainer.appendChild(employeeList);
@@ -210,6 +223,8 @@ function renderTable(shiftPlanData) {
                 cellContainer.appendChild(emptyDiv);
                 td.appendChild(cellContainer);
             }
+            // Removed employees list
+            td.appendChild(removedEmployeeList);
 
             tr.appendChild(td);
         }
@@ -282,4 +297,68 @@ export function set_coverage_unchangable() {
     checkboxes.forEach((checkbox) => {
         checkbox.disabled = true;
     });
+}
+
+
+function moveToRemovedList(badge, empName, removedEmployeeList, day, shiftType) {
+    // Add employee to dataDict as removed
+    if (!dataDict["removed_employees"]) {
+        dataDict["removed_employees"] = {};
+    }
+    if (!dataDict["removed_employees"][day]) {
+        dataDict["removed_employees"][day] = {};
+    }
+    if (!dataDict["removed_employees"][day][shiftType]) {
+        dataDict["removed_employees"][day][shiftType] = [];
+    }
+    dataDict["removed_employees"][day][shiftType].push(empName); // Add to removed employees list
+    // Remove the badge from the middle part
+    const parentList = badge.parentElement;
+    const childBadge = badge
+    badge.remove();
+
+    // Create container for the removed employee badge
+    const badgeContainer = document.createElement('div');
+    badgeContainer.className = 'employee-badge-container';
+
+    // Create a badge for removed employees
+    const removedBadge = document.createElement('span');
+    removedBadge.className = 'removed-employee-badge';
+    removedBadge.textContent = empName;
+
+    // Create a re-add button for removed employees
+    const reAddButton = document.createElement('span');
+    reAddButton.innerHTML = '&plus;'; // Use HTML entity for "+"
+    reAddButton.className = 're-add-employee-button';
+
+    // Event listener for re-adding employee
+    reAddButton.addEventListener('click', () => {
+        reAddEmployee(removedBadge, empName, childBadge, parentList, day, shiftType);
+    });
+
+    // Append badge and button to the badge container
+    badgeContainer.appendChild(removedBadge);
+    badgeContainer.appendChild(reAddButton);
+
+    // Append badge container to the removed employee list
+    removedEmployeeList.appendChild(badgeContainer);
+    console.log(dataDict)
+}
+
+function reAddEmployee(removedBadge, empName, childBadge, badgeParent, day, shiftType) {
+    // Remove from the removed employee list
+    const badgeContainer = removedBadge.parentElement; // Get the existing badge container
+    badgeContainer.remove(); // Remove the badge container from the removed list
+
+    // Remove employee from dataDict
+    if (dataDict["removed_employees"] && dataDict["removed_employees"][day] && dataDict["removed_employees"][day][shiftType]) {
+        const removedIndex = dataDict["removed_employees"][day][shiftType].indexOf(empName);
+        if (removedIndex > -1) {
+            dataDict["removed_employees"][day][shiftType].splice(removedIndex, 1); // Remove from removed employees
+        }
+    }
+    console.log(badgeParent)
+    // Append the existing badge container back to the original employee list
+    badgeParent.appendChild(childBadge);
+    console.log(dataDict)
 }

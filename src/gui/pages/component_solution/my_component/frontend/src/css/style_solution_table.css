@@ -44,6 +44,8 @@
     position: sticky;
     color: black;
     vertical-align: top;
+    min-width: 120px; /* Set a minimum width for columns */
+    max-width: 150px; /* Set a maximum width for columns */
 }
 
 .shift-plan-table tr:hover {
@@ -73,20 +75,28 @@
 }
 
 .day-header {
-    width: 100px; /* Minimum width for day headers */
-    max-width: 100px; 
+    width: 120px; /* Minimum width for day headers */
+    max-width: 120px; 
     background-color: #f5f5f5; /* Day header background */
     text-align: center;
     font-weight: 600;
     justify-content: center;
 }
 
-.employee-badge {
-    background-color: #e3f2fd;
-    color: #1976d2;
+.employee-badge, .remove-employee-button {
     padding: 4px 8px; /* Badge padding */
     border-radius: 4px; /* Badge border radius */
     font-size: 0.85em; /* Badge font size */
+    background-color: #e3f2fd; /* Light blue background for employee badges */
+    color: #1976d2; /* Blue text color for employee badges */
+}
+
+.removed-employee-badge, .re-add-employee-button {
+    padding: 4px 8px; /* Badge padding */
+    border-radius: 4px; /* Badge border radius */
+    font-size: 0.85em; /* Badge font size */
+    background-color: #ffccbc; /* Light red background for removed badges */
+    color: #c62828; /* Dark red text color for removed badges */
 }
 
 .shift-time {
@@ -94,12 +104,19 @@
     color: #555; /* Color for time text */
 }
 
-.cover-weight {
+.cover-weight, .employee-list {
     display: flex; /* Flex for checkbox and text field align */
     align-items: center; /* Center items vertically */
     margin-top: 5px;
     padding-bottom: 6px;
     border-bottom: 1px solid #e0e0e0;
+}
+
+.removed-employee-list {
+    display: flex; /* Flex for checkbox and text field align */
+    align-items: center; /* Center items vertically */
+    margin-top: 5px;
+    padding-bottom: 6px;
 }
 
 .filter-input {
@@ -140,4 +157,17 @@
 
 #submit_cover_change:active {
     background-color: #318b35; /* Even darker when clicked */
+}
+
+
+
+/* Optional hover effect for buttons */
+.remove-employee-button:hover {
+    background-color: #f8d7da; /* Light red background on hover */
+    cursor: pointer;
+}
+
+.re-add-employee-button:hover {
+    background-color: #d1c4e9;
+    cursor: pointer;
 }
