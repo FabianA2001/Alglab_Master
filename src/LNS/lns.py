@@ -4,6 +4,7 @@ import time
 from ortools.sat.python import cp_model
 
 from .. import solution, solver
+from ..inputTypes import instace
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -12,20 +13,53 @@ logger.setLevel(logging.DEBUG)
 class LNS:
     def __init__(
         self,
-        sol: solution.Solution,
-        timeout_seconds: int = 180,
+        sol_or_instance: solution.Solution | instace.Instance,
+        timeout_seconds: float = 180,
         small_runtime_seconds: int = 20,
         search_window_size: int = 7,
     ):
         self.search_window_size: int = search_window_size  # days
-        self.timeout_seconds: int = timeout_seconds
+        self.timeout_seconds: float = timeout_seconds
         self.small_runtime_seconds: int = small_runtime_seconds
-        self.old_solution = sol
+
+        self.old_solution, create_time_first_solution = (
+            self.__parse_solution_or_instance(sol_or_instance, timeout_seconds)
+        )
+        self.timeout_seconds: float = max(
+            0.0, timeout_seconds - create_time_first_solution
+        )
+
         logger.info(
             f"LNS initialized with search_window_size={self.search_window_size}, "
             f"timeout_seconds={self.timeout_seconds}, small_runtime_seconds={self.small_runtime_seconds}"
         )
-        logger.debug(f"Initial solution objective value: {sol.objective_value}")
+        logger.debug(
+            f"Initial solution objective value: {self.old_solution.objective_value}"
+        )
+
+    @staticmethod
+    def __parse_solution_or_instance(
+        sol_or_instance: solution.Solution | instace.Instance,
+        timeout_seconds: float,
+    ) -> tuple[solution.Solution, float]:
+        if isinstance(sol_or_instance, solution.Solution):
+            return sol_or_instance, 0.0
+        elif isinstance(sol_or_instance, instace.Instance):
+            start_time = time.time()
+            vars = solver.shift_vars.Shift_vars(sol_or_instance)
+            solv = solver.Solver(sol_or_instance, vars)
+            initial_solution = solv.solve(
+                log_search_progress=False,
+                max_time_in_seconds=timeout_seconds,
+                stop_after_first_solution=True,
+            )
+            assert (
+                initial_solution.solve_status == cp_model.OPTIMAL
+                or initial_solution.solve_status == cp_model.FEASIBLE
+            )
+            return initial_solution, time.time() - start_time
+        else:
+            raise ValueError("Input must be a Solution or an Instance")
 
     def choose_search_window(self) -> tuple[int, int]:
         """Wählt ein Suchfenster basierend auf der alten Lösung aus."""

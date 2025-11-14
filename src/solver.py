@@ -32,6 +32,7 @@ class Solver:
         log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
         disabled_constraints: list[SolverConstraints] = [],
+        stop_after_first_solution: bool = False,
         **solver_params,
     ) -> Solution:
         if SolverConstraints.days_off not in disabled_constraints:
@@ -73,6 +74,9 @@ class Solver:
         solver = cp_model.CpSolver()
         solver.parameters.log_search_progress = log_search_progress
         solver.parameters.max_time_in_seconds = max_time_in_seconds
+
+        if stop_after_first_solution:
+            solver.parameters.stop_after_first_solution = True
 
         for key, value in solver_params.items():
             setattr(solver.parameters, key, value)

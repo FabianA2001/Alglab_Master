@@ -36,7 +36,7 @@ def sayHello(name="World") -> str:
 
 def get_tes_data() -> instace.Instance:
     test_file = Path.joinpath(
-        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance1.txt"
+        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance9.txt"
     )
     return parseTXT.parse_txt(test_file)
 
@@ -74,15 +74,16 @@ def t_single_day_validation():
 
 
 def run_lns_example():
-    old_sol = Solution.from_json_file("Instance9")
+    # old_sol = Solution.from_json_file("Instance9")
+    inst = get_tes_data()
     lns_solver = lns.LNS(
-        old_sol,
+        inst,
         small_runtime_seconds=10,
         timeout_seconds=60,
     )
     improved_solution = lns_solver.solve()
     # improved_solution.print_all_variables_values()
-    print("Objective value before LNS:", old_sol.objective_value)
+    # print("Objective value before LNS:", old_sol.objective_value)
     print("Objective value after LNS:", improved_solution.objective_value)
 
 
