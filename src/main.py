@@ -3,12 +3,14 @@ from pathlib import Path
 from cpsat_utils.testing import AssertModelFeasible
 from ortools.sat.python import cp_model
 
+from src.help_functions import compare_solutions
+from src.solution import Solution
+
 from .inputTypes import employee, instace, shiftType
+from .LNS import lns
 from .parseData import parseTXT
 from .shift_vars import Shift_vars
 from .solver import Solver
-from src.help_functions import compare_solutions
-from src.solution import Solution
 
 
 def try_compare_solutions():
@@ -63,6 +65,13 @@ def t_single_day_validation():
         assert solver.Value(vars.get_above_prefferd_var(0, lokal_shift_type.uid)) == 1
 
 
+def run_lns_example():
+    lns_solver = lns.LNS(Solution.from_json_file("Instance2"))
+    improved_solution = lns_solver.solve()
+    improved_solution.print_all_variables_values()
+    print("Objective value after LNS:", improved_solution.objective_value)
+
+
 def main() -> None:
     # inst = get_tes_data()
     # x = inst
@@ -70,8 +79,9 @@ def main() -> None:
     # get_test_constraint_deactivation()
     # get_test_solution_from_model()
     # sol = Solution.from_json_file("Instance1")
-    get_test_solution_from_model()
-    try_compare_solutions()
+    # get_test_solution_from_model()
+    # try_compare_solutions()
+    run_lns_example()
 
 
 if __name__ == "__main__":
