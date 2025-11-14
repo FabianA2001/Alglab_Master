@@ -1,18 +1,25 @@
 import logging
-from time import time
+import time
 
 from ortools.sat.python import cp_model
 
 from .. import solution, solver
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class LNS:
-    def __init__(self, sol: solution.Solution):
-        self.search_window_size: int = 3  # days
-        self.timeout_seconds: int = 180
-        self.small_runtime_seconds: int = 20
+    def __init__(
+        self,
+        sol: solution.Solution,
+        timeout_seconds: int = 180,
+        small_runtime_seconds: int = 20,
+        search_window_size: int = 7,
+    ):
+        self.search_window_size: int = search_window_size  # days
+        self.timeout_seconds: int = timeout_seconds
+        self.small_runtime_seconds: int = small_runtime_seconds
         self.old_solution = sol
         logger.info(
             f"LNS initialized with search_window_size={self.search_window_size}, "
@@ -58,13 +65,13 @@ class LNS:
 
     def solve(self) -> solution.Solution:
         logger.info("Starting LNS solve process")
-        start_time = time.now()
+        start_time = time.time()
         iteration = 0
         improvements = 0
 
-        while time.now() - start_time < self.timeout_seconds:
+        while time.time() - start_time < self.timeout_seconds:
             iteration += 1
-            elapsed_time = time.now() - start_time
+            elapsed_time = time.time() - start_time
             logger.debug(
                 f"Iteration {iteration} started (elapsed: {elapsed_time:.2f}s)"
             )
@@ -115,7 +122,7 @@ class LNS:
                     f"Iteration {iteration}: No improvement (current best: {self.old_solution.objective_value})"
                 )
 
-        total_time = time.now() - start_time
+        total_time = time.time() - start_time
         logger.info(
             f"LNS completed: {iteration} iterations, {improvements} improvements, "
             f"total time: {total_time:.2f}s, final objective: {self.old_solution.objective_value}"

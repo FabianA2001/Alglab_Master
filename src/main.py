@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 from cpsat_utils.testing import AssertModelFeasible
@@ -11,6 +12,13 @@ from .LNS import lns
 from .parseData import parseTXT
 from .shift_vars import Shift_vars
 from .solver import Solver
+
+# Logging konfigurieren
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 
 def try_compare_solutions():
@@ -66,9 +74,15 @@ def t_single_day_validation():
 
 
 def run_lns_example():
-    lns_solver = lns.LNS(Solution.from_json_file("Instance2"))
+    old_sol = Solution.from_json_file("Instance9")
+    lns_solver = lns.LNS(
+        old_sol,
+        small_runtime_seconds=10,
+        timeout_seconds=60,
+    )
     improved_solution = lns_solver.solve()
-    improved_solution.print_all_variables_values()
+    # improved_solution.print_all_variables_values()
+    print("Objective value before LNS:", old_sol.objective_value)
     print("Objective value after LNS:", improved_solution.objective_value)
 
 
