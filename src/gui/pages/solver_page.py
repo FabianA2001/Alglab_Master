@@ -1,9 +1,11 @@
+import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
 
 import streamlit as st
 
 from ... import shift_vars, solution, solver
+from ...LNS import lns
 from .session_state_names import Session_state_Names as SSN
 
 
@@ -37,6 +39,22 @@ def solve(**kwargs) -> solution.Solution:
         max_time_in_seconds=kwargs["timeout_seconds"],
     )
     sol.to_json_file(instance.name)
+    return sol
+
+
+def solve_with_lns(**kwargs) -> solution.Solution:
+    """Führt den Solver in einem separaten Thread aus"""
+    inst_sol = kwargs["instance_solution"]
+    disabled_constraints = kwargs["disabled_constraints"]
+    lns_solver = lns.LNS(
+        inst_sol,
+        disabled_constraints=disabled_constraints,
+        timeout_seconds=kwargs["timeout_seconds"],
+        log_level=logging.ERROR,
+    )
+    sol = lns_solver.solve()
+
+    sol.to_json_file(sol.instance.name)
     return sol
 
 
@@ -156,7 +174,10 @@ def show():
                     timeout_seconds=st.session_state[SSN.solver_timeout.name],
                 )
 
-        if len(st.session_state[SSN.solutions.name]) > 0:
+        if (
+            len(st.session_state[SSN.solutions.name]) > 0
+            and st.session_state[SSN.allow_resolve.name]
+        ):
             if st.button(
                 "Warm start",
                 type="primary",
@@ -168,6 +189,29 @@ def show():
                     instance=st.session_state[SSN.instance.name],
                     disabled_constraints=disabled_constraints,
                     old_solution=st.session_state[SSN.solutions.name][-1],
+                    timeout_seconds=st.session_state[SSN.solver_timeout.name],
+                )
+
+        # TODO: change LNS Parameter
+        if (
+            len(st.session_state[SSN.solutions.name]) > 0
+            and st.session_state[SSN.allow_resolve.name]
+        ) or len(st.session_state[SSN.solutions.name]) == 0:
+            if st.button(
+                "Large neighborhood search",
+                type="primary",
+                disabled=st.session_state[SSN.solver_running.name],
+                key="lns_start_solver_button",
+            ):
+                inst_sol = (
+                    st.session_state[SSN.instance.name]
+                    if len(st.session_state[SSN.solutions.name]) == 0
+                    else st.session_state[SSN.solutions.name][-1]
+                )
+                run_solver_in_thread(
+                    solve_funktion=solve_with_lns,
+                    instance_solution=inst_sol,
+                    disabled_constraints=disabled_constraints,
                     timeout_seconds=st.session_state[SSN.solver_timeout.name],
                 )
 

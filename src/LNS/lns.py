@@ -13,7 +13,8 @@ class LNS:
     def __init__(
         self,
         sol_or_instance: solution.Solution | instace.Instance,
-        search_time_first_solution: float = 0.1,
+        disabled_constraints=None,
+        percent_search_time_first_solution: float = 0.1,
         timeout_seconds: float = 180,
         small_runtime_seconds: int = 20,
         search_window_size_max: int = 7,
@@ -37,19 +38,24 @@ class LNS:
         self.timeout_seconds: float = timeout_seconds
         self.small_runtime_seconds: int = small_runtime_seconds
 
-        assert search_time_first_solution < 1.0, (
+        assert percent_search_time_first_solution < 1.0, (
             "search_time_first_solution must be < 1.0"
         )
-        assert search_time_first_solution > 0.0, (
+        assert percent_search_time_first_solution > 0.0, (
             "search_time_first_solution must be > 0.0"
         )
         self.old_solution, create_time_first_solution = (
             self.__parse_solution_or_instance(
-                sol_or_instance, timeout_seconds * search_time_first_solution
+                sol_or_instance, timeout_seconds * percent_search_time_first_solution
             )
         )
         self.timeout_seconds: float = max(
             0.0, timeout_seconds - create_time_first_solution
+        )
+        self.disabled_constraints = (
+            disabled_constraints
+            if disabled_constraints is not None
+            else self.old_solution.disabled_constraints
         )
 
         logger.info(
@@ -183,7 +189,7 @@ class LNS:
 
             solv = solv.solve(
                 log_search_progress=False,
-                disabled_constraints=self.old_solution.disabled_constraints,
+                disabled_constraints=self.disabled_constraints,
                 max_time_in_seconds=self.small_runtime_seconds,
             )
 
