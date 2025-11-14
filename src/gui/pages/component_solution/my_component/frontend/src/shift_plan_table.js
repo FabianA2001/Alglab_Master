@@ -37,7 +37,7 @@ const CONFIG = {
 
 let filteredEmployee = '';
 
-export var dataDict = {};
+export var dataDict = {"cover_weights": {}, "added_employees": {}, "removed_employees": {}};
 
 // Render the table with data
 function renderTable(shiftPlanData) {
@@ -175,15 +175,16 @@ function renderTable(shiftPlanData) {
                 checkbox.addEventListener('change', () => updateData(day, shiftTypeInfo.name));
                 textField.addEventListener('input', () => {
                     if (checkbox.checked) {
-                        dataDict[day][shiftTypeInfo.name] = parseInt(textField.value) || 0;
+                        dataDict["cover_weights"][day][shiftTypeInfo.name] = parseInt(textField.value) || 0;
                     }
+                    console.log(dataDict)
                 });
             }
             const employees = cellData.employees || cellData;
             
             // Create container for removed employees add it the end
             const removedEmployeeList = document.createElement('div');
-            removedEmployeeList.className = 'removed-employee-list';
+            removedEmployeeList.className = 'employee-list';
             const employeeList = document.createElement('div');
             employeeList.className = 'employee-list';
 
@@ -329,12 +330,13 @@ function updateData(dayIndex, shiftType) {
 
     if (checkbox.checked) {
         // Add entry if checkbox is checked
-        dataDict[dayIndex] = {}
-        dataDict[dayIndex][shiftType] = 1000;
+        dataDict["cover_weights"][dayIndex] = {}
+        dataDict["cover_weights"][dayIndex][shiftType] = 150;
     } else {
         // Remove entry if checkbox is unchecked
-        delete dataDict[dayIndex][shiftType];
+        delete dataDict["cover_weights"][dayIndex][shiftType];
     }
+    console.log(dataDict)
 }
 
 function reset_cover_requirement_options() {
@@ -356,8 +358,6 @@ export function reset_dataDict() {
 
 export function set_coverage_unchangable() {
     const checkboxes = document.querySelectorAll('input[type="checkbox"].cover-requirement-checkbox');
-    console.log("checkboxes")
-    console.log(checkboxes)
     checkboxes.forEach((checkbox) => {
         checkbox.disabled = true;
     });
@@ -365,10 +365,6 @@ export function set_coverage_unchangable() {
 
 
 function moveToRemovedList(badge, removedEmployeeList, empName, day, shiftType) {
-    // Add employee to dataDict as removed
-    if (!dataDict["removed_employees"]) {
-        dataDict["removed_employees"] = {};
-    }
     if (!dataDict["removed_employees"][day]) {
         dataDict["removed_employees"][day] = {};
     }
@@ -430,10 +426,6 @@ function reAddEmployee(removedBadge, childBadge, badgeParent, empName, day, shif
             }
         }
 
-        // Check if removed_employees is completely empty
-        if (Object.keys(dataDict["removed_employees"]).length === 0) {
-            delete dataDict["removed_employees"]; // Remove the added_employees object if empty
-        }
     }
     console.log(badgeParent)
     // Append the existing badge container back to the original employee list
@@ -443,10 +435,6 @@ function reAddEmployee(removedBadge, childBadge, badgeParent, empName, day, shif
 
 
 function addEmployee(option, empName, day, shiftType){
-    // Add employee to dataDict as removed
-    if (!dataDict["added_employees"]) {
-        dataDict["added_employees"] = {};
-    }
     if (!dataDict["added_employees"][day]) {
         dataDict["added_employees"][day] = {};
     }
@@ -476,10 +464,6 @@ function removeEmployee(badgeContainer, empName, day, shiftType) {
             }
         }
 
-        // Check if added_employees is completely empty
-        if (Object.keys(dataDict["added_employees"]).length === 0) {
-            delete dataDict["added_employees"]; // Remove the added_employees object if empty
-        }
     }
     console.log(dataDict["added_employees"])
 }
