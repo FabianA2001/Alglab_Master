@@ -80,6 +80,7 @@ def run_lns_example():
         inst,
         small_runtime_seconds=10,
         timeout_seconds=60,
+        search_window_size_max=inst.number_of_days // 2,
     )
     improved_solution = lns_solver.solve()
     # improved_solution.print_all_variables_values()
