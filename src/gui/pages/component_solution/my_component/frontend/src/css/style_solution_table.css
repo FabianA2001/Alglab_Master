@@ -114,7 +114,7 @@
     display: flex; /* Flex for checkbox and text field align */
     align-items: center; /* Center items vertically */
     margin-top: 5px;
-    padding-bottom: 6px;
+    padding-bottom: 10px;
     border-bottom: 1px solid #e0e0e0;
 }
 
@@ -196,4 +196,8 @@
     max-width: 100%; /* Stay within container width */
     box-sizing: border-box; /* Include padding in width calculations */
     cursor: pointer; /* Pointer cursor for interactivity */
+}
+
+.send-day-shift {
+    margin-top: 5px;
 }

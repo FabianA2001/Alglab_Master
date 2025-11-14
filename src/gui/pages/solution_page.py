@@ -9,6 +9,8 @@ from .component_solution import my_component
 from .session_state_names import Session_state_Names as SSN
 from .show_constraints import show_active_constraints, show_constraint_violations
 
+import pandas as pd
+
 SOLUTION_DIR = (
     Path(__file__).resolve().parent.parent.parent.parent / "data" / "solutions"
 )
@@ -131,6 +133,71 @@ def render_shift_plan_component(
         st.session_state[SSN.allow_resolve.name] = True
 
 
+def show_solution_employee_changes():
+    if len(st.session_state[SSN.solutions.name]) < 2:
+        st.info("Es sind mindestens zwei Lösungen erforderlich, um sie zu vergleichen.")
+        return (None, [])
+    all_columns = []
+    solutions_list = []
+    # bring the solutions into a more managable structure
+    for i, sol in enumerate(reversed(st.session_state[SSN.solutions.name])):
+        newer_solution = {"selected": {}, "deselected": {}}
+        for keys, selected in sol.vars.items():
+            shift_name = sol.instance.shift_types[keys[1]].name
+            employee_name = sol.instance.employees[keys[2]].name
+            if selected:
+                if keys[0] not in newer_solution["selected"]:
+                    newer_solution["selected"][keys[0]] = {}
+                if shift_name not in newer_solution["selected"][keys[0]]:
+                    newer_solution["selected"][keys[0]][shift_name] = []
+                newer_solution["selected"][keys[0]][shift_name].append(employee_name)
+            else:
+                if keys[0] not in newer_solution["deselected"]:
+                    newer_solution["deselected"][keys[0]] = {}
+                if shift_name not in newer_solution["deselected"][keys[0]]:
+                    newer_solution["deselected"][keys[0]][shift_name] = []
+                newer_solution["deselected"][keys[0]][shift_name].append(employee_name)
+        solutions_list.append(newer_solution)
+
+    # Process the created structures
+    all_rows = []
+    # solutions_list all solutions dict
+    for index, solution_dict in enumerate(solutions_list):
+        # for the current solution the selected part
+        solution_row = {}
+        for day, shift_dict in solution_dict["selected"].items():
+            for shift_uid, employee_list in shift_dict.items():
+                if index + 1 < len(solutions_list):
+                    select_previous_solution_list = solutions_list[index + 1][
+                        "deselected"
+                    ][day][shift_uid]
+
+                    solution_row[f"added_to_day_{day}_shift_{shift_uid}"] = [
+                        item
+                        for item in employee_list
+                        if item in select_previous_solution_list
+                    ]
+                    deseleted_current_solution_list = solution_dict["deselected"][day][
+                        shift_uid
+                    ]
+                    seleted_previous_solution_list = solutions_list[index + 1][
+                        "selected"
+                    ][day][shift_uid]
+                    solution_row[f"removed_from_day_{day}_shift_{shift_uid}"] = ""
+
+                    solution_row[f"removed_from_day_{day}_shift_{shift_uid}"] = [
+                        item
+                        for item in deseleted_current_solution_list
+                        if item in seleted_previous_solution_list
+                    ]
+                    all_columns.append(f"added_to_day_{day}_shift_{shift_uid}")
+                    all_columns.append(f"removed_from_day_{day}_shift_{shift_uid}")
+
+        all_rows.append(solution_row)
+
+    return (pd.DataFrame(all_rows), all_columns)
+
+
 def show_compare_solutions():
     if len(st.session_state[SSN.solutions.name]) < 2:
         st.info("Es sind mindestens zwei Lösungen erforderlich, um sie zu vergleichen.")
@@ -181,6 +248,7 @@ def show():
     st.title("✅ Solution")
     # Check if solution exists in session state
     # TODO Discuss if always show solution selector or only when no solution in session state
+    # TODO should must likly be removed because it breaks some functions for example with show_solution_employee_changes
     available_solutions = []
     if SOLUTION_DIR.exists():
         available_solutions = [f.stem for f in SOLUTION_DIR.glob("*.json")]
@@ -229,3 +297,10 @@ def show():
         render_shift_plan_component(sol, read_only=True, index=i + 1)
 
     show_compare_solutions()
+
+    df, df_columns = show_solution_employee_changes()
+    st.dataframe(
+        df,
+        use_container_width=True,
+        hide_index=True,
+    )

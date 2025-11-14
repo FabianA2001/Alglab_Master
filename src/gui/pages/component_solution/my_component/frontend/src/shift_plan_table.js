@@ -183,7 +183,7 @@ function renderTable(shiftPlanData) {
             
             // Create container for removed employees add it the end
             const removedEmployeeList = document.createElement('div');
-            removedEmployeeList.className = 'employee-list';
+            removedEmployeeList.className = 'employee-list removed-employee-list';
             const employeeList = document.createElement('div');
             employeeList.className = 'employee-list';
 
@@ -366,6 +366,14 @@ function reset_cover_requirement_options() {
 export function reset_dataDict() {
     dataDict = {"cover_weights": {}, "added_employees": {}, "removed_employees": {}};
     reset_cover_requirement_options();
+    reset_employees_options();
+}
+
+export function reset_employees_options() {
+    const added_employees = document.querySelectorAll('span.added-employee-remove-button');
+    added_employees.forEach(el => el.click());
+    const removed_employees = document.querySelectorAll('.re-add-employee-button');
+    removed_employees.forEach(el => el.click());
 }
 
 export function set_coverage_unchangable() {
@@ -373,6 +381,17 @@ export function set_coverage_unchangable() {
     checkboxes.forEach((checkbox) => {
         checkbox.disabled = true;
     });
+}
+
+export function remove_changable_employee_options() {
+    const removed_employees = document.querySelectorAll('.remove-employee-button');
+    removed_employees.forEach(el => el.remove());
+    const add_employee_buttons = document.querySelectorAll('.add-employee-button');
+    add_employee_buttons.forEach(el => el.remove());
+    const send_day_shift_buttons = document.querySelectorAll('.send-day-shift');
+    send_day_shift_buttons.forEach(el => el.remove());
+    const removed_emolyee_list = document.querySelectorAll('.removed-employee-list');
+    removed_emolyee_list.forEach(el => el.remove());
 }
 
 
