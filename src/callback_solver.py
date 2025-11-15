@@ -29,63 +29,39 @@ class Callback_Solver(cp_model.CpSolverSolutionCallback):
         self.start_solve_time: datetime = datetime(2005, 1, 1, 0, 0)
 
     def on_solution_callback(self):
-        check = 0
-        wishes = 0
-        for employee_uid in self.instance.employees:
-            for day in range(self.instance.number_of_days):
-                for type_uid in self.instance.shifts[day]:
-                    if (
-                        self.instance.get_shift(
-                            day=day, type_uid=type_uid
-                        ).penalty_assigned_day_employee.get(employee_uid, 0)
-                        > 0
-                    ):
-                        wishes += 1 * self.Value(
-                            self.vars.vars[(day, type_uid, employee_uid)]
-                        )
-                    if (
-                        self.instance.get_shift(
-                            day=day, type_uid=type_uid
-                        ).penalty_not_assigned_day_employee.get(employee_uid, 0)
-                        > 0
-                    ):
-                        wishes += 1 * (
-                            1
-                            - self.Value(self.vars.vars[(day, type_uid, employee_uid)])
-                        )
-        summ = 0
-        for employee_uid in self.instance.employees:
-            for day in range(self.instance.number_of_days):
-                for type_uid in self.instance.shifts[day]:
-                    if (
-                        self.instance.get_shift(
-                            day=day, type_uid=type_uid
-                        ).penalty_assigned_day_employee.get(employee_uid, 0)
-                        > 0
-                    ):
-                        summ += 1
-                    if (
-                        self.instance.get_shift(
-                            day=day, type_uid=type_uid
-                        ).penalty_not_assigned_day_employee.get(employee_uid, 0)
-                        > 0
-                    ):
-                        summ += 1
+        total_weights = 0
+        satisfied_wishes = 0
 
-        if wishes > 0.1 * summ:
-            check = 1
+        # Über alle Schichten der Instanz iterieren
+        for day, day_shift_dict in self.instance.shifts.items():
+            for type_uid, shift in day_shift_dict.items():
+                # Beispiel: preferred employees check
+                pref = shift.preffert_number_employees
 
-        for day in range(self.instance.number_of_days):
-            for type_uid in self.instance.shifts[day]:
-                if (
-                    self.Value(self.vars.below_prefferd_vars[(day, type_uid)])
-                    / self.instance.shifts[day][type_uid].preffert_number_employees
-                ) > 0.1:
-                    check = 0
-            # objective_value += (
-            #     self.vars.above_prefferd_vars[(day, type_uid)]
-            #     * self.instance.shifts[day][type_uid].weight_above_preferred
-            # )
-        if check == 1:
-            print("Genug gut → Suche stoppen.")
+                below = self.Value(self.vars.below_prefferd_vars[(day, type_uid)])
+                if below > pref * 0.5:
+                    return  # schlechte Lösung -> sofort abbrechen
+
+                # Wünsche
+                for emp in self.instance.employees:
+                    weight_pos = shift.penalty_assigned_day_employee.get(emp, 0)
+                    weight_neg = shift.penalty_not_assigned_day_employee.get(emp, 0)
+
+                    if weight_pos > 0:
+                        total_weights += 1
+                        if self.Value(self.vars.vars[(day, type_uid, emp)]) == 1:
+                            satisfied_wishes += 1
+
+                    if weight_neg > 0:
+                        total_weights += 1
+                        if self.Value(self.vars.vars[(day, type_uid, emp)]) == 0:
+                            satisfied_wishes += 1
+
+        if total_weights == 0:
+            return
+
+        ratio = satisfied_wishes / total_weights
+
+        if ratio > 0.5:
+            print("Gute Lösung -> StopSearch()")
             self.StopSearch()
