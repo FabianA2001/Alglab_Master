@@ -1,5 +1,5 @@
 import { Streamlit, RenderData } from "streamlit-component-lib"
-import { dataDict, initShiftPlanTable, reset_dataDict, set_coverage_unchangable } from "./shift_plan_table.js"; // 
+import { dataDict, initShiftPlanTable, reset_dataDict, set_coverage_unchangable, remove_changable_employee_options } from "./shift_plan_table.js"; // 
 
 /**
  * The component's render function. This will be called immediately after
@@ -48,7 +48,7 @@ function onRender(event: Event): void {
               const observer_add_cover_button = new MutationObserver(() => {
               const tableInfo = document.getElementById("tableInfo");
                     if (tableInfo) {
-                        tableInfo.insertAdjacentHTML('afterend', `<button id="submit_cover_change">Submit Cover Changes</button>`); // Call the function to add the button
+                        tableInfo.insertAdjacentHTML('afterend', `<button id="submit_cover_change">Submit Changes</button>`); // Call the function to add the button
                         observer_add_cover_button.disconnect(); // Stop observing once the button is added
                     }
                 }
@@ -81,6 +81,7 @@ function onRender(event: Event): void {
         const searchInput = document.getElementById('searchInput') as HTMLInputElement;
         if(extra_options["read_only"]){
           set_coverage_unchangable();
+          remove_changable_employee_options();
         }
         if (searchInput) {
             searchInput.addEventListener('input', function () {

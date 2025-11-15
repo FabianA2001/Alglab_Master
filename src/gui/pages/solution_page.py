@@ -9,6 +9,8 @@ from .component_solution import my_component
 from .session_state_names import Session_state_Names as SSN
 from .show_constraints import show_active_constraints, show_constraint_violations
 
+import pandas as pd
+
 SOLUTION_DIR = (
     Path(__file__).resolve().parent.parent.parent.parent / "data" / "solutions"
 )
@@ -84,10 +86,16 @@ def solution_to_html_data(sol: solution.Solution) -> dict:
             )
         data.append(row)
 
+    # create a list of employee names
+    employee_names = []
+    for employee in sol.instance.employees.values():
+        employee_names.append(employee.name)
+
     return {
         "shift_types_info": shift_types_info,
         "num_days": sol.instance.number_of_days,
         "data": data,
+        "employee_names": employee_names,
     }
 
 
@@ -100,18 +108,20 @@ def render_shift_plan_component(
     # Konvertiere Lösung in JSON-Format
     shift_plan_data = solution_to_html_data(sol)
     extra_options = {"read_only": read_only}
-    response_cover_requirement = my_component.my_component(
+
+    solution_changes_response = my_component.my_component(
         f"shift_plan_component_{index}",
         render_option="shift_plan_solution",
         data=json.dumps(shift_plan_data),
         extra_options=json.dumps(extra_options),
     )
+
     if read_only:
         return
-    st.markdown(f"The selected employee is: {response_cover_requirement}")
-    if response_cover_requirement != {}:
+    st.markdown(f"The selected employee is: {solution_changes_response}")
+    if "cover_weights" in solution_changes_response:
         instance = sol.instance.model_copy(deep=True)
-        for day, shift_type_dict in response_cover_requirement.items():
+        for day, shift_type_dict in solution_changes_response["cover_weights"].items():
             for shift_type, value in shift_type_dict.items():
                 # TODO what about weight_above_preferred?
                 instance.shifts[int(day)][
@@ -121,6 +131,80 @@ def render_shift_plan_component(
         st.session_state[SSN.instance.name] = instance
         st.success("Instance updated with new cover requirements from component.")
         st.session_state[SSN.allow_resolve.name] = True
+
+
+def show_solution_employee_changes():
+    if len(st.session_state[SSN.solutions.name]) < 2:
+        st.info("Es sind mindestens zwei Lösungen erforderlich, um sie zu vergleichen.")
+        return (None, [])
+    all_columns = []
+    solutions_list = []
+    # bring the solutions into a more managable structure
+    for i, sol in enumerate(reversed(st.session_state[SSN.solutions.name])):
+        newer_solution = {"selected": {}, "deselected": {}}
+        for keys, selected in sol.vars.items():
+            shift_name = sol.instance.shift_types[keys[1]].name
+            employee_name = sol.instance.employees[keys[2]].name
+            if selected:
+                if keys[0] not in newer_solution["selected"]:
+                    newer_solution["selected"][keys[0]] = {}
+                if shift_name not in newer_solution["selected"][keys[0]]:
+                    newer_solution["selected"][keys[0]][shift_name] = []
+                newer_solution["selected"][keys[0]][shift_name].append(employee_name)
+            else:
+                if keys[0] not in newer_solution["deselected"]:
+                    newer_solution["deselected"][keys[0]] = {}
+                if shift_name not in newer_solution["deselected"][keys[0]]:
+                    newer_solution["deselected"][keys[0]][shift_name] = []
+                newer_solution["deselected"][keys[0]][shift_name].append(employee_name)
+        solutions_list.append(newer_solution)
+
+    # Process the created structures
+    all_rows = []
+    # solutions_list all solutions dict
+    for index, solution_dict in enumerate(solutions_list):
+        # for the current solution the selected part
+        solution_row = {}
+        shifts_count_difference = 0
+        for day, shift_dict in solution_dict["selected"].items():
+            for shift_uid, employee_list in shift_dict.items():
+                if index + 1 < len(solutions_list):
+                    select_previous_solution_list = solutions_list[index + 1][
+                        "deselected"
+                    ][day][shift_uid]
+
+                    solution_row[f"added_to_{day}_{shift_uid}"] = [
+                        item
+                        for item in employee_list
+                        if item in select_previous_solution_list
+                    ]
+                    deseleted_current_solution_list = solution_dict["deselected"][day][
+                        shift_uid
+                    ]
+                    seleted_previous_solution_list = solutions_list[index + 1][
+                        "selected"
+                    ][day][shift_uid]
+
+                    solution_row[f"removed_from_{day}_{shift_uid}"] = [
+                        item
+                        for item in deseleted_current_solution_list
+                        if item in seleted_previous_solution_list
+                    ]
+
+                    solution_row[f"employ_count_{day}_{shift_uid}"] = len(
+                        employee_list
+                    ) - len(seleted_previous_solution_list)
+                    shifts_count_difference += solution_row[
+                        f"employ_count_{day}_{shift_uid}"
+                    ]
+
+                    all_columns.append(f"added_to_{day}_{shift_uid}")
+                    all_columns.append(f"removed_from_{day}_{shift_uid}")
+                    all_columns.append(f"employ_count_{day}_{shift_uid}")
+        solution_row[f"shifts_count_difference"] = shifts_count_difference
+        all_rows.append(solution_row)
+
+    return (pd.DataFrame(all_rows), all_columns)
 
 
 def show_compare_solutions():
@@ -173,6 +257,7 @@ def show():
     st.title("✅ Solution")
     # Check if solution exists in session state
     # TODO Discuss if always show solution selector or only when no solution in session state
+    # TODO should must likly be removed because it breaks some functions for example with show_solution_employee_changes
     available_solutions = []
     if SOLUTION_DIR.exists():
         available_solutions = [f.stem for f in SOLUTION_DIR.glob("*.json")]
@@ -221,3 +306,10 @@ def show():
         render_shift_plan_component(sol, read_only=True, index=i + 1)
 
     show_compare_solutions()
+
+    df, df_columns = show_solution_employee_changes()
+    st.dataframe(
+        df,
+        use_container_width=True,
+        hide_index=True,
+    )
