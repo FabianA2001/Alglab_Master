@@ -32,12 +32,16 @@ class Solver:
         log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
         disabled_constraints: list[SolverConstraints] = [],
+        stop_after_first_solution: bool = False,
         **solver_params,
     ) -> Solution:
         self.set_constraints(disabled_constraints=disabled_constraints)
         solver = cp_model.CpSolver()
         solver.parameters.log_search_progress = log_search_progress
         solver.parameters.max_time_in_seconds = max_time_in_seconds
+
+        if stop_after_first_solution:
+            solver.parameters.stop_after_first_solution = True
 
         for key, value in solver_params.items():
             setattr(solver.parameters, key, value)
@@ -88,10 +92,10 @@ class Solver:
             self.store_solution(
                 solver, solution
             )  # Pass the solution instance to store values
-            if status == cp_model.OPTIMAL:
-                print("Optimal solution found.")
-            else:
-                print("Feasible solution found but not optimal.")
+            # if status == cp_model.OPTIMAL:
+            #     print("Optimal solution found.")
+            # else:
+            #     print("Feasible solution found but not optimal.")
             solution.objective_value = solver.ObjectiveValue()
             solution.solve_status = status
             solution.instance = self.instance
