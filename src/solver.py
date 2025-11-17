@@ -33,6 +33,7 @@ class Solver:
         max_time_in_seconds: float = 60.0,
         disabled_constraints: list[SolverConstraints] = [],
         stop_after_first_solution: bool = False,
+        callback: cp_model.CpSolverSolutionCallback | None = None,
         **solver_params,
     ) -> Solution:
         self.set_constraints(disabled_constraints=disabled_constraints)
@@ -48,7 +49,10 @@ class Solver:
 
         self.vars.model.Minimize(self.objevtive_value())
         self.start_solve_time = datetime.now()
-        status = solver.Solve(self.vars.model)
+        if callback is not None:
+            status = solver.SolveWithSolutionCallback(self.vars.model, callback)
+        else:
+            status = solver.Solve(self.vars.model)
         self.solve_time = (datetime.now() - self.start_solve_time).total_seconds()
         return self.handle_results(status, solver, disabled_constraints)
 
