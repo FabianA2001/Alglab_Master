@@ -81,7 +81,6 @@ def run_lns_example():
     inst = get_tes_data()
     lns_solver = lns.LNS(
         inst,
-        small_runtime_seconds=10,
         timeout_seconds=60,
         start_search_window_size=5,
     )

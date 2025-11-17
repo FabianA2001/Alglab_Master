@@ -25,14 +25,16 @@ class StopAfterMinTimeAndFirstSolution(cp_model.CpSolverSolutionCallback):
 
 
 class LNS:
+    MIN_SMALL_SEARCH_TIME: float = 2.0  # sec
+
     def __init__(
         self,
         sol_or_instance: solution.Solution | instace.Instance,
         disabled_constraints=None,
         percent_search_time_first_solution: float = 0.1,
         timeout_seconds: float = 180,
-        small_runtime_seconds: int = 20,
-        start_search_window_size: int = 3,
+        small_runtime_base: float = 0.01,  # * number_of_days * (number_of_shift_types + number_of_employees)
+        start_search_window_size: int = 7,
         search_window_size_min: int = 3,
         window_increase_factor: float = 1.5,
         window_decrease_factor: float = 0.8,
@@ -55,6 +57,8 @@ class LNS:
                 timeout_seconds,
             )
         )
+        self.NUMBER_OF_SHIFT_TYPES = len(self.old_solution.instance.shift_types)
+        self.NUMBER_OF_EMPLOYEES = len(self.old_solution.instance.employees)
 
         # window change size parameters
         self.window_increase_factor = window_increase_factor
@@ -70,7 +74,7 @@ class LNS:
 
         # time parameters
         self.timeout_seconds: float = timeout_seconds
-        self.small_runtime_seconds: int = small_runtime_seconds
+        self.small_runtime_milliseconds_base: float = small_runtime_base
         self.timeout_seconds: float = max(
             0.0, timeout_seconds - create_time_first_solution
         )
@@ -85,7 +89,7 @@ class LNS:
         # logging info
         logger.info(
             f"LNS initialized with search_window_size={self.start_search_window_size}, "
-            f"timeout_seconds={self.timeout_seconds}, small_runtime_seconds={self.small_runtime_seconds}"
+            f"timeout_seconds={self.timeout_seconds}, small_runtime_seconds_base={self.small_runtime_milliseconds_base}"
         )
         logger.debug(
             f"Initial solution objective value: {self.old_solution.objective_value}"
@@ -215,8 +219,15 @@ class LNS:
             assert self.end_day > self.start_day
             iteration += 1
             elapsed_time = time.time() - start_time
+            small_max_solve_time = max(
+                self.MIN_SMALL_SEARCH_TIME,
+                self.small_runtime_milliseconds_base
+                * (self.end_day - self.start_day)
+                * (self.NUMBER_OF_SHIFT_TYPES + self.NUMBER_OF_EMPLOYEES),
+            )
             logger.debug(
-                f"Iteration {iteration} started (elapsed: {elapsed_time:.2f}s)"
+                f"Iteration {iteration}({elapsed_time:.2f}): Solving with small max solve time: {small_max_solve_time:.2f}s "
+                f"for window days {self.start_day} to {self.end_day}"
             )
 
             solv = solver.Solver(
@@ -229,7 +240,7 @@ class LNS:
             solv = solv.solve(
                 log_search_progress=False,
                 disabled_constraints=self.disabled_constraints,
-                max_time_in_seconds=self.small_runtime_seconds,
+                max_time_in_seconds=small_max_solve_time,
             )
 
             if not (
