@@ -19,6 +19,8 @@ from .module import (
     max_Cons_shifts_new,
     minimum_consecutove_days_off_new,
     minimum_consecutive_shifts_new,
+    assign_employee_day_shift,
+    ban_employee_day_shift,
 )
 from .module.solverConstraints import SolverConstraints
 from .solution import Solution
@@ -300,6 +302,14 @@ class Solver:
             not in disabled_constraints
         ):
             shift_assignment_single_day_validation.Single_day_validation().build(
+                self.instance, self.vars
+            )
+        if SolverConstraints.assign_employee_day_shift not in disabled_constraints:
+            assign_employee_day_shift.Assign_employee_day_shift().build(
+                self.instance, self.vars
+            )
+        if SolverConstraints.ban_employee_day_shift not in disabled_constraints:
+            ban_employee_day_shift.Ban_employee_day_shift().build(
                 self.instance, self.vars
             )
 

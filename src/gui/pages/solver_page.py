@@ -139,6 +139,8 @@ def show():
     toggle_constraint(solver.SolverConstraints.minMaxWorkTime)
     toggle_constraint(solver.SolverConstraints.shift_assignment_single_day_validation)
     toggle_constraint(solver.SolverConstraints.shift_rotation_constraint)
+    toggle_constraint(solver.SolverConstraints.assign_employee_day_shift)
+    toggle_constraint(solver.SolverConstraints.ban_employee_day_shift)
 
     st.session_state[SSN.disabled_constraints.name] = disabled_constraints_value
     disabled_constraints: list[solver.SolverConstraints] = []
