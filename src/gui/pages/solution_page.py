@@ -65,10 +65,21 @@ def solution_to_html_data(sol: solution.Solution) -> dict:
         row = []
         for day in days:
             assigned_employees = []
+            force_assign_employees = []
+            banned_employees = []
             for emp_id in sol.instance.employees:
                 if sol.is_employee_assigned(day, shift_type_uid, emp_id):
                     assigned_employees.append(sol.instance.employees[emp_id].name)
-
+            for emp_id in sol.instance.shifts[day][
+                shift_type_uid
+            ].assign_employee_day_shift:
+                force_assign_employees.append(sol.instance.employees[emp_id].name)
+            for emp_id in sol.instance.shifts[day][
+                shift_type_uid
+            ].ban_employee_day_shift:
+                banned_employees.append(sol.instance.employees[emp_id].name)
+            print(f"day {day} - shift {shift_type_uid}")
+            print(force_assign_employees)
             # Hole die bevorzugte Anzahl an Mitarbeitern für diese Schicht
             shift = sol.instance.get_shift(day, shift_type_uid)
             preferred_count = shift.preffert_number_employees
@@ -80,8 +91,8 @@ def solution_to_html_data(sol: solution.Solution) -> dict:
                     "employees": assigned_employees,
                     "preferred": preferred_count,
                     "actual": actual_count,
-                    "banned_employees": "",
-                    "assigned_employees": "",
+                    "banned_employees": banned_employees,
+                    "force_assigned_employees": force_assign_employees,
                     "difference": difference,
                     "weight": sol.instance.shifts[day][
                         shift_type_uid
@@ -139,6 +150,10 @@ def render_shift_plan_component(
             "added_employees"
         ].items():
             for shift_type, employees in shift_type_dict.items():
+                # TODO should I reset, considering I am showing everything in the frontend
+                instance.shifts[int(day)][
+                    hash_string(shift_type)
+                ].assign_employee_day_shift = set()
                 for employee in employees:
                     instance.shifts[int(day)][
                         hash_string(shift_type)
@@ -150,6 +165,10 @@ def render_shift_plan_component(
             "removed_employees"
         ].items():
             for shift_type, employees in shift_type_dict.items():
+                # TODO should I reset, considering I am showing everything in the frontend
+                instance.shifts[int(day)][
+                    hash_string(shift_type)
+                ].ban_employee_day_shift = set()
                 for employee in employees:
                     instance.shifts[int(day)][
                         hash_string(shift_type)
