@@ -32,54 +32,27 @@ class Solver:
         log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
         disabled_constraints: list[SolverConstraints] = [],
+        stop_after_first_solution: bool = False,
+        callback: cp_model.CpSolverSolutionCallback | None = None,
         **solver_params,
     ) -> Solution:
-        if SolverConstraints.days_off not in disabled_constraints:
-            days_off.Days_off().build(self.instance, self.vars)
-        if SolverConstraints.cover_requirements not in disabled_constraints:
-            cover_requirements.Cover_requirements().build(self.instance, self.vars)
-        if (
-            SolverConstraints.limited_shifts_per_type_validation
-            not in disabled_constraints
-        ):
-            limited_shifts_per_type_validation.Limited_shifts_per_type_validation().build(
-                self.instance, self.vars
-            )
-        if SolverConstraints.max_Cons_Shifts not in disabled_constraints:
-            max_Cons_Shifts.Max_Cons_Shifts().build(self.instance, self.vars)
-        if SolverConstraints.max_weekend_days not in disabled_constraints:
-            max_weekend_days.Max_weekend_days().build(self.instance, self.vars)
-        if SolverConstraints.minimum_consecutive_days_off not in disabled_constraints:
-            minimum_consecutive_days_off.Minimum_consecutive_days_off().build(
-                self.instance, self.vars
-            )
-        if SolverConstraints.minimum_consecutive_shifts not in disabled_constraints:
-            minimum_consecutive_shifts.Minimum_consecutive_shifts().build(
-                self.instance, self.vars
-            )
-        if SolverConstraints.minMaxWorkTime not in disabled_constraints:
-            minMaxWorkTime.MinMaxWorkTime().build(self.instance, self.vars)
-        if SolverConstraints.shift_rotation_constraint not in disabled_constraints:
-            shift_rotation_constraint.Shift_rotation_constraint().build(
-                self.instance, self.vars
-            )
-        if (
-            SolverConstraints.shift_assignment_single_day_validation
-            not in disabled_constraints
-        ):
-            shift_assignment_single_day_validation.Single_day_validation().build(
-                self.instance, self.vars
-            )
+        self.set_constraints(disabled_constraints=disabled_constraints)
         solver = cp_model.CpSolver()
         solver.parameters.log_search_progress = log_search_progress
         solver.parameters.max_time_in_seconds = max_time_in_seconds
+
+        if stop_after_first_solution:
+            solver.parameters.stop_after_first_solution = True
 
         for key, value in solver_params.items():
             setattr(solver.parameters, key, value)
 
         self.vars.model.Minimize(self.objevtive_value())
         self.start_solve_time = datetime.now()
-        status = solver.Solve(self.vars.model)
+        if callback is not None:
+            status = solver.SolveWithSolutionCallback(self.vars.model, callback)
+        else:
+            status = solver.Solve(self.vars.model)
         self.solve_time = (datetime.now() - self.start_solve_time).total_seconds()
         return self.handle_results(status, solver, disabled_constraints)
 
@@ -123,14 +96,16 @@ class Solver:
             self.store_solution(
                 solver, solution
             )  # Pass the solution instance to store values
-            if status == cp_model.OPTIMAL:
-                print("Optimal solution found.")
-            else:
-                print("Feasible solution found but not optimal.")
+            # if status == cp_model.OPTIMAL:
+            #     print("Optimal solution found.")
+            # else:
+            #     print("Feasible solution found but not optimal.")
             solution.objective_value = solver.ObjectiveValue()
+            solution.solve_status = status
             solution.instance = self.instance
             solution.disabled_constraints = disabled_constraints
             solution.solve_time = self.solve_time
+            solution.timestamp = datetime.now()
             return solution  # Return the populated solution
         elif status == cp_model.INFEASIBLE:
             self.process_infeasible_solution()
@@ -184,3 +159,120 @@ class Solver:
         """Handles the case when the model is invalid."""
         print("The model provided is invalid and cannot be solved.")
         print("The model provided is invalid and cannot be solved.")
+
+    def warm_start(
+        self,
+        solution: Solution,
+        instance: instace.Instance,
+        disabled_constraints: list[SolverConstraints] = [],
+        max_time_in_seconds: float = 60.0,
+    ) -> Solution:
+        """Warm starts the solver with a given solution."""
+        self.instance = instance
+        for day in range(instance.number_of_days):
+            for type_uid in instance.shifts[day]:
+                for employee_uid in instance.employees:
+                    var_value = solution.vars[(day, type_uid, employee_uid)] == 1
+                    self.vars.model.AddHint(
+                        self.vars.get_var(day, type_uid, employee_uid), var_value
+                    )
+        return self.solve_min_changes(
+            solution=solution,
+            disabled_constraints=disabled_constraints,
+            max_time_in_seconds=max_time_in_seconds,
+        )
+
+    def objective_value_weight_changes(
+        self,
+        solution: Solution,
+        changes_weight: int = 2,
+    ):
+        """Calculates the objective value weight based on changes from a given solution."""
+        objective_value = 0
+        for day in range(self.instance.number_of_days):
+            for type_uid in self.instance.shifts[day]:
+                for employee_uid in self.instance.employees:
+                    current_var = self.vars.vars[(day, type_uid, employee_uid)]
+                    previous_var_value = solution.vars.get(
+                        (day, type_uid, employee_uid), 0
+                    )
+                    changed = self.vars.model.NewBoolVar(
+                        f"changed_{day}_{type_uid}_{employee_uid}"
+                    )
+
+                    self.vars.model.Add(
+                        current_var != previous_var_value
+                    ).OnlyEnforceIf(changed)
+                    self.vars.model.Add(
+                        current_var == previous_var_value
+                    ).OnlyEnforceIf(changed.Not())
+                    # If the assignment has changed, add the change weight
+
+                    objective_value += changes_weight * changed
+        return objective_value + self.objevtive_value()
+
+    def solve_min_changes(
+        self,
+        solution: Solution,
+        log_search_progress: bool = True,
+        max_time_in_seconds: float = 60.0,
+        disabled_constraints: list[SolverConstraints] = [],
+        **solver_params,
+    ) -> Solution:
+        self.set_constraints(disabled_constraints=disabled_constraints)
+        solver = cp_model.CpSolver()
+        solver.parameters.log_search_progress = log_search_progress
+        solver.parameters.max_time_in_seconds = max_time_in_seconds
+
+        for key, value in solver_params.items():
+            setattr(solver.parameters, key, value)
+
+        self.vars.model.Minimize(self.objective_value_weight_changes(solution=solution))
+        self.start_solve_time = datetime.now()
+        status = solver.Solve(self.vars.model)
+        self.solve_time = (datetime.now() - self.start_solve_time).total_seconds()
+        return self.handle_results(status, solver, disabled_constraints)
+
+    def set_constraints(
+        self,
+        log_search_progress: bool = True,
+        max_time_in_seconds: float = 60.0,
+        disabled_constraints: list[SolverConstraints] = [],
+        **solver_params,
+    ):
+        if SolverConstraints.days_off not in disabled_constraints:
+            days_off.Days_off().build(self.instance, self.vars)
+        if SolverConstraints.cover_requirements not in disabled_constraints:
+            cover_requirements.Cover_requirements().build(self.instance, self.vars)
+        if (
+            SolverConstraints.limited_shifts_per_type_validation
+            not in disabled_constraints
+        ):
+            limited_shifts_per_type_validation.Limited_shifts_per_type_validation().build(
+                self.instance, self.vars
+            )
+        if SolverConstraints.max_Cons_Shifts not in disabled_constraints:
+            max_Cons_Shifts.Max_Cons_Shifts().build(self.instance, self.vars)
+        if SolverConstraints.max_weekend_days not in disabled_constraints:
+            max_weekend_days.Max_weekend_days().build(self.instance, self.vars)
+        if SolverConstraints.minimum_consecutive_days_off not in disabled_constraints:
+            minimum_consecutive_days_off.Minimum_consecutive_days_off().build(
+                self.instance, self.vars
+            )
+        if SolverConstraints.minimum_consecutive_shifts not in disabled_constraints:
+            minimum_consecutive_shifts.Minimum_consecutive_shifts().build(
+                self.instance, self.vars
+            )
+        if SolverConstraints.minMaxWorkTime not in disabled_constraints:
+            minMaxWorkTime.MinMaxWorkTime().build(self.instance, self.vars)
+        if SolverConstraints.shift_rotation_constraint not in disabled_constraints:
+            shift_rotation_constraint.Shift_rotation_constraint().build(
+                self.instance, self.vars
+            )
+        if (
+            SolverConstraints.shift_assignment_single_day_validation
+            not in disabled_constraints
+        ):
+            shift_assignment_single_day_validation.Single_day_validation().build(
+                self.instance, self.vars
+            )

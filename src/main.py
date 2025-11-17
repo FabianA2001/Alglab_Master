@@ -1,12 +1,33 @@
+import logging
 from pathlib import Path
 
 from cpsat_utils.testing import AssertModelFeasible
 from ortools.sat.python import cp_model
 
+from src.help_functions import compare_solutions
+from src.solution import Solution
+
 from .inputTypes import employee, instace, shiftType
+from .LNS import lns
 from .parseData import parseTXT
 from .shift_vars import Shift_vars
 from .solver import Solver
+
+# Logging konfigurieren
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
+
+def try_compare_solutions():
+    sol_a = Solution.from_json_file("Instance1")
+    sol_b = Solution.from_json_file("Instance2")
+
+    result = compare_solutions(sol_a, sol_b, include_details=True)
+    print(f"Mitarbeiter mit Änderungen: {result['employees_with_changes']}")
+    print(f"Insgesamt geänderte Tagesschichten: {result['total_changed_days']}")
 
 
 def sayHello(name="World") -> str:
@@ -15,7 +36,7 @@ def sayHello(name="World") -> str:
 
 def get_tes_data() -> instace.Instance:
     test_file = Path.joinpath(
-        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance2.txt"
+        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance9.txt"
     )
     return parseTXT.parse_txt(test_file)
 
@@ -52,6 +73,21 @@ def t_single_day_validation():
         assert solver.Value(vars.get_above_prefferd_var(0, lokal_shift_type.uid)) == 1
 
 
+def run_lns_example():
+    # old_sol = Solution.from_json_file("Instance9")
+    inst = get_tes_data()
+    lns_solver = lns.LNS(
+        inst,
+        small_runtime_seconds=10,
+        timeout_seconds=60,
+        search_window_size_max=inst.number_of_days // 2,
+    )
+    improved_solution = lns_solver.solve()
+    # improved_solution.print_all_variables_values()
+    # print("Objective value before LNS:", old_sol.objective_value)
+    print("Objective value after LNS:", improved_solution.objective_value)
+
+
 def main() -> None:
     # inst = get_tes_data()
     # x = inst
@@ -59,7 +95,9 @@ def main() -> None:
     # get_test_constraint_deactivation()
     # get_test_solution_from_model()
     # sol = Solution.from_json_file("Instance1")
-    get_test_solution_from_model()
+    # get_test_solution_from_model()
+    # try_compare_solutions()
+    run_lns_example()
 
 
 if __name__ == "__main__":

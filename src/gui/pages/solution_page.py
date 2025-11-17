@@ -1,43 +1,44 @@
+from datetime import time
 from pathlib import Path
 
-import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
 
 from ... import solution
+from ...help_functions import compare_solutions, hash_string
+from .component_solution import my_component
+from .session_state_names import Session_state_Names as SSN
 from .show_constraints import show_active_constraints, show_constraint_violations
+
+import pandas as pd
 
 SOLUTION_DIR = (
     Path(__file__).resolve().parent.parent.parent.parent / "data" / "solutions"
 )
 
 
-def soluation_to_dataframe(solution: solution.Solution) -> pd.DataFrame:
-    # Diese Funktion sollte die Lösung in ein DataFrame umwandeln
-    days = [day for day in range(solution.instance.number_of_days)]
-    shift_types = [
-        shift_type.name for shift_type in solution.instance.shift_types.values()
-    ]
-    # blank_data = {day: [[] for _ in shift_types] for day in days}
-    data = []
-    for shift_type_uid in solution.instance.shift_types:
-        row = []
-        for day in days:
-            assigned_employees = []
-            for emp_id in solution.instance.employees:
-                if solution.is_employee_assigned(day, shift_type_uid, emp_id):
-                    assigned_employees.append(solution.instance.employees[emp_id].name)
-            row.append(assigned_employees)
-        data.append(row)
+def on_change_solution():
+    try:
+        loaded_solution = solution.Solution.from_json_file(
+            st.session_state.solution_selectbox
+        )
+        st.session_state[SSN.solutions.name].append(loaded_solution)
+        st.success(
+            f"Lösung '{st.session_state.solution_selectbox}' erfolgreich geladen!"
+        )
+    except Exception as e:
+        st.error(f"Fehler beim Laden der Lösung: {e}")
 
-    df = pd.DataFrame(data, index=shift_types)
 
-    return df
+def add_minutes_to_time(start_time: time, minutes: int) -> time:
+    """Addiert Minuten zu einer time und gibt die neue time zurück."""
+    total_minutes = start_time.hour * 60 + start_time.minute + minutes
+    hours = (total_minutes // 60) % 24
+    mins = total_minutes % 60
+    return time(hours, mins)
 
 
 def solution_to_html_data(sol: solution.Solution) -> dict:
     """Konvertiert die Lösung in ein Format für die Custom HTML Komponente"""
-    from datetime import timedelta
 
     days = [day for day in range(sol.instance.number_of_days)]
 
@@ -46,7 +47,7 @@ def solution_to_html_data(sol: solution.Solution) -> dict:
     for shift_type in sol.instance.shift_types.values():
         start_time = shift_type.start_time
         # Berechne Endzeit basierend auf Länge in Minuten
-        end_time = start_time + timedelta(minutes=shift_type.length)
+        end_time = add_minutes_to_time(start_time, shift_type.length)
 
         shift_types_info.append(
             {
@@ -78,112 +79,214 @@ def solution_to_html_data(sol: solution.Solution) -> dict:
                     "preferred": preferred_count,
                     "actual": actual_count,
                     "difference": difference,
+                    "weight": sol.instance.shifts[day][
+                        shift_type_uid
+                    ].weight_below_preferred,
                 }
             )
         data.append(row)
+
+    # create a list of employee names
+    employee_names = []
+    for employee in sol.instance.employees.values():
+        employee_names.append(employee.name)
 
     return {
         "shift_types_info": shift_types_info,
         "num_days": sol.instance.number_of_days,
         "data": data,
+        "employee_names": employee_names,
     }
 
 
-def render_shift_plan_component(sol: solution.Solution):
+def render_shift_plan_component(
+    sol: solution.Solution, read_only: bool = False, index=0
+):
     """Rendert die Custom HTML/JS Komponente für den Shift Plan"""
     import json
 
-    # Pfad zu den HTML/JS Dateien
-    html_file = Path(__file__).parent / "shift_plan_table.html"
-    js_file = Path(__file__).parent / "shift_plan_table.js"
-    config_file = Path(__file__).parent / "shift_plan_config.js"
-
-    # Lese HTML, JS und Config
-    with open(html_file, "r", encoding="utf-8") as f:
-        html_content = f.read()
-
-    with open(js_file, "r", encoding="utf-8") as f:
-        js_content = f.read()
-
-    with open(config_file, "r", encoding="utf-8") as f:
-        config_content = f.read()
-
     # Konvertiere Lösung in JSON-Format
     shift_plan_data = solution_to_html_data(sol)
+    extra_options = {"read_only": read_only}
 
-    # Erstelle den vollständigen HTML-Code mit eingebettetem JavaScript und Daten
-    full_html = f"""
-    {html_content}
-    <script>
-    // Lade die Konfiguration
-    {config_content}
-    
-    // Lade das Haupt-JavaScript
-    {js_content}
-    
-    // Initialisiere die Tabelle mit den Daten
-    (function() {{
-        const shiftPlanData = {json.dumps(shift_plan_data)};
-        console.log('Data loaded:', shiftPlanData);
-        
-        // Warte kurz und initialisiere dann
-        setTimeout(function() {{
-            if (window.initShiftPlanTable) {{
-                window.initShiftPlanTable(shiftPlanData);
-            }} else {{
-                console.error('initShiftPlanTable function not found');
-            }}
-        }}, 100);
-    }})();
-    </script>
-    """
+    solution_changes_response = my_component.my_component(
+        f"shift_plan_component_{index}",
+        render_option="shift_plan_solution",
+        data=json.dumps(shift_plan_data),
+        extra_options=json.dumps(extra_options),
+    )
 
-    # Rendere als HTML Komponente
+    if read_only:
+        return
+    st.markdown(f"The selected employee is: {solution_changes_response}")
+    if "cover_weights" in solution_changes_response:
+        instance = sol.instance.model_copy(deep=True)
+        for day, shift_type_dict in solution_changes_response["cover_weights"].items():
+            for shift_type, value in shift_type_dict.items():
+                # TODO what about weight_above_preferred?
+                instance.shifts[int(day)][
+                    hash_string(shift_type)
+                ].weight_below_preferred = int(value)
+                instance.name = instance.name + "eddited_cover_requirements"
+        st.session_state[SSN.instance.name] = instance
+        st.success("Instance updated with new cover requirements from component.")
+        st.session_state[SSN.allow_resolve.name] = True
 
-    components.html(full_html, height=600, scrolling=True)
+
+def show_solution_employee_changes():
+    if len(st.session_state[SSN.solutions.name]) < 2:
+        st.info("Es sind mindestens zwei Lösungen erforderlich, um sie zu vergleichen.")
+        return (None, [])
+    all_columns = []
+    solutions_list = []
+    # bring the solutions into a more managable structure
+    for i, sol in enumerate(reversed(st.session_state[SSN.solutions.name])):
+        newer_solution = {"selected": {}, "deselected": {}}
+        for keys, selected in sol.vars.items():
+            shift_name = sol.instance.shift_types[keys[1]].name
+            employee_name = sol.instance.employees[keys[2]].name
+            if selected:
+                if keys[0] not in newer_solution["selected"]:
+                    newer_solution["selected"][keys[0]] = {}
+                if shift_name not in newer_solution["selected"][keys[0]]:
+                    newer_solution["selected"][keys[0]][shift_name] = []
+                newer_solution["selected"][keys[0]][shift_name].append(employee_name)
+            else:
+                if keys[0] not in newer_solution["deselected"]:
+                    newer_solution["deselected"][keys[0]] = {}
+                if shift_name not in newer_solution["deselected"][keys[0]]:
+                    newer_solution["deselected"][keys[0]][shift_name] = []
+                newer_solution["deselected"][keys[0]][shift_name].append(employee_name)
+        solutions_list.append(newer_solution)
+
+    # Process the created structures
+    all_rows = []
+    # solutions_list all solutions dict
+    for index, solution_dict in enumerate(solutions_list):
+        # for the current solution the selected part
+        solution_row = {}
+        shifts_count_difference = 0
+        for day, shift_dict in solution_dict["selected"].items():
+            for shift_uid, employee_list in shift_dict.items():
+                if index + 1 < len(solutions_list):
+                    select_previous_solution_list = solutions_list[index + 1][
+                        "deselected"
+                    ][day][shift_uid]
+
+                    solution_row[f"added_to_{day}_{shift_uid}"] = [
+                        item
+                        for item in employee_list
+                        if item in select_previous_solution_list
+                    ]
+                    deseleted_current_solution_list = solution_dict["deselected"][day][
+                        shift_uid
+                    ]
+                    seleted_previous_solution_list = solutions_list[index + 1][
+                        "selected"
+                    ][day][shift_uid]
+
+                    solution_row[f"removed_from_{day}_{shift_uid}"] = [
+                        item
+                        for item in deseleted_current_solution_list
+                        if item in seleted_previous_solution_list
+                    ]
+
+                    solution_row[f"employ_count_{day}_{shift_uid}"] = len(
+                        employee_list
+                    ) - len(seleted_previous_solution_list)
+                    shifts_count_difference += solution_row[
+                        f"employ_count_{day}_{shift_uid}"
+                    ]
+
+                    all_columns.append(f"added_to_{day}_{shift_uid}")
+                    all_columns.append(f"removed_from_{day}_{shift_uid}")
+                    all_columns.append(f"employ_count_{day}_{shift_uid}")
+        solution_row[f"shifts_count_difference"] = shifts_count_difference
+        all_rows.append(solution_row)
+
+    return (pd.DataFrame(all_rows), all_columns)
+
+
+def show_compare_solutions():
+    if len(st.session_state[SSN.solutions.name]) < 2:
+        st.info("Es sind mindestens zwei Lösungen erforderlich, um sie zu vergleichen.")
+        return
+    com = compare_solutions(
+        st.session_state[SSN.solutions.name][-2],
+        st.session_state[SSN.solutions.name][-1],
+        include_details=True,
+    )
+
+    # Zeige Zusammenfassung in einer Tabelle
+    st.write("### Lösungsvergleich")
+    summary_data = {
+        "Metrik": ["Mitarbeiter mit Änderungen", "Gesamtzahl geänderter Tage"],
+        "Wert": [
+            com.get("employees_with_changes", 0),
+            com.get("total_changed_days", 0),
+        ],
+    }
+    st.table(summary_data)
+
+    # Zeige Details pro Mitarbeiter, falls vorhanden
+    if "per_employee_changes" in com and com["per_employee_changes"]:
+        st.write("#### Änderungen pro Mitarbeiter")
+        employee_data = []
+        for emp_uid, emp_data in com["per_employee_changes"].items():
+            employee_data.append(
+                {
+                    "Mitarbeiter ID": emp_uid,
+                    "Name": emp_data.get("name", "Unbekannt"),
+                    "Anzahl geänderter Tage": emp_data.get("num_changed_days", 0),
+                }
+            )
+        st.dataframe(employee_data, use_container_width=True)
+
+    # Zeige Details pro Tag, falls vorhanden
+    if "per_day_changes" in com and com["per_day_changes"]:
+        st.write("#### Änderungen pro Tag")
+        day_data = []
+        for day, count in sorted(com["per_day_changes"].items()):
+            if count > 0:  # Nur Tage mit Änderungen anzeigen
+                day_data.append({"Tag": day, "Anzahl Änderungen": count})
+        if day_data:
+            st.dataframe(day_data, use_container_width=True)
 
 
 def show():
     st.title("✅ Solution")
     # Check if solution exists in session state
-    if "solution" not in st.session_state:
+    # TODO Discuss if always show solution selector or only when no solution in session state
+    # TODO should must likly be removed because it breaks some functions for example with show_solution_employee_changes
+    available_solutions = []
+    if SOLUTION_DIR.exists():
+        available_solutions = [f.stem for f in SOLUTION_DIR.glob("*.json")]
+        available_solutions.sort()
+
+    if available_solutions:
+        st.selectbox(
+            "Wähle eine gespeicherte Lösung:",
+            options=[""] + available_solutions,
+            key="solution_selectbox",
+            index=0,
+            help="Wähle eine Lösung aus dem Dropdown-Menü",
+            on_change=on_change_solution,
+        )
+
+    else:
+        st.info("Keine gespeicherten Lösungen gefunden.")
+        return
+
+    if (
+        SSN.solutions.name not in st.session_state
+        or st.session_state[SSN.solutions.name] == []
+    ):
         st.warning(
             "Keine Lösung verfügbar. Bitte zuerst den Solver ausführen oder eine Lösung auswählen."
         )
-        st.info("Gehe zur Solver-Seite um eine Lösung zu berechnen.")
-        # Dropdown-Menü für fertige Lösungen
-        st.write("### Gespeicherte Lösungen laden")
-
-        # Liste aller verfügbaren Lösungsdateien
-        available_solutions = []
-        if SOLUTION_DIR.exists():
-            available_solutions = [f.stem for f in SOLUTION_DIR.glob("*.json")]
-            available_solutions.sort()
-
-        if available_solutions:
-            selected_solution = st.selectbox(
-                "Wähle eine gespeicherte Lösung:",
-                options=[""] + available_solutions,
-                index=0,
-                help="Wähle eine Lösung aus dem Dropdown-Menü",
-            )
-
-            if selected_solution:
-                try:
-                    loaded_solution = solution.Solution.from_json_file(
-                        selected_solution
-                    )
-                    st.session_state["solution"] = loaded_solution
-                    st.success(f"Lösung '{selected_solution}' erfolgreich geladen!")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Fehler beim Laden der Lösung: {e}")
-        else:
-            st.info("Keine gespeicherten Lösungen gefunden.")
-
         return
 
-    sol = st.session_state["solution"]
+    sol = st.session_state[SSN.solutions.name][-1]
 
     st.write("### Objective Value")
     st.write(f"**{sol.objective_value}**")
@@ -196,12 +299,17 @@ def show():
 
     st.write("### Shift Plan")
 
-    # Option zur Auswahl zwischen Custom Komponente und DataFrame
-    display_mode = st.radio(
-        "Anzeigemodus:", ["Custom HTML Tabelle", "Standard DataFrame"], horizontal=True
-    )
+    render_shift_plan_component(sol)
 
-    if display_mode == "Custom HTML Tabelle":
-        render_shift_plan_component(sol)
-    else:
-        st.dataframe(soluation_to_dataframe(sol), key="shiftplan")
+    st.write("### Vorherige Lösungen (absteigend)")
+    for i, sol in enumerate(reversed(st.session_state[SSN.solutions.name][:-1])):
+        render_shift_plan_component(sol, read_only=True, index=i + 1)
+
+    show_compare_solutions()
+
+    df, df_columns = show_solution_employee_changes()
+    st.dataframe(
+        df,
+        use_container_width=True,
+        hide_index=True,
+    )
