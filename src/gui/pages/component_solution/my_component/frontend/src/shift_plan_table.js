@@ -179,7 +179,13 @@ function renderTable(shiftPlanData) {
                     }
                 });
             }
-            const employees = cellData.employees || cellData;
+            let employees = cellData.employees;
+            const force_assigned_employees = cellData.force_assigned_employees;
+            const banned_employees = cellData.banned_employees;
+            //remove extra forced assigned employees, so that we can add them at the end of this funciton as forced assigned
+            employees = employees.filter(item => !force_assigned_employees.includes(item))
+            employees.push(...banned_employees)
+
             
             // Create container for removed employees add it the end
             const removedEmployeeList = document.createElement('div');
@@ -202,18 +208,18 @@ function renderTable(shiftPlanData) {
             selectionContainer.style.display = 'none'; // Initially hidden
             selectionContainer.style.position = 'absolute'; // Position it absolutely
 
-            // Sample list of potential employees (replace with your employee data)
+            // Get remaining employees
             const employeeOptions = shiftPlanData.employee_names.filter(item => !employees.includes(item));
 
             employeeOptions.forEach(empName => {
                 const option = document.createElement('div');
                 option.className = 'employee-option';
+                option.id = `employee-${empName}-option-day-${day}-shift-${shiftTypeInfo.name}`;
                 option.textContent = empName;
 
                 // Event listener to add the selected employee without removing functionality
                 option.addEventListener('click', () => {
                     const badgeContainer = document.createElement('div');
-                    option.id = `option-${empName}`;
                     badgeContainer.className = 'employee-badge-container';
 
                     const badge = document.createElement('span');
@@ -264,6 +270,7 @@ function renderTable(shiftPlanData) {
                     
                     const removeButton = document.createElement('span');
                     removeButton.innerHTML = '&times;';
+                    removeButton.id = `remove-employee-${empName}-day-${day}-shift-${shiftTypeInfo.name}-button`
                     removeButton.className = 'remove-employee-button';
 
                     // Event listener for removing employee
@@ -278,7 +285,7 @@ function renderTable(shiftPlanData) {
 
                 cellContainer.appendChild(employeeList);
                 td.appendChild(cellContainer);
-                totalAssignments += employees.length;
+                totalAssignments += employees.length - banned_employees.length;
             } else {
                 // Füge einen Platzhalter für "Keine Mitarbeiter" hinzu
                 const emptyDiv = document.createElement('div');
@@ -304,6 +311,7 @@ function renderTable(shiftPlanData) {
 
             td.appendChild(submit_day_shift)
             tr.appendChild(td);
+            set_employees_options(force_assigned_employees, banned_employees, day, shiftTypeInfo.name);
         }
 
         tableBody.appendChild(tr);
@@ -348,7 +356,6 @@ function updateData(dayIndex, shiftType) {
         // Remove entry if checkbox is unchecked
         delete dataDict["cover_weights"][dayIndex][shiftType];
     }
-    console.log(dataDict)
 }
 
 function reset_cover_requirement_options() {
@@ -366,7 +373,6 @@ function reset_cover_requirement_options() {
 export function reset_dataDict() {
     dataDict = {"cover_weights": {}, "added_employees": {}, "removed_employees": {}};
     reset_cover_requirement_options();
-    reset_employees_options();
 }
 
 export function reset_employees_options() {
@@ -374,6 +380,38 @@ export function reset_employees_options() {
     added_employees.forEach(el => el.click());
     const removed_employees = document.querySelectorAll('.re-add-employee-button');
     removed_employees.forEach(el => el.click());
+}
+
+function set_employees_options(force_assigned_employees, banned_employees, day, shift_type) {
+    const observer = new MutationObserver(() => {
+        let allFound = true;
+        force_assigned_employees.forEach((empName) => {
+            const element = document.getElementById(`employee-${empName}-option-day-${day}-shift-${shift_type}`); // Check by ID
+            if (!element) {
+                allFound = false;
+            }
+        });
+        banned_employees.forEach((empName) => {
+            const element = document.getElementById(`remove-employee-${empName}-day-${day}-shift-${shift_type}-button`); // Check by ID
+            if (!element) {
+                allFound = false;
+            }
+        });
+
+        // Disconnect observer if all IDs are found
+        if (allFound) {
+            force_assigned_employees.forEach(empName => document.getElementById(`employee-${empName}-option-day-${day}-shift-${shift_type}`).click());
+            banned_employees.forEach(empName => document.getElementById(`remove-employee-${empName}-day-${day}-shift-${shift_type}-button`).click());
+            observer.disconnect();
+            console.log('All target IDs found. Observer disconnected.');
+        }
+    });
+
+    // Start observing changes in the document body
+    observer.observe(document.body, {
+        childList: true, // Observe direct children
+        subtree: true,   // Observe all descendants
+    });
 }
 
 export function set_coverage_unchangable() {
@@ -384,14 +422,17 @@ export function set_coverage_unchangable() {
 }
 
 export function remove_changable_employee_options() {
-    const removed_employees = document.querySelectorAll('.remove-employee-button');
-    removed_employees.forEach(el => el.remove());
-    const add_employee_buttons = document.querySelectorAll('.add-employee-button');
-    add_employee_buttons.forEach(el => el.remove());
-    const send_day_shift_buttons = document.querySelectorAll('.send-day-shift');
-    send_day_shift_buttons.forEach(el => el.remove());
-    const removed_emolyee_list = document.querySelectorAll('.removed-employee-list');
-    removed_emolyee_list.forEach(el => el.remove());
+    // TODO create an observer to do this
+    // const removed_employees = document.querySelectorAll('.remove-employee-button');
+    // removed_employees.forEach(el => el.remove());
+    // const add_employee_buttons = document.querySelectorAll('.add-employee-button');
+    // add_employee_buttons.forEach(el => el.remove());
+    // const send_day_shift_buttons = document.querySelectorAll('.send-day-shift');
+    // send_day_shift_buttons.forEach(el => el.remove());
+    // const added_employee_remove_buttons = document.querySelectorAll('.added-employee-remove-button');
+    // added_employee_remove_buttons.forEach(el => el.remove());
+    // const re_add_employee_button = document.querySelectorAll('.re-add-employee-button');
+    // re_add_employee_button.forEach(el => el.remove());
 }
 
 
@@ -420,6 +461,7 @@ function moveToRemovedList(badge, removedEmployeeList, empName, day, shiftType) 
     // Create a re-add button for removed employees
     const reAddButton = document.createElement('span');
     reAddButton.innerHTML = '&plus;'; // Use HTML entity for "+"
+    reAddButton.id = `re-add-employee-button-${empName}-day-${day}-shift-${shiftType}`
     reAddButton.className = 're-add-employee-button';
 
     // Event listener for re-adding employee
