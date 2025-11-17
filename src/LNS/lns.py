@@ -9,6 +9,21 @@ from ..inputTypes import instace
 logger = logging.getLogger(__name__)
 
 
+class StopAfterMinTimeAndFirstSolution(cp_model.CpSolverSolutionCallback):
+    def __init__(self, min_runtime_sec):
+        super().__init__()
+        self.min_runtime_sec = min_runtime_sec
+        self.start = time.time()
+        self.solution_found_after_min_time = False
+
+    def on_solution_callback(self):
+        now = time.time()
+        if now - self.start >= self.min_runtime_sec:
+            # Sobald die Mindestzeit erreicht ist und eine Lösung existiert → Solver stoppen
+            print("Stopping: min time reached and a solution is available.")
+            self.StopSearch()
+
+
 class LNS:
     def __init__(
         self,
@@ -46,7 +61,9 @@ class LNS:
         )
         self.old_solution, create_time_first_solution = (
             self.__parse_solution_or_instance(
-                sol_or_instance, timeout_seconds * percent_search_time_first_solution
+                sol_or_instance,
+                timeout_seconds * percent_search_time_first_solution,
+                timeout_seconds,
             )
         )
         self.timeout_seconds: float = max(
@@ -69,6 +86,7 @@ class LNS:
     @staticmethod
     def __parse_solution_or_instance(
         sol_or_instance: solution.Solution | instace.Instance,
+        min_runtime_sec: float,
         timeout_seconds: float,
     ) -> tuple[solution.Solution, float]:
         if isinstance(sol_or_instance, solution.Solution):
@@ -78,9 +96,11 @@ class LNS:
             start_time = time.time()
             vars = solver.shift_vars.Shift_vars(sol_or_instance)
             solv = solver.Solver(sol_or_instance, vars)
+            callback = StopAfterMinTimeAndFirstSolution(min_runtime_sec)
             initial_solution = solv.solve(
                 log_search_progress=False,
                 max_time_in_seconds=timeout_seconds,
+                callback=callback,
             )
             assert (
                 initial_solution.solve_status == cp_model.OPTIMAL
@@ -200,6 +220,7 @@ class LNS:
                 logger.debug(
                     f"Iteration {iteration}: No feasible solution found (status: {solv.solve_status})"
                 )
+
                 continue
 
             logger.debug(

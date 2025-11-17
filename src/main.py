@@ -36,7 +36,7 @@ def sayHello(name="World") -> str:
 
 def get_tes_data() -> instace.Instance:
     test_file = Path.joinpath(
-        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance9.txt"
+        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance13.txt"
     )
     return parseTXT.parse_txt(test_file)
 
