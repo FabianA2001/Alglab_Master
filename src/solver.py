@@ -112,10 +112,10 @@ class Solver:
             self.store_solution(
                 solver, solution
             )  # Pass the solution instance to store values
-            if status == cp_model.OPTIMAL:
-                print("Optimal solution found.")
-            else:
-                print("Feasible solution found but not optimal.")
+            # if status == cp_model.OPTIMAL:
+            #     print("Optimal solution found.")
+            # else:
+            #     print("Feasible solution found but not optimal.")
             solution.objective_value = solver.ObjectiveValue()
             solution.solve_status = status
             solution.instance = self.instance
