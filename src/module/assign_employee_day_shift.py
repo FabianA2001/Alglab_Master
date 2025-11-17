@@ -16,7 +16,5 @@ class Assign_employee_day_shift(ShiftAssignmentModule):
                 for employee_uid in instance.shifts[day][
                     type_uid
                 ].assign_employee_day_shift:
-                    print("assign employee", employee_uid)
                     vars.model.Add(vars.get_var(day, type_uid, employee_uid) == 1)
-                    print(" employee assigned")
         return 0
