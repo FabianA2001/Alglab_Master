@@ -16,7 +16,5 @@ class Ban_employee_day_shift(ShiftAssignmentModule):
                 for employee_uid in instance.shifts[day][
                     type_uid
                 ].ban_employee_day_shift:
-                    print("ban employee", employee_uid)
                     vars.model.Add(vars.get_var(day, type_uid, employee_uid) == 0)
-                    print(" employee banned")
         return 0
