@@ -32,7 +32,7 @@ class LNS:
         percent_search_time_first_solution: float = 0.1,
         timeout_seconds: float = 180,
         small_runtime_seconds: int = 20,
-        search_window_size_max: int = 7,
+        start_search_window_size: int = 3,
         search_window_size_min: int = 3,
         window_increase_factor: float = 1.5,
         window_decrease_factor: float = 0.8,
@@ -41,18 +41,7 @@ class LNS:
     ):
         logger.setLevel(log_level)
 
-        self.window_increase_factor = window_increase_factor
-        self.window_decrease_factor = window_decrease_factor
-        self.strong_improvement_threshold = strong_improvement_threshold
-
-        self.search_window_size: int = min(
-            search_window_size_max, search_window_size_max // 2 + search_window_size_min
-        )  # days
-        self.search_window_size_max = search_window_size_max
-        self.search_window_size_min = search_window_size_min
-        self.timeout_seconds: float = timeout_seconds
-        self.small_runtime_seconds: int = small_runtime_seconds
-
+        # get first Solution
         assert percent_search_time_first_solution < 1.0, (
             "search_time_first_solution must be < 1.0"
         )
@@ -66,17 +55,36 @@ class LNS:
                 timeout_seconds,
             )
         )
+
+        # window change size parameters
+        self.window_increase_factor = window_increase_factor
+        self.window_decrease_factor = window_decrease_factor
+        self.strong_improvement_threshold = strong_improvement_threshold
+
+        self.MIN_DAY: int = 0
+        self.start_day: int = self.MIN_DAY
+        self.MAX_DAY: int = self.old_solution.instance.number_of_days - 1
+        self.end_day: int = self.MAX_DAY
+        self.start_search_window_size: int = start_search_window_size
+        self.search_window_size_min = search_window_size_min
+
+        # time parameters
+        self.timeout_seconds: float = timeout_seconds
+        self.small_runtime_seconds: int = small_runtime_seconds
         self.timeout_seconds: float = max(
             0.0, timeout_seconds - create_time_first_solution
         )
+
+        # disabled constraints
         self.disabled_constraints = (
             disabled_constraints
             if disabled_constraints is not None
             else self.old_solution.disabled_constraints
         )
 
+        # logging info
         logger.info(
-            f"LNS initialized with search_window_size={self.search_window_size}, "
+            f"LNS initialized with search_window_size={self.start_search_window_size}, "
             f"timeout_seconds={self.timeout_seconds}, small_runtime_seconds={self.small_runtime_seconds}"
         )
         logger.debug(
@@ -110,26 +118,6 @@ class LNS:
         else:
             raise ValueError("Input must be a Solution or an Instance")
 
-    def choose_search_window(self) -> tuple[int, int]:
-        """Wählt ein Suchfenster basierend auf der alten Lösung aus."""
-        import random
-
-        total_days = self.old_solution.instance.number_of_days
-        logger.debug(f"Total days in instance: {total_days}")
-
-        if total_days <= self.search_window_size:
-            logger.debug(
-                f"Total days ({total_days}) <= search_window_size ({self.search_window_size}), using full range"
-            )
-            return 0, total_days - 1
-
-        start_day = random.randint(0, total_days - self.search_window_size)
-        end_day = start_day + self.search_window_size - 1
-        logger.debug(
-            f"Selected search window: days {start_day} to {end_day}, size {self.search_window_size}"
-        )
-        return start_day, end_day
-
     def fix_outside_window(
         self, start_day: int, end_day: int, solver_instance: solver.Solver
     ):
@@ -151,38 +139,71 @@ class LNS:
     def update_search_window(self, improvement: float):
         """
         Passt die Größe des Suchfensters basierend auf der Verbesserung an.
+        Verschiebt start_day und end_day unter Beachtung der min/max Grenzen.
 
         Args:
             improvement: Die Verbesserung des Objective-Werts (positiv wenn besser)
         """
-        old_window_size = self.search_window_size
 
-        if improvement > 0:
-            # Starke Verbesserung? -> Fenster verkleinern
-            relative_improvement = (
-                improvement / self.old_solution.objective_value
-                if self.old_solution.objective_value > 0
-                else 0
-            )
+        def __calculate_new_window_size():
+            old_window_size = self.end_day - self.start_day
+            new_window_size = old_window_size
 
-            if relative_improvement >= self.strong_improvement_threshold:
-                self.search_window_size = max(
-                    self.search_window_size_min,
-                    int(self.search_window_size * self.window_decrease_factor),
+            if improvement > 0:
+                # Starke Verbesserung? -> Fenster verkleinern
+                relative_improvement = (
+                    improvement / self.old_solution.objective_value
+                    if self.old_solution.objective_value > 0
+                    else 0
+                )
+
+                if relative_improvement >= self.strong_improvement_threshold:
+                    new_window_size = max(
+                        self.search_window_size_min,
+                        int(old_window_size * self.window_decrease_factor),
+                    )
+                    logger.debug(
+                        f"Strong improvement ({relative_improvement:.2%}): "
+                        f"Decreasing window size from {old_window_size} to {new_window_size}"
+                    )
+            else:
+                # Keine Verbesserung -> Fenster vergrößern
+                new_window_size = min(
+                    self.MAX_DAY, int(old_window_size * self.window_increase_factor)
                 )
                 logger.debug(
-                    f"Strong improvement ({relative_improvement:.2%}): "
-                    f"Decreasing window size from {old_window_size} to {self.search_window_size}"
+                    f"No improvement: Increasing window size from {old_window_size} to {new_window_size}"
                 )
-        else:
-            # Keine Verbesserung -> Fenster vergrößern
-            self.search_window_size = min(
-                self.search_window_size_max,
-                int(self.search_window_size * self.window_increase_factor),
+            return new_window_size
+
+        import random
+
+        new_window_size = __calculate_new_window_size()
+
+        # Fenster verschieben/anpassen
+        max_possible_window = self.MAX_DAY - self.MIN_DAY
+        new_window_size = min(new_window_size, max_possible_window)
+
+        current_window_size = self.end_day - self.start_day
+        if new_window_size < current_window_size:
+            # Fenster verkleinern
+            reduction = current_window_size - new_window_size
+            shift_start = random.randint(0, reduction)
+            self.start_day += shift_start
+            self.end_day = self.start_day + new_window_size
+        elif new_window_size > current_window_size:
+            # Fenster vergrößern
+            increase = new_window_size - current_window_size
+            shift_start = random.randint(0, increase)
+            self.start_day = max(
+                self.MIN_DAY, self.start_day - (increase - shift_start)
             )
-            logger.debug(
-                f"No improvement: Increasing window size from {old_window_size} to {self.search_window_size}"
-            )
+            self.end_day = min(self.MAX_DAY, self.start_day + new_window_size)
+        # else: Fenster bleibt gleich groß
+
+        assert self.end_day - self.start_day >= self.search_window_size_min
+        assert self.start_day >= self.MIN_DAY
+        assert self.end_day <= self.MAX_DAY
 
     def solve(self) -> solution.Solution:
         logger.info("Starting LNS solve process")
@@ -191,21 +212,19 @@ class LNS:
         improvements = 0
 
         while time.time() - start_time < self.timeout_seconds:
+            assert self.end_day > self.start_day
             iteration += 1
             elapsed_time = time.time() - start_time
             logger.debug(
                 f"Iteration {iteration} started (elapsed: {elapsed_time:.2f}s)"
             )
 
-            start_day, end_day = self.choose_search_window()
-            assert end_day > start_day
-
             solv = solver.Solver(
                 self.old_solution.instance,
                 solver.shift_vars.Shift_vars(self.old_solution.instance),
             )
 
-            self.fix_outside_window(start_day, end_day, solv)
+            self.fix_outside_window(self.start_day, self.end_day, solv)
 
             solv = solv.solve(
                 log_search_progress=False,
