@@ -40,7 +40,7 @@ let filteredEmployee = '';
 export var dataDict = {"cover_weights": {}, "added_employees": {}, "removed_employees": {}};
 
 // Render the table with data
-function renderTable(shiftPlanData) {
+function renderTable(shiftPlanData, read_only) {
     if (!shiftPlanData) {
         console.error('No shift plan data available');
         return;
@@ -285,7 +285,7 @@ function renderTable(shiftPlanData) {
 
                 cellContainer.appendChild(employeeList);
                 td.appendChild(cellContainer);
-                totalAssignments += employees.length - banned_employees.length;
+                totalAssignments += employees.length - banned_employees.length + force_assigned_employees.length;
             } else {
                 // Füge einen Platzhalter für "Keine Mitarbeiter" hinzu
                 const emptyDiv = document.createElement('div');
@@ -311,7 +311,7 @@ function renderTable(shiftPlanData) {
 
             td.appendChild(submit_day_shift)
             tr.appendChild(td);
-            set_employees_options(force_assigned_employees, banned_employees, day, shiftTypeInfo.name);
+            set_employees_options(force_assigned_employees, banned_employees, day, shiftTypeInfo.name, read_only);
         }
 
         tableBody.appendChild(tr);
@@ -321,9 +321,9 @@ function renderTable(shiftPlanData) {
 }
 
 // Handle search input
-function handleSearch(event, shiftPlanData) {
+function handleSearch(event, shiftPlanData, read_only) {
     filteredEmployee = event.target.value;
-    renderTable(shiftPlanData);
+    renderTable(shiftPlanData, read_only);
 }
 
 // Export initialization function
@@ -331,14 +331,14 @@ function handleSearch(event, shiftPlanData) {
  * 
  * @param {dictionary} data: A solution?
  */
-export function initShiftPlanTable(data) {
-    renderTable(data);
+export function initShiftPlanTable(data, read_only) {
+    renderTable(data, read_only);
 
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.placeholder = 'Nach Mitarbeiter suchen...';
         searchInput.addEventListener('input', function (e) {
-            handleSearch(e, data);
+            handleSearch(e, data, read_only);
         });
     }
 };
@@ -382,7 +382,7 @@ export function reset_employees_options() {
     removed_employees.forEach(el => el.click());
 }
 
-function set_employees_options(force_assigned_employees, banned_employees, day, shift_type) {
+function set_employees_options(force_assigned_employees, banned_employees, day, shift_type, read_only) {
     const observer = new MutationObserver(() => {
         let allFound = true;
         force_assigned_employees.forEach((empName) => {
@@ -403,7 +403,9 @@ function set_employees_options(force_assigned_employees, banned_employees, day, 
             force_assigned_employees.forEach(empName => document.getElementById(`employee-${empName}-option-day-${day}-shift-${shift_type}`).click());
             banned_employees.forEach(empName => document.getElementById(`remove-employee-${empName}-day-${day}-shift-${shift_type}-button`).click());
             observer.disconnect();
-            console.log('All target IDs found. Observer disconnected.');
+            if (read_only) {
+                remove_changable_employee_options();
+            }
         }
     });
 
@@ -422,17 +424,16 @@ export function set_coverage_unchangable() {
 }
 
 export function remove_changable_employee_options() {
-    // TODO create an observer to do this
-    // const removed_employees = document.querySelectorAll('.remove-employee-button');
-    // removed_employees.forEach(el => el.remove());
-    // const add_employee_buttons = document.querySelectorAll('.add-employee-button');
-    // add_employee_buttons.forEach(el => el.remove());
-    // const send_day_shift_buttons = document.querySelectorAll('.send-day-shift');
-    // send_day_shift_buttons.forEach(el => el.remove());
-    // const added_employee_remove_buttons = document.querySelectorAll('.added-employee-remove-button');
-    // added_employee_remove_buttons.forEach(el => el.remove());
-    // const re_add_employee_button = document.querySelectorAll('.re-add-employee-button');
-    // re_add_employee_button.forEach(el => el.remove());
+    const removed_employees = document.querySelectorAll('.remove-employee-button');
+    removed_employees.forEach(el => el.remove());
+    const add_employee_buttons = document.querySelectorAll('.add-employee-button');
+    add_employee_buttons.forEach(el => el.remove());
+    const send_day_shift_buttons = document.querySelectorAll('.send-day-shift');
+    send_day_shift_buttons.forEach(el => el.remove());
+    const added_employee_remove_buttons = document.querySelectorAll('.added-employee-remove-button');
+    added_employee_remove_buttons.forEach(el => el.remove());
+    const re_add_employee_button = document.querySelectorAll('.re-add-employee-button');
+    re_add_employee_button.forEach(el => el.remove());
 }
 
 

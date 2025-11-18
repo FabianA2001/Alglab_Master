@@ -1,6 +1,10 @@
 import { Streamlit, RenderData } from "streamlit-component-lib"
-import { dataDict, initShiftPlanTable, reset_dataDict, set_coverage_unchangable, remove_changable_employee_options } from "./shift_plan_table.js"; // 
+import { dataDict, initShiftPlanTable, reset_dataDict, set_coverage_unchangable} from "./shift_plan_table.js"; // 
 
+// TODO develop a standerd/uniform methode to set the websites fully and then at the very end set everything related to read_only
+// TODO fix the search options (it breaks everything else)
+// TODO make simpiliar styles
+// TODO 
 /**
  * The component's render function. This will be called immediately after
  * the component is initially loaded, and then again every time the
@@ -77,11 +81,10 @@ function onRender(event: Event): void {
             }
         }
         // Initialize the shift plan table with the provided solution data
-        initShiftPlanTable(shift_plan_solution)
+        initShiftPlanTable(shift_plan_solution, extra_options["read_only"])
         const searchInput = document.getElementById('searchInput') as HTMLInputElement;
         if(extra_options["read_only"]){
           set_coverage_unchangable();
-          remove_changable_employee_options();
         }
         if (searchInput) {
             searchInput.addEventListener('input', function () {
