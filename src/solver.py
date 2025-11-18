@@ -18,6 +18,7 @@ from .module import (
 )
 from .module.solverConstraints import SolverConstraints
 from .solution import Solution
+from .callback_solver import Callback_Solver
 
 
 class Solver:
@@ -55,6 +56,21 @@ class Solver:
             status = solver.Solve(self.vars.model)
         self.solve_time = (datetime.now() - self.start_solve_time).total_seconds()
         return self.handle_results(status, solver, disabled_constraints)
+
+    def solve_with_callback(
+        self,
+        log_search_progress: bool = True,
+        max_time_in_seconds: float = 60.0,
+        disabled_constraints: list[SolverConstraints] = [],
+        **solver_params,
+    ):
+        callback = Callback_Solver(self.instance, self.vars)
+        return self.solve(
+            log_search_progress,
+            max_time_in_seconds,
+            disabled_constraints,
+            callback=callback,
+        )
 
     def objevtive_value(self):
         objective_value = 0
@@ -229,7 +245,11 @@ class Solver:
 
         self.vars.model.Minimize(self.objective_value_weight_changes(solution=solution))
         self.start_solve_time = datetime.now()
-        status = solver.Solve(self.vars.model)
+        # status = solver.Solve(self.vars.model)
+        ##mit Callback
+        callback = Callback_Solver(self.instance, self.vars)
+        status = solver.SolveWithSolutionCallback(self.vars.model, callback)
+        ###
         self.solve_time = (datetime.now() - self.start_solve_time).total_seconds()
         return self.handle_results(status, solver, disabled_constraints)
 
