@@ -5,485 +5,348 @@ This module provides functions to systematically test different parameter combin
 for the LNS solver and find the optimal configuration for a given instance.
 """
 
-import itertools
 import json
 import logging
-import time
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from itertools import product
 from pathlib import Path
-from typing import Any
+from typing import Optional
 
 from ..inputTypes import instace
-from ..solution import Solution
+from ..parseData import parseTXT
 from . import lns
 
 
-def setup_run_logger(
-    run_index: int, log_dir: Path, instance_name: str
-) -> logging.Logger:
-    """
-    Create a separate logger for each run with its own log file.
+@dataclass
+class LNSParameters:
+    """Parameters for LNS algorithm"""
 
-    Args:
-        run_index: Index of the current run
-        log_dir: Directory to save log files
-        instance_name: Name of the instance being solved
+    percent_search_time_first_solution: Optional[float] = None
+    timeout_seconds: Optional[float] = None
+    small_runtime_base: Optional[float] = None
+    start_search_window_size: Optional[int] = None
+    search_window_size_min: Optional[int] = None
+    window_increase_factor: Optional[float] = None
+    window_decrease_factor: Optional[float] = None
+    strong_improvement_threshold: Optional[float] = None
 
-    Returns:
-        Configured logger for this run
-    """
-    log_dir.mkdir(parents=True, exist_ok=True)
-    log_file = log_dir / f"run_{run_index:04d}_{instance_name}.log"
-
-    # Create a unique logger for this run
-    logger = logging.getLogger(f"lns_run_{run_index}")
-    logger.setLevel(logging.DEBUG)
-    logger.propagate = False  # Don't propagate to root logger
-
-    # Remove any existing handlers
-    logger.handlers.clear()
-
-    # File handler for detailed logs
-    file_handler = logging.FileHandler(log_file, mode="w", encoding="utf-8")
-    file_handler.setLevel(logging.DEBUG)
-    file_formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
-    file_handler.setFormatter(file_formatter)
-    logger.addHandler(file_handler)
-
-    # Console handler for important messages
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
-    console_formatter = logging.Formatter("%(levelname)s - %(message)s")
-    console_handler.setFormatter(console_formatter)
-    logger.addHandler(console_handler)
-
-    return logger
+    def to_dict(self):
+        """Convert to dict, excluding None values"""
+        return {k: v for k, v in asdict(self).items() if v is not None}
 
 
 @dataclass
-class ParameterConfig:
-    """Configuration for LNS parameters to test."""
+class TestConfig:
+    """Configuration for a test run"""
 
-    percent_search_time_first_solution: float = 0.1
-    timeout_seconds: float = 180
-    small_runtime_base: float = 0.01
-    start_search_window_size: int = 7
-    search_window_size_min: int = 3
-    window_increase_factor: float = 1.5
-    window_decrease_factor: float = 0.8
-    strong_improvement_threshold: float = 0.01
+    instance_name: str
+    instance_path: str
+    parameters: LNSParameters
+    timestamp: str
+    run_id: int
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert config to dictionary."""
+    def to_dict(self):
         return {
-            "percent_search_time_first_solution": self.percent_search_time_first_solution,
-            "timeout_seconds": self.timeout_seconds,
-            "small_runtime_base": self.small_runtime_base,
-            "start_search_window_size": self.start_search_window_size,
-            "search_window_size_min": self.search_window_size_min,
-            "window_increase_factor": self.window_increase_factor,
-            "window_decrease_factor": self.window_decrease_factor,
-            "strong_improvement_threshold": self.strong_improvement_threshold,
+            "instance_name": self.instance_name,
+            "instance_path": self.instance_path,
+            "parameters": self.parameters.to_dict(),
+            "timestamp": self.timestamp,
+            "run_id": self.run_id,
         }
 
 
 @dataclass
 class TestResult:
-    """Result of a parameter test run."""
+    """Result of a single LNS test run"""
 
-    config: ParameterConfig
-    objective_value: float
-    runtime_seconds: float
-    solve_status: str
+    run_id: int
     instance_name: str
-    run_index: int = -1
-    timestamp: str = field(default_factory=lambda: time.strftime("%Y-%m-%d %H:%M:%S"))
+    parameters: dict
+    objective_value: float
+    solve_status: str
+    runtime_seconds: float
+    iterations: int
+    improvements: int
+    timestamp: str
+    log_file: str
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert result to dictionary."""
-        return {
-            "run_index": self.run_index,
-            "config": self.config.to_dict(),
-            "objective_value": self.objective_value,
-            "runtime_seconds": self.runtime_seconds,
-            "solve_status": self.solve_status,
-            "instance_name": self.instance_name,
-            "timestamp": self.timestamp,
-        }
+    def to_dict(self):
+        return asdict(self)
 
 
-def test_parameter_config(
-    instance: instace.Instance,
-    config: ParameterConfig,
-    run_index: int = -1,
-    log_dir: Path | None = None,
-    logger: logging.Logger | None = None,
-) -> tuple[TestResult, Solution]:
-    """
-    Test a single parameter configuration on the given instance.
+class LNSParameterTester:
+    """Main class for testing LNS parameters"""
 
-    Args:
-        instance: The scheduling instance to solve
-        config: The parameter configuration to test
-        run_index: Index of this run (for logging purposes)
-        log_dir: Directory to save log files (if None, uses provided logger)
-        logger: Optional logger for detailed output (ignored if log_dir is provided)
+    def __init__(
+        self,
+        output_base_dir: Path = Path("lns_parameter_tests"),
+        log_level: int = logging.INFO,
+    ):
+        self.output_base_dir = Path(output_base_dir)
+        self.output_base_dir.mkdir(parents=True, exist_ok=True)
+        self.log_level = log_level
+        self.run_counter = 0
+        self.batch_dir = None  # Will be set in run_parameter_grid
 
-    Returns:
-        Tuple of (TestResult, solution) containing the outcome of the test and the solution
-    """
-    # Create run-specific logger if log_dir is provided
-    if log_dir is not None:
-        logger = setup_run_logger(run_index, log_dir, instance.name)
-    elif logger is None:
-        logger = logging.getLogger(__name__)
+    def _create_batch_directory(self) -> Path:
+        """Create a directory for a batch of parameter tests"""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        batch_dir = self.output_base_dir / f"batch_{timestamp}"
+        batch_dir.mkdir(parents=True, exist_ok=True)
+        return batch_dir
 
-    logger.info("=" * 80)
-    logger.info(f"RUN INDEX: {run_index}")
-    logger.info(f"Instance: {instance.name}")
-    logger.info(f"Testing configuration: {config.to_dict()}")
-    logger.info("=" * 80)
+    def _setup_logger(self, run_dir: Path, run_id: int) -> tuple[logging.Logger, str]:
+        """Setup logger for a specific run"""
+        log_file = run_dir / f"run_{run_id}.log"
 
-    start_time = time.time()
+        logger = logging.getLogger(f"LNS_Test_{run_id}")
+        logger.setLevel(self.log_level)
+        logger.handlers = []  # Clear existing handlers
 
-    try:
-        lns_solver = lns.LNS(
-            instance,
-            percent_search_time_first_solution=config.percent_search_time_first_solution,
-            timeout_seconds=config.timeout_seconds,
-            small_runtime_base=config.small_runtime_base,
-            start_search_window_size=config.start_search_window_size,
-            search_window_size_min=config.search_window_size_min,
-            window_increase_factor=config.window_increase_factor,
-            window_decrease_factor=config.window_decrease_factor,
-            strong_improvement_threshold=config.strong_improvement_threshold,
-            logger=logger,
-            log_level=logging.INFO,
+        # File handler
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
 
+        # Console handler
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.INFO)
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
+
+        return logger, str(log_file)
+
+    def _save_config(self, config: TestConfig, batch_dir: Path):
+        """Save test configuration to JSON file"""
+        config_file = batch_dir / f"config_run_{config.run_id}.json"
+        with open(config_file, "w") as f:
+            json.dump(config.to_dict(), f, indent=2)
+
+    def _save_result(self, result: TestResult, batch_dir: Path):
+        """Save test result to JSON file"""
+        result_file = batch_dir / f"result_run_{result.run_id}.json"
+        with open(result_file, "w") as f:
+            json.dump(result.to_dict(), f, indent=2)
+
+    def _load_instance(self, instance_path: Path) -> instace.Instance:
+        """Load instance from file"""
+        if instance_path.suffix == ".txt":
+            return parseTXT.parse_txt(instance_path)
+        else:
+            raise ValueError(f"Unsupported instance format: {instance_path.suffix}")
+
+    def run_single_test(
+        self,
+        instance_path: Path,
+        parameters: LNSParameters,
+        batch_dir: Optional[Path] = None,
+    ) -> TestResult:
+        """Run a single LNS test with given parameters"""
+        import time
+
+        if batch_dir is None:
+            batch_dir = self._create_batch_directory()
+
+        run_id = self.run_counter
+        self.run_counter += 1
+        instance_name = instance_path.stem
+        timestamp = datetime.now().isoformat()
+
+        # Setup logger
+        logger, log_file = self._setup_logger(batch_dir, run_id)
+
+        # Create and save config
+        config = TestConfig(
+            instance_name=instance_name,
+            instance_path=str(instance_path),
+            parameters=parameters,
+            timestamp=timestamp,
+            run_id=run_id,
+        )
+        self._save_config(config, batch_dir)
+
+        logger.info(f"Starting LNS test run {run_id}")
+        logger.info(f"Instance: {instance_name}")
+        logger.info(f"Parameters: {parameters.to_dict()}")
+
+        # Load instance
+        logger.info("Loading instance...")
+        instance = self._load_instance(instance_path)
+
+        # Create LNS with parameters (only pass non-None values)
+        logger.info("Creating LNS solver...")
+        lns_kwargs = parameters.to_dict()
+        lns_kwargs["logger"] = logger
+        lns_kwargs["log_level"] = logging.DEBUG
+
+        start_time = time.time()
+        lns_solver = lns.LNS(instance, **lns_kwargs)
+
+        # Solve
+        logger.info("Starting LNS solve...")
         solution = lns_solver.solve()
         runtime = time.time() - start_time
 
+        logger.info(f"LNS solve completed in {runtime:.2f} seconds")
+        logger.info(f"Final objective value: {solution.objective_value}")
+
+        # Create result
         result = TestResult(
-            config=config,
+            run_id=run_id,
+            instance_name=instance_name,
+            parameters=parameters.to_dict(),
             objective_value=solution.objective_value,
-            runtime_seconds=runtime,
             solve_status=str(solution.solve_status),
-            instance_name=instance.name,
-            run_index=run_index,
+            runtime_seconds=runtime,
+            iterations=0,  # Would need to be tracked in LNS
+            improvements=0,  # Would need to be tracked in LNS
+            timestamp=timestamp,
+            log_file=str(log_file),
         )
 
-        logger.info("=" * 80)
-        logger.info(f"RUN {run_index} COMPLETED")
-        logger.info(
-            f"Test completed: objective={result.objective_value}, "
-            f"runtime={result.runtime_seconds:.2f}s"
+        # Save result
+        self._save_result(result, batch_dir)
+        logger.info(f"Results saved to {batch_dir}")
+
+        return result
+
+    def run_parameter_grid(
+        self,
+        instances: list[Path],
+        parameter_grid: dict[str, list],
+    ) -> list[TestResult]:
+        """
+        Run tests for all combinations of parameters and instances
+
+        Args:
+            instances: List of instance file paths
+            parameter_grid: Dict mapping parameter names to lists of values to test
+                Example: {
+                    'timeout_seconds': [60, 120, 180],
+                    'start_search_window_size': [5, 7, 10],
+                    'window_increase_factor': [1.2, 1.3, 1.5]
+                }
+
+        Returns:
+            List of TestResult objects
+        """
+        results = []
+
+        # Create one batch directory for all tests in this grid
+        batch_dir = self._create_batch_directory()
+
+        # Setup batch logger
+        batch_logger = logging.getLogger(f"LNS_Batch_{batch_dir.name}")
+        batch_logger.setLevel(self.log_level)
+        batch_logger.handlers = []
+
+        # Console handler for batch logger
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.INFO)
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
-        logger.info("=" * 80)
+        console_handler.setFormatter(formatter)
+        batch_logger.addHandler(console_handler)
 
-        return result, solution
+        # Batch log file
+        batch_log_file = batch_dir / "batch.log"
+        file_handler = logging.FileHandler(batch_log_file)
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(formatter)
+        batch_logger.addHandler(file_handler)
 
-    except Exception as e:
-        logger.error(f"Error testing configuration: {e}")
-        raise
-    finally:
-        # Clean up handlers if we created a run-specific logger
-        if log_dir is not None and logger:
-            for handler in logger.handlers:
-                handler.close()
-            logger.handlers.clear()
-
-
-def save_intermediate_results(
-    instance_name: str,
-    results: list[TestResult],
-    config_mapping: dict,
-    best_result: TestResult | None,
-    output_file: Path | None,
-    log_dir: Path | None,
-) -> None:
-    """Save intermediate results after each run."""
-    # Save full results if output file specified
-    if output_file:
-        output_data = {
-            "instance_name": instance_name,
-            "total_configurations_tested": len(results),
-            "best_result": best_result.to_dict() if best_result else None,
-            "best_run_index": best_result.run_index if best_result else None,
-            "all_results": [r.to_dict() for r in results],
+        # Save parameter grid info
+        grid_info = {
+            "parameter_grid": parameter_grid,
+            "instances": [str(p) for p in instances],
+            "timestamp": datetime.now().isoformat(),
         }
+        with open(batch_dir / "parameter_grid.json", "w") as f:
+            json.dump(grid_info, f, indent=2)
 
-        output_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_file, "w") as f:
-            json.dump(output_data, f, indent=2)
+        # Generate all parameter combinations
+        param_names = list(parameter_grid.keys())
+        param_values = list(parameter_grid.values())
 
-    # Save configuration mapping
-    if log_dir is not None:
-        mapping_file = log_dir / "run_config_mapping.json"
-        mapping_data = {
-            "instance_name": instance_name,
-            "total_runs": len(config_mapping),
-            "best_run_index": best_result.run_index if best_result else None,
-            "best_objective_value": best_result.objective_value
-            if best_result
-            else None,
-            "configurations": config_mapping,
-        }
-        with open(mapping_file, "w") as f:
-            json.dump(mapping_data, f, indent=2)
+        total_combinations = len(list(product(*param_values))) * len(instances)
+        batch_logger.info("=" * 80)
+        batch_logger.info(f"Starting new batch: {batch_dir.name}")
+        batch_logger.info(
+            f"Testing {total_combinations} combinations "
+            f"({len(instances)} instances × {len(list(product(*param_values)))} parameter sets)"
+        )
+        batch_logger.info("=" * 80)
 
-
-def find_best_parameters(
-    instance: instace.Instance,
-    parameter_ranges: dict[str, list],
-    timeout_per_config: float = 180,
-    output_file: Path | None = None,
-    log_dir: Path | None = None,
-    logger: logging.Logger | None = None,
-) -> tuple[ParameterConfig, TestResult]:
-    """
-    Find the best parameter configuration by testing multiple combinations.
-
-    Args:
-        instance: The scheduling instance to solve
-        parameter_ranges: Dictionary specifying parameter ranges to test.
-                         Keys are parameter names, values are lists of values to try.
-                         If None, uses default ranges.
-        timeout_per_config: Timeout for each configuration test in seconds
-        output_file: Optional file path to save results JSON
-        log_dir: Optional directory to save individual run logs
-        logger: Optional logger for detailed output (used for summary only if log_dir is provided)
-
-    Returns:
-        Tuple of (best_config, best_result)
-
-    Example:
-        >>> parameter_ranges = {
-        ...     'start_search_window_size': [5, 7, 10],
-        ...     'window_increase_factor': [1.3, 1.5, 1.7],
-        ...     'window_decrease_factor': [0.7, 0.8, 0.9],
-        ... }
-        >>> best_config, best_result = find_best_parameters(instance, parameter_ranges)
-    """
-    if logger is None:
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.INFO)
-
-    # Generate all parameter combinations
-    param_names = list(parameter_ranges.keys())
-    param_values = [parameter_ranges[name] for name in param_names]
-    combinations = list(itertools.product(*param_values))
-
-    logger.info(
-        f"Testing {len(combinations)} parameter combinations on instance '{instance.name}' in {len(combinations) * timeout_per_config} seconds total."
-    )
-
-    # Setup log directory if provided
-    if log_dir is not None:
-        log_dir = Path(log_dir)
-        log_dir.mkdir(parents=True, exist_ok=True)
-        logger.info(f"Logs will be saved to: {log_dir}")
-
-    results = []
-    best_result = None
-    best_solution = None
-    config_mapping = {}  # Maps run_index to configuration
-
-    for i, combo in enumerate(combinations, 1):
-        logger.info(f"\n{'=' * 80}")
-        logger.info(f"Configuration {i}/{len(combinations)}")
-        logger.info(f"{'=' * 80}")
-
-        # Create config with current combination
-        config_dict = dict(zip(param_names, combo))
-        config_dict["timeout_seconds"] = timeout_per_config
-
-        # Fill in any missing parameters with defaults
-        default_config = ParameterConfig()
-        for key in vars(default_config):
-            if key not in config_dict:
-                config_dict[key] = getattr(default_config, key)
-
-        config = ParameterConfig(**config_dict)
-
-        # Store configuration mapping
-        config_mapping[i] = {
-            "run_index": i,
-            "config": config.to_dict(),
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        }
-
-        try:
-            result, solution = test_parameter_config(
-                instance, config, run_index=i, log_dir=log_dir, logger=logger
-            )
-            results.append(result)
-
-            best_solution = None
-
-            # Update mapping with result
-            config_mapping[i]["objective_value"] = result.objective_value
-            config_mapping[i]["runtime_seconds"] = result.runtime_seconds
-            config_mapping[i]["solve_status"] = result.solve_status
-
-            if (
-                best_result is None
-                or result.objective_value < best_result.objective_value
-            ):
-                best_result = result
-                best_solution = solution
-                logger.info(
-                    f"🎯 New best configuration found! Objective: {result.objective_value}"
+        combination_count = 0
+        for instance_path in instances:
+            for param_combination in product(*param_values):
+                combination_count += 1
+                batch_logger.info("=" * 80)
+                batch_logger.info(
+                    f"Running test {combination_count}/{total_combinations}: "
+                    f"{instance_path.name}"
                 )
+                batch_logger.info("=" * 80)
 
-            # Save results after each successful run
-            save_intermediate_results(
-                instance.name,
-                results,
-                config_mapping,
-                best_result,
-                output_file,
-                log_dir,
-            )
+                # Create parameter object
+                param_dict = dict(zip(param_names, param_combination))
+                parameters = LNSParameters(**param_dict)
 
-        except Exception as e:
-            logger.error(f"Failed to test configuration: {e}")
-            # Mark as failed in mapping
-            config_mapping[i]["status"] = "failed"
-            config_mapping[i]["error"] = str(e)
+                # Run test (all in same batch directory)
+                try:
+                    result = self.run_single_test(instance_path, parameters, batch_dir)
+                    results.append(result)
+                except Exception as e:
+                    batch_logger.error(f"Error in test run: {e}")
+                    import traceback
 
-            # Save even after failure
-            save_intermediate_results(
-                instance.name,
-                results,
-                config_mapping,
-                best_result,
-                output_file,
-                log_dir,
-            )
-            continue
+                    batch_logger.error(traceback.format_exc())
 
-    if best_result is None:
-        raise RuntimeError("No successful configuration tests completed")
+        batch_logger.info("=" * 80)
+        batch_logger.info(f"All tests completed! Total runs: {len(results)}")
+        batch_logger.info(f"Results saved to: {batch_dir}")
+        batch_logger.info("=" * 80)
 
-    # Final save already done after last run, just log summary
-    if output_file:
-        logger.info(f"Final results saved to {output_file}")
-    if log_dir is not None:
-        logger.info(f"Final mapping saved to {log_dir / 'run_config_mapping.json'}")
-
-    logger.info(f"\n{'=' * 80}")
-    logger.info("BEST CONFIGURATION FOUND:")
-    logger.info(f"{'=' * 80}")
-    logger.info(f"Objective value: {best_result.objective_value}")
-    logger.info(f"Runtime: {best_result.runtime_seconds:.2f}s")
-    logger.info(f"Parameters: {best_result.config.to_dict()}")
-
-    return best_result.config, best_result
-
-
-def compare_with_default(
-    instance: instace.Instance,
-    custom_config: ParameterConfig,
-    timeout_seconds: float = 180,
-    logger: logging.Logger | None = None,
-) -> tuple[TestResult, TestResult]:
-    """
-    Compare a custom parameter configuration with the default configuration.
-
-    Args:
-        instance: The scheduling instance to solve
-        custom_config: Custom parameter configuration to test
-        timeout_seconds: Timeout for each test in seconds
-        logger: Optional logger for detailed output
-
-    Returns:
-        Tuple of (default_result, custom_result)
-    """
-    if logger is None:
-        logger = logging.getLogger(__name__)
-
-    logger.info("Testing default configuration...")
-    default_config = ParameterConfig(timeout_seconds=timeout_seconds)
-    default_result, _ = test_parameter_config(
-        instance, default_config, run_index=1, logger=logger
-    )
-
-    logger.info("\nTesting custom configuration...")
-    custom_config.timeout_seconds = timeout_seconds
-    custom_result, _ = test_parameter_config(
-        instance, custom_config, run_index=2, logger=logger
-    )
-
-    logger.info(f"\n{'=' * 80}")
-    logger.info("COMPARISON RESULTS:")
-    logger.info(f"{'=' * 80}")
-    logger.info(
-        f"Default objective: {default_result.objective_value} "
-        f"(runtime: {default_result.runtime_seconds:.2f}s)"
-    )
-    logger.info(
-        f"Custom objective:  {custom_result.objective_value} "
-        f"(runtime: {custom_result.runtime_seconds:.2f}s)"
-    )
-
-    improvement = default_result.objective_value - custom_result.objective_value
-    if improvement > 0:
-        percent = (improvement / default_result.objective_value) * 100
-        logger.info(f"✅ Custom config is better by {improvement} ({percent:.2f}%)")
-    elif improvement < 0:
-        percent = (abs(improvement) / default_result.objective_value) * 100
-        logger.info(
-            f"❌ Default config is better by {abs(improvement)} ({percent:.2f}%)"
-        )
-    else:
-        logger.info("Both configurations achieved the same objective value")
-
-    return default_result, custom_result
+        return results
 
 
 def main():
-    """Main entry point for finding LNS parameters."""
-    from ..parseData import parseTXT
+    """Example usage of the parameter tester"""
 
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-    )
+    # Define instances to test
+    instance_dir = Path("data/instance_raw")
+    instances = [
+        instance_dir / "Instance1.txt",
+    ]
 
-    INSTANCE_NAME = "Instance9.txt"
-
-    # Load an instance
-    instance_path = (
-        Path(__file__).parent.parent.parent / "data" / "instance_raw" / INSTANCE_NAME
-    )
-    instance = parseTXT.parse_txt(instance_path)
-
-    # Define parameter ranges to test
-    parameter_ranges = {
-        "start_search_window_size": [7],
-        "window_increase_factor": [1.3, 1.5, 1.7],
-        "window_decrease_factor": [0.7, 0.8],
-        "strong_improvement_threshold": [0.01, 0.05, 0.1],
+    # Define parameter grid
+    parameter_grid = {
+        "timeout_seconds": [20],
+        "strong_improvement_threshold": [0.01, 0.05],
     }
 
-    # Find best parameters
-    output_path = (
-        Path(__file__).parent.parent.parent
-        / "data"
-        / f"{INSTANCE_NAME}_lns_parameter_results.json"
+    # Create tester
+    tester = LNSParameterTester(
+        output_base_dir=Path("lns_parameter_tests"), log_level=logging.INFO
     )
-    log_dir_path = Path(__file__).parent.parent.parent / "data" / "lns_logs"
 
-    best_config, best_result = find_best_parameters(
-        instance,
-        parameter_ranges=parameter_ranges,
-        timeout_per_config=60,  # 60 seconds per configuration
-        output_file=output_path,
-        log_dir=log_dir_path,
-    )
+    # Setup logger for main
+    logger = logging.getLogger("LNS_Main")
+    logger.setLevel(logging.INFO)
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(levelname)s - %(message)s"))
+    logger.addHandler(handler)
+
+    # Run all tests
+    results = tester.run_parameter_grid(instances, parameter_grid)
+
+    logger.info(f"Completed {len(results)} test runs")
 
 
 if __name__ == "__main__":
