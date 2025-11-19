@@ -6,8 +6,6 @@ from ortools.sat.python import cp_model
 from .. import solution, solver
 from ..inputTypes import instace
 
-logger = logging.getLogger(__name__)
-
 
 class StopAfterMinTimeAndFirstSolution(cp_model.CpSolverSolutionCallback):
     def __init__(self, min_runtime_sec):
@@ -39,9 +37,11 @@ class LNS:
         window_increase_factor: float = 1.5,
         window_decrease_factor: float = 0.8,
         strong_improvement_threshold: float = 0.01,
+        logger=logging.getLogger(__name__),
         log_level: int = logging.DEBUG,
     ):
-        logger.setLevel(log_level)
+        self.logger = logger
+        self.logger.setLevel(log_level)
 
         # get first Solution
         assert percent_search_time_first_solution < 1.0, (
@@ -87,11 +87,11 @@ class LNS:
         )
 
         # logging info
-        logger.info(
+        self.logger.info(
             f"LNS initialized with search_window_size={self.start_search_window_size}, "
             f"timeout_seconds={self.timeout_seconds}, small_runtime_seconds_base={self.small_runtime_milliseconds_base}"
         )
-        logger.debug(
+        self.logger.debug(
             f"Initial solution objective value: {self.old_solution.objective_value}"
         )
 
@@ -104,7 +104,6 @@ class LNS:
         if isinstance(sol_or_instance, solution.Solution):
             return sol_or_instance, 0.0
         elif isinstance(sol_or_instance, instace.Instance):
-            logger.info("Creating initial solution from instance using Solver")
             start_time = time.time()
             vars = solver.shift_vars.Shift_vars(sol_or_instance)
             solv = solver.Solver(sol_or_instance, vars)
@@ -166,7 +165,7 @@ class LNS:
                         self.search_window_size_min,
                         int(old_window_size * self.window_decrease_factor),
                     )
-                    logger.debug(
+                    self.logger.debug(
                         f"Strong improvement ({relative_improvement:.2%}): "
                         f"Decreasing window size from {old_window_size} to {new_window_size}"
                     )
@@ -175,7 +174,7 @@ class LNS:
                 new_window_size = min(
                     self.MAX_DAY, int(old_window_size * self.window_increase_factor)
                 )
-                logger.debug(
+                self.logger.debug(
                     f"No improvement: Increasing window size from {old_window_size} to {new_window_size}"
                 )
             return new_window_size
@@ -210,7 +209,7 @@ class LNS:
         assert self.end_day <= self.MAX_DAY
 
     def solve(self) -> solution.Solution:
-        logger.info("Starting LNS solve process")
+        self.logger.info("Starting LNS solve process")
         start_time = time.time()
         iteration = 0
         improvements = 0
@@ -225,7 +224,7 @@ class LNS:
                 * (self.end_day - self.start_day)
                 * (self.NUMBER_OF_SHIFT_TYPES + self.NUMBER_OF_EMPLOYEES),
             )
-            logger.debug(
+            self.logger.debug(
                 f"Iteration {iteration}({elapsed_time:.2f}): Solving with small max solve time: {small_max_solve_time:.2f}s "
                 f"for window days {self.start_day} to {self.end_day}"
             )
@@ -247,13 +246,13 @@ class LNS:
                 solv.solve_status == cp_model.OPTIMAL
                 or solv.solve_status == cp_model.FEASIBLE
             ):
-                logger.debug(
+                self.logger.debug(
                     f"Iteration {iteration}: No feasible solution found (status: {solv.solve_status})"
                 )
 
                 continue
 
-            logger.debug(
+            self.logger.debug(
                 f"Iteration {iteration}: Found solution with objective {solv.objective_value}"
             )
 
@@ -261,7 +260,7 @@ class LNS:
             if solv.objective_value < self.old_solution.objective_value:
                 improvements += 1
                 improvement = self.old_solution.objective_value - solv.objective_value
-                logger.info(
+                self.logger.info(
                     f"Iteration {iteration}: Found improvement! "
                     f"Old objective: {self.old_solution.objective_value}, "
                     f"New objective: {solv.objective_value}, "
@@ -269,7 +268,7 @@ class LNS:
                 )
                 self.old_solution = solv
             else:
-                logger.debug(
+                self.logger.debug(
                     f"Iteration {iteration}: No improvement (current best: {self.old_solution.objective_value})"
                 )
 
@@ -277,7 +276,7 @@ class LNS:
             print("-" * 80)
 
         total_time = time.time() - start_time
-        logger.info(
+        self.logger.info(
             f"LNS completed: {iteration} iterations, {improvements} improvements, "
             f"total time: {total_time:.2f}s, final objective: {self.old_solution.objective_value}"
         )
