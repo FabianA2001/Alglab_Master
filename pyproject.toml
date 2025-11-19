@@ -11,7 +11,8 @@ dependencies = [
     "ortools>=9.11.4210",
     "pydantic",
     "pandas",
-    "streamlit"
+    "streamlit",
+    "tqdm",
     
 ]
 

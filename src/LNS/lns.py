@@ -273,7 +273,6 @@ class LNS:
                 )
 
             self.update_search_window(improvement)
-            print("-" * 80)
 
         total_time = time.time() - start_time
         self.logger.info(

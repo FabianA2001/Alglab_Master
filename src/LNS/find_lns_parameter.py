@@ -13,6 +13,8 @@ from itertools import product
 from pathlib import Path
 from typing import Optional
 
+from tqdm import tqdm
+
 from ..inputTypes import instace
 from ..parseData import parseTXT
 from . import lns
@@ -103,6 +105,7 @@ class LNSParameterTester:
         logger = logging.getLogger(f"LNS_Test_{run_id}")
         logger.setLevel(self.log_level)
         logger.handlers = []  # Clear existing handlers
+        logger.propagate = False  # Don't propagate to parent loggers
 
         # File handler
         file_handler = logging.FileHandler(log_file)
@@ -113,11 +116,7 @@ class LNSParameterTester:
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
 
-        # Console handler
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.INFO)
-        console_handler.setFormatter(formatter)
-        logger.addHandler(console_handler)
+        # No console handler - only file logging
 
         return logger, str(log_file)
 
@@ -184,6 +183,9 @@ class LNSParameterTester:
         lns_kwargs["logger"] = logger
         lns_kwargs["log_level"] = logging.DEBUG
 
+        # Disable all console output from root logger
+        logging.getLogger().handlers = []
+
         start_time = time.time()
         lns_solver = lns.LNS(instance, **lns_kwargs)
 
@@ -240,21 +242,17 @@ class LNSParameterTester:
         # Create one batch directory for all tests in this grid
         batch_dir = self._create_batch_directory()
 
-        # Setup batch logger
+        # Setup batch logger (file only, no console)
         batch_logger = logging.getLogger(f"LNS_Batch_{batch_dir.name}")
         batch_logger.setLevel(self.log_level)
         batch_logger.handlers = []
+        batch_logger.propagate = False  # Don't propagate to parent loggers
 
-        # Console handler for batch logger
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.INFO)
         formatter = logging.Formatter(
             "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
-        console_handler.setFormatter(formatter)
-        batch_logger.addHandler(console_handler)
 
-        # Batch log file
+        # Batch log file only
         batch_log_file = batch_dir / "batch.log"
         file_handler = logging.FileHandler(batch_log_file)
         file_handler.setLevel(logging.DEBUG)
@@ -283,6 +281,14 @@ class LNSParameterTester:
         )
         batch_logger.info("=" * 80)
 
+        # Create tqdm progress bar
+        pbar = tqdm(
+            total=total_combinations,
+            desc="Testing LNS parameters",
+            unit="test",
+            ncols=100,
+        )
+
         combination_count = 0
         for instance_path in instances:
             for param_combination in product(*param_values):
@@ -294,6 +300,9 @@ class LNSParameterTester:
                 )
                 batch_logger.info("=" * 80)
 
+                # Update progress bar description
+                pbar.set_description(f"Testing {instance_path.stem}")
+
                 # Create parameter object
                 param_dict = dict(zip(param_names, param_combination))
                 parameters = LNSParameters(**param_dict)
@@ -302,16 +311,29 @@ class LNSParameterTester:
                 try:
                     result = self.run_single_test(instance_path, parameters, batch_dir)
                     results.append(result)
+                    pbar.set_postfix(
+                        {"objective": f"{result.objective_value:.1f}", "status": "✓"},
+                        refresh=False,
+                    )
                 except Exception as e:
                     batch_logger.error(f"Error in test run: {e}")
                     import traceback
 
                     batch_logger.error(traceback.format_exc())
+                    pbar.set_postfix({"status": "✗ ERROR"}, refresh=False)
+
+                pbar.update(1)
+
+        pbar.close()
 
         batch_logger.info("=" * 80)
         batch_logger.info(f"All tests completed! Total runs: {len(results)}")
         batch_logger.info(f"Results saved to: {batch_dir}")
         batch_logger.info("=" * 80)
+
+        # Print summary to console
+        print(f"\n✅ Completed {len(results)}/{total_combinations} test runs")
+        print(f"📁 Results saved to: {batch_dir}")
 
         return results
 
@@ -327,7 +349,7 @@ def main():
 
     # Define parameter grid
     parameter_grid = {
-        "timeout_seconds": [20],
+        "timeout_seconds": [10],
         "strong_improvement_threshold": [0.01, 0.05],
     }
 
