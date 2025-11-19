@@ -453,9 +453,11 @@ def main():
         level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
     )
 
+    INSTANCE_NAME = "Instance9.txt"
+
     # Load an instance
     instance_path = (
-        Path(__file__).parent.parent.parent / "data" / "instance_raw" / "Instance9.txt"
+        Path(__file__).parent.parent.parent / "data" / "instance_raw" / INSTANCE_NAME
     )
     instance = parseTXT.parse_txt(instance_path)
 
@@ -469,7 +471,9 @@ def main():
 
     # Find best parameters
     output_path = (
-        Path(__file__).parent.parent.parent / "data" / "lns_parameter_results.json"
+        Path(__file__).parent.parent.parent
+        / "data"
+        / f"{INSTANCE_NAME}_lns_parameter_results.json"
     )
     log_dir_path = Path(__file__).parent.parent.parent / "data" / "lns_logs"
 
