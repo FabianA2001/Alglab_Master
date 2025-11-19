@@ -34,8 +34,8 @@ class LNS:
         small_runtime_base: float = 0.01,  # * number_of_days * (number_of_shift_types + number_of_employees)
         start_search_window_size: int = 7,
         search_window_size_min: int = 3,
-        window_increase_factor: float = 1.5,
-        window_decrease_factor: float = 0.8,
+        window_increase_factor: float = 1.3,
+        window_decrease_factor: float = 0.7,
         strong_improvement_threshold: float = 0.01,
         logger=logging.getLogger(__name__),
         log_level: int = logging.DEBUG,

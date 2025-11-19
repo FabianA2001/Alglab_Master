@@ -1,0 +1,12 @@
+2025-11-19 14:44:04 - lns_run_1 - INFO - ================================================================================
+2025-11-19 14:44:04 - lns_run_1 - INFO - RUN INDEX: 1
+2025-11-19 14:44:04 - lns_run_1 - INFO - Instance: Instance1
+2025-11-19 14:44:04 - lns_run_1 - INFO - Testing configuration: {'percent_search_time_first_solution': 0.1, 'timeout_seconds': 60, 'small_runtime_base': 0.01, 'start_search_window_size': 7, 'search_window_size_min': 3, 'window_increase_factor': 1.3, 'window_decrease_factor': 0.7, 'strong_improvement_threshold': 0.01}
+2025-11-19 14:44:04 - lns_run_1 - INFO - ================================================================================
+2025-11-19 14:44:04 - lns_run_1 - INFO - LNS initialized with search_window_size=7, timeout_seconds=59.82439708709717, small_runtime_seconds_base=0.01
+2025-11-19 14:44:04 - lns_run_1 - INFO - Starting LNS solve process
+2025-11-19 14:45:05 - lns_run_1 - INFO - LNS completed: 98 iterations, 0 improvements, total time: 60.36s, final objective: 607.0
+2025-11-19 14:45:05 - lns_run_1 - INFO - ================================================================================
+2025-11-19 14:45:05 - lns_run_1 - INFO - RUN 1 COMPLETED
+2025-11-19 14:45:05 - lns_run_1 - INFO - Test completed: objective=607.0, runtime=60.54s
+2025-11-19 14:45:05 - lns_run_1 - INFO - ================================================================================
