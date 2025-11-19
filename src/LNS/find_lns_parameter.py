@@ -281,6 +281,18 @@ class LNSParameterTester:
         )
         batch_logger.info("=" * 80)
 
+        # Calculate maximum possible time
+        max_timeout = max(parameter_grid.get("timeout_seconds", [180]))
+        max_time_seconds = total_combinations * max_timeout
+        max_hours = int(max_time_seconds // 3600)
+        max_minutes = int((max_time_seconds % 3600) // 60)
+
+        print(f"\n🚀 Starting batch: {batch_dir.name}")
+        print(f"📊 Total tests: {total_combinations}")
+        print(f"⏱️  Max time per test: {max_timeout}s")
+        print(f"⏰ Estimated max duration: {max_hours}h {max_minutes}m")
+        print()
+
         # Create tqdm progress bar
         pbar = tqdm(
             total=total_combinations,
@@ -344,13 +356,14 @@ def main():
     # Define instances to test
     instance_dir = Path("data/instance_raw")
     instances = [
-        instance_dir / "Instance1.txt",
+        instance_dir / "Instance9.txt",
     ]
 
     # Define parameter grid
     parameter_grid = {
-        "timeout_seconds": [10],
-        "strong_improvement_threshold": [0.01, 0.05],
+        "timeout_seconds": [120],
+        "strong_improvement_threshold": [0.01, 0.05, 0.005],
+        "small_runtime_base": [0.01, 0.02, 0.005],
     }
 
     # Create tester
