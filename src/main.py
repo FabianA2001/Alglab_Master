@@ -91,7 +91,7 @@ def run_lns_example():
     print("Objective value after LNS:", improved_solution.objective_value)
 
 
-def calculate_all_instancen():
+def get_all_instancen() -> list[instace.Instance]:
     data_folder = Path.joinpath(
         Path(__file__).resolve().parent.parent, "data", "instance_raw"
     )
@@ -102,24 +102,49 @@ def calculate_all_instancen():
         parts = re.split(r"(\d+)", path.name)
         return [int(part) if part.isdigit() else part for part in parts]
 
+    instances = []
     # Sortiere die Dateien numerisch korrekt
     files = sorted(data_folder.iterdir(), key=natural_sort_key)
     for file in files:
-        print(f"Processing file: {file}")
         if file.suffix == ".txt":
-            instance = parseTXT.parse_txt(file)
-            vars = Shift_vars(instance)
-            solv = Solver(instance, vars)
-            sol = solv.solve(max_time_in_seconds=60)
-            print(sol.solve_status)
-            if (
-                sol.solve_status == cp_model.OPTIMAL
-                or sol.solve_status == cp_model.FEASIBLE
-            ):
-                sol.to_json_file(file.stem)
-            else:
-                print(f"No feasible solution found for {file.name}")
-                return
+            instances.append(parseTXT.parse_txt(file))
+    return instances
+
+
+def calculate_all_instancen():
+    for instance in get_all_instancen():
+        vars = Shift_vars(instance)
+        solv = Solver(instance, vars)
+        sol = solv.solve(max_time_in_seconds=60)
+        print(sol.solve_status)
+        if (
+            sol.solve_status == cp_model.OPTIMAL
+            or sol.solve_status == cp_model.FEASIBLE
+        ):
+            sol.to_json_file(instance.name)
+        else:
+            print(f"No feasible solution found for {instance.name}")
+            return
+
+
+def print_some_infos():
+    instances = get_all_instancen()
+    for inst in instances[5 : 5 + 1]:
+        print(f"Instance: {inst.name}")
+        print("=" * 60)
+
+        # Übersicht für jeden Mitarbeiter
+        for emp in inst.employees.values():
+            print(f"  Mitarbeiter: {emp.name} (UID: ...{str(emp.uid)[-3:]})")
+            print(
+                f"    Max. aufeinanderfolgende Arbeitstage: {emp.max_number_consecutive_shifts}"
+            )
+            print(
+                f"    Min. aufeinanderfolgende freie Tage:  {emp.min_number_consecutive_days_off}"
+            )
+            print()
+
+        print()
 
 
 def main() -> None:
@@ -132,7 +157,8 @@ def main() -> None:
     # get_test_solution_from_model()
     # try_compare_solutions()
     # run_lns_example()
-    calculate_all_instancen()
+    # calculate_all_instancen()
+    print_some_infos()
 
 
 if __name__ == "__main__":
