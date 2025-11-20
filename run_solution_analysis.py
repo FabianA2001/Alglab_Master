@@ -21,14 +21,14 @@ from src.analyze_solutions import (
 
 if __name__ == "__main__":
     print("🔍 Analysiere alle Solutions...\n")
-    
+
     # Alle Solutions analysieren
     results = analyze_all_solutions()
-    
+
     if results:
         # Ergebnisse ausdrucken
         print_analysis_summary(results)
-        
+
         # Als JSON speichern
         save_analysis_to_json(results)
     else:
