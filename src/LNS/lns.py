@@ -209,9 +209,13 @@ class LNS:
         assert self.end_day <= self.MAX_DAY
 
     def create_window_instance(self) -> instace.Instance:
-        """Erstellt eine Instanz, die nur das aktuelle Suchfenster umfasst."""
+        """Erstellt eine Instanz, die das aktuelle Suchfenster plus einen Tag davor und danach umfasst."""
         old_instance = self.old_solution.instance
-        days_in_window = self.end_day - self.start_day + 1
+
+        # Erweitere Fenster um einen Tag vor und nach (falls möglich)
+        extended_start = max(self.MIN_DAY, self.start_day - 1)
+        extended_end = min(self.MAX_DAY, self.end_day + 1)
+        days_in_window = extended_end - extended_start + 1
 
         # Kopiere employees (Referenz auf dieselben Employee-Objekte)
         employees = old_instance.employees.copy()
@@ -219,12 +223,12 @@ class LNS:
         # Kopiere shift_types (Referenz auf dieselben ShiftType-Objekte)
         shift_types = old_instance.shift_types.copy()
 
-        # Erstelle neue shifts nur für das Fenster
+        # Erstelle neue shifts für das erweiterte Fenster
         from collections import defaultdict
 
         shifts = defaultdict(dict)
         for day_offset in range(days_in_window):
-            old_day = self.start_day + day_offset
+            old_day = extended_start + day_offset
             for shift_type_uid in old_instance.shift_types:
                 # Kopiere den Shift vom alten Tag
                 shifts[day_offset][shift_type_uid] = old_instance.get_shift(
@@ -234,13 +238,13 @@ class LNS:
         # Berechne neue weekend_days (angepasst an neuen day-Index)
         weekend_days = set()
         for old_weekend_day in old_instance.weekend_days:
-            if self.start_day <= old_weekend_day <= self.end_day:
-                new_day = old_weekend_day - self.start_day
+            if extended_start <= old_weekend_day <= extended_end:
+                new_day = old_weekend_day - extended_start
                 weekend_days.add(new_day)
 
         # Erstelle neue Instanz mit __init__
         window_instance = instace.Instance(
-            name=f"{old_instance.name}_window_{self.start_day}_{self.end_day}",
+            name=f"{old_instance.name}_window_{extended_start}_{extended_end}",
             employees=employees,
             number_of_days=days_in_window,
             weekend_days=weekend_days,
@@ -271,17 +275,15 @@ class LNS:
                 f"for window days {self.start_day} to {self.end_day}"
             )
 
-            solv = solver.Solver(
-                self.old_solution.instance,
-                solver.shift_vars.Shift_vars(self.old_solution.instance),
+            window_instance = self.create_window_instance()
+            solvr = solver.Solver(
+                window_instance, solver.shift_vars.Shift_vars(window_instance)
             )
 
-            self.fix_outside_window(self.start_day, self.end_day, solv)
-
-            solv = solv.solve(
+            solv = solvr.solve(
                 log_search_progress=False,
-                disabled_constraints=self.disabled_constraints,
                 max_time_in_seconds=small_max_solve_time,
+                disabled_constraints=self.disabled_constraints,
             )
 
             if not (
