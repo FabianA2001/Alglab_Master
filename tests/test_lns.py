@@ -38,6 +38,8 @@ class TestUpdateSearchWindow:
 
         instance = Mock(spec=Instance)
         instance.number_of_days = 30
+        instance.shift_types = ["type1", "type2", "type3"]  # Mock shift types
+        instance.employees = ["emp1", "emp2", "emp3", "emp4"]  # Mock employees
         solution.instance = instance
 
         return solution
