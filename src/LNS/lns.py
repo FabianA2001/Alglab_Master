@@ -208,6 +208,48 @@ class LNS:
         assert self.start_day >= self.MIN_DAY
         assert self.end_day <= self.MAX_DAY
 
+    def create_window_instance(self) -> instace.Instance:
+        """Erstellt eine Instanz, die nur das aktuelle Suchfenster umfasst."""
+        old_instance = self.old_solution.instance
+        days_in_window = self.end_day - self.start_day + 1
+
+        # Kopiere employees (Referenz auf dieselben Employee-Objekte)
+        employees = old_instance.employees.copy()
+
+        # Kopiere shift_types (Referenz auf dieselben ShiftType-Objekte)
+        shift_types = old_instance.shift_types.copy()
+
+        # Erstelle neue shifts nur für das Fenster
+        from collections import defaultdict
+
+        shifts = defaultdict(dict)
+        for day_offset in range(days_in_window):
+            old_day = self.start_day + day_offset
+            for shift_type_uid in old_instance.shift_types:
+                # Kopiere den Shift vom alten Tag
+                shifts[day_offset][shift_type_uid] = old_instance.get_shift(
+                    old_day, shift_type_uid
+                )
+
+        # Berechne neue weekend_days (angepasst an neuen day-Index)
+        weekend_days = set()
+        for old_weekend_day in old_instance.weekend_days:
+            if self.start_day <= old_weekend_day <= self.end_day:
+                new_day = old_weekend_day - self.start_day
+                weekend_days.add(new_day)
+
+        # Erstelle neue Instanz mit __init__
+        window_instance = instace.Instance(
+            name=f"{old_instance.name}_window_{self.start_day}_{self.end_day}",
+            employees=employees,
+            number_of_days=days_in_window,
+            weekend_days=weekend_days,
+            shifts=shifts,
+            shift_types=shift_types,
+        )
+
+        return window_instance
+
     def solve(self) -> solution.Solution:
         self.logger.info("Starting LNS solve process")
         start_time = time.time()
