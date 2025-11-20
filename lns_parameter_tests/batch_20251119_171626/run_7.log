@@ -1,0 +1,21 @@
+2025-11-19 17:31:31,574 - LNS_Test_7 - INFO - Starting LNS test run 7
+2025-11-19 17:31:31,574 - LNS_Test_7 - INFO - Instance: Instance9
+2025-11-19 17:31:31,574 - LNS_Test_7 - INFO - Parameters: {'timeout_seconds': 120, 'small_runtime_base': 0.02, 'strong_improvement_threshold': 0.005}
+2025-11-19 17:31:31,574 - LNS_Test_7 - INFO - Loading instance...
+2025-11-19 17:31:31,577 - LNS_Test_7 - INFO - Creating LNS solver...
+2025-11-19 17:32:17,242 - LNS_Test_7 - INFO - LNS initialized with search_window_size=7, timeout_seconds=74.39517402648926, small_runtime_seconds_base=0.02
+2025-11-19 17:32:17,242 - LNS_Test_7 - DEBUG - Initial solution objective value: 11369.0
+2025-11-19 17:32:17,242 - LNS_Test_7 - INFO - Starting LNS solve...
+2025-11-19 17:32:17,242 - LNS_Test_7 - INFO - Starting LNS solve process
+2025-11-19 17:32:17,242 - LNS_Test_7 - DEBUG - Iteration 1(0.00): Solving with small max solve time: 21.60s for window days 0 to 27
+2025-11-19 17:32:42,028 - LNS_Test_7 - DEBUG - Iteration 1: No feasible solution found (status: 0)
+2025-11-19 17:32:42,028 - LNS_Test_7 - DEBUG - Iteration 2(24.79): Solving with small max solve time: 21.60s for window days 0 to 27
+2025-11-19 17:33:05,771 - LNS_Test_7 - DEBUG - Iteration 2: No feasible solution found (status: 0)
+2025-11-19 17:33:05,771 - LNS_Test_7 - DEBUG - Iteration 3(48.53): Solving with small max solve time: 21.60s for window days 0 to 27
+2025-11-19 17:33:29,544 - LNS_Test_7 - DEBUG - Iteration 3: No feasible solution found (status: 0)
+2025-11-19 17:33:29,544 - LNS_Test_7 - DEBUG - Iteration 4(72.30): Solving with small max solve time: 21.60s for window days 0 to 27
+2025-11-19 17:33:53,467 - LNS_Test_7 - DEBUG - Iteration 4: No feasible solution found (status: 0)
+2025-11-19 17:33:53,468 - LNS_Test_7 - INFO - LNS completed: 4 iterations, 0 improvements, total time: 96.23s, final objective: 11369.0
+2025-11-19 17:33:53,468 - LNS_Test_7 - INFO - LNS solve completed in 141.89 seconds
+2025-11-19 17:33:53,468 - LNS_Test_7 - INFO - Final objective value: 11369.0
+2025-11-19 17:33:53,468 - LNS_Test_7 - INFO - Results saved to lns_parameter_tests/batch_20251119_171626

@@ -1,4 +1,5 @@
 import logging
+import re
 from pathlib import Path
 
 from cpsat_utils.testing import AssertModelFeasible
@@ -38,6 +39,9 @@ def get_tes_data() -> instace.Instance:
     test_file = Path.joinpath(
         Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance9.txt"
     )
+    # test_file = Path.joinpath(
+    #     Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance13.txt"
+    # )
     return parseTXT.parse_txt(test_file)
 
 
@@ -78,14 +82,44 @@ def run_lns_example():
     inst = get_tes_data()
     lns_solver = lns.LNS(
         inst,
-        small_runtime_seconds=10,
         timeout_seconds=60,
-        search_window_size_max=inst.number_of_days // 2,
+        start_search_window_size=5,
     )
     improved_solution = lns_solver.solve()
     # improved_solution.print_all_variables_values()
     # print("Objective value before LNS:", old_sol.objective_value)
     print("Objective value after LNS:", improved_solution.objective_value)
+
+
+def calculate_all_instancen():
+    data_folder = Path.joinpath(
+        Path(__file__).resolve().parent.parent, "data", "instance_raw"
+    )
+
+    # Hilfsfunktion für numerische Sortierung
+    def natural_sort_key(path):
+        # Extrahiere Zahlen aus dem Dateinamen für numerische Sortierung
+        parts = re.split(r"(\d+)", path.name)
+        return [int(part) if part.isdigit() else part for part in parts]
+
+    # Sortiere die Dateien numerisch korrekt
+    files = sorted(data_folder.iterdir(), key=natural_sort_key)
+    for file in files:
+        print(f"Processing file: {file}")
+        if file.suffix == ".txt":
+            instance = parseTXT.parse_txt(file)
+            vars = Shift_vars(instance)
+            solv = Solver(instance, vars)
+            sol = solv.solve(max_time_in_seconds=60)
+            print(sol.solve_status)
+            if (
+                sol.solve_status == cp_model.OPTIMAL
+                or sol.solve_status == cp_model.FEASIBLE
+            ):
+                sol.to_json_file(file.stem)
+            else:
+                print(f"No feasible solution found for {file.name}")
+                return
 
 
 def main() -> None:
@@ -97,7 +131,8 @@ def main() -> None:
     # sol = Solution.from_json_file("Instance1")
     # get_test_solution_from_model()
     # try_compare_solutions()
-    run_lns_example()
+    # run_lns_example()
+    calculate_all_instancen()
 
 
 if __name__ == "__main__":
