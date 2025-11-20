@@ -1,0 +1,49 @@
+2025-11-19 17:20:49,371 - LNS_Test_2 - INFO - Starting LNS test run 2
+2025-11-19 17:20:49,371 - LNS_Test_2 - INFO - Instance: Instance9
+2025-11-19 17:20:49,371 - LNS_Test_2 - INFO - Parameters: {'timeout_seconds': 120, 'small_runtime_base': 0.005, 'strong_improvement_threshold': 0.01}
+2025-11-19 17:20:49,371 - LNS_Test_2 - INFO - Loading instance...
+2025-11-19 17:20:49,373 - LNS_Test_2 - INFO - Creating LNS solver...
+2025-11-19 17:21:01,887 - LNS_Test_2 - INFO - LNS initialized with search_window_size=7, timeout_seconds=107.48670101165771, small_runtime_seconds_base=0.005
+2025-11-19 17:21:01,887 - LNS_Test_2 - DEBUG - Initial solution objective value: 5491.0
+2025-11-19 17:21:01,887 - LNS_Test_2 - INFO - Starting LNS solve...
+2025-11-19 17:21:01,887 - LNS_Test_2 - INFO - Starting LNS solve process
+2025-11-19 17:21:01,887 - LNS_Test_2 - DEBUG - Iteration 1(0.00): Solving with small max solve time: 5.40s for window days 0 to 27
+2025-11-19 17:21:08,230 - LNS_Test_2 - DEBUG - Iteration 1: No feasible solution found (status: 0)
+2025-11-19 17:21:08,230 - LNS_Test_2 - DEBUG - Iteration 2(6.34): Solving with small max solve time: 5.40s for window days 0 to 27
+2025-11-19 17:21:14,371 - LNS_Test_2 - DEBUG - Iteration 2: No feasible solution found (status: 0)
+2025-11-19 17:21:14,371 - LNS_Test_2 - DEBUG - Iteration 3(12.48): Solving with small max solve time: 5.40s for window days 0 to 27
+2025-11-19 17:21:20,303 - LNS_Test_2 - DEBUG - Iteration 3: No feasible solution found (status: 0)
+2025-11-19 17:21:20,303 - LNS_Test_2 - DEBUG - Iteration 4(18.42): Solving with small max solve time: 5.40s for window days 0 to 27
+2025-11-19 17:21:25,909 - LNS_Test_2 - DEBUG - Iteration 4: No feasible solution found (status: 0)
+2025-11-19 17:21:25,909 - LNS_Test_2 - DEBUG - Iteration 5(24.02): Solving with small max solve time: 5.40s for window days 0 to 27
+2025-11-19 17:21:31,803 - LNS_Test_2 - DEBUG - Iteration 5: No feasible solution found (status: 0)
+2025-11-19 17:21:31,803 - LNS_Test_2 - DEBUG - Iteration 6(29.92): Solving with small max solve time: 5.40s for window days 0 to 27
+2025-11-19 17:21:37,899 - LNS_Test_2 - DEBUG - Iteration 6: No feasible solution found (status: 0)
+2025-11-19 17:21:37,899 - LNS_Test_2 - DEBUG - Iteration 7(36.01): Solving with small max solve time: 5.40s for window days 0 to 27
+2025-11-19 17:21:44,252 - LNS_Test_2 - DEBUG - Iteration 7: No feasible solution found (status: 0)
+2025-11-19 17:21:44,252 - LNS_Test_2 - DEBUG - Iteration 8(42.36): Solving with small max solve time: 5.40s for window days 0 to 27
+2025-11-19 17:21:50,413 - LNS_Test_2 - DEBUG - Iteration 8: No feasible solution found (status: 0)
+2025-11-19 17:21:50,413 - LNS_Test_2 - DEBUG - Iteration 9(48.53): Solving with small max solve time: 5.40s for window days 0 to 27
+2025-11-19 17:21:56,703 - LNS_Test_2 - DEBUG - Iteration 9: No feasible solution found (status: 0)
+2025-11-19 17:21:56,703 - LNS_Test_2 - DEBUG - Iteration 10(54.82): Solving with small max solve time: 5.40s for window days 0 to 27
+2025-11-19 17:22:02,927 - LNS_Test_2 - DEBUG - Iteration 10: No feasible solution found (status: 0)
+2025-11-19 17:22:02,927 - LNS_Test_2 - DEBUG - Iteration 11(61.04): Solving with small max solve time: 5.40s for window days 0 to 27
+2025-11-19 17:22:09,128 - LNS_Test_2 - DEBUG - Iteration 11: No feasible solution found (status: 0)
+2025-11-19 17:22:09,128 - LNS_Test_2 - DEBUG - Iteration 12(67.24): Solving with small max solve time: 5.40s for window days 0 to 27
+2025-11-19 17:22:15,307 - LNS_Test_2 - DEBUG - Iteration 12: No feasible solution found (status: 0)
+2025-11-19 17:22:15,307 - LNS_Test_2 - DEBUG - Iteration 13(73.42): Solving with small max solve time: 5.40s for window days 0 to 27
+2025-11-19 17:22:21,556 - LNS_Test_2 - DEBUG - Iteration 13: No feasible solution found (status: 0)
+2025-11-19 17:22:21,556 - LNS_Test_2 - DEBUG - Iteration 14(79.67): Solving with small max solve time: 5.40s for window days 0 to 27
+2025-11-19 17:22:27,747 - LNS_Test_2 - DEBUG - Iteration 14: No feasible solution found (status: 0)
+2025-11-19 17:22:27,747 - LNS_Test_2 - DEBUG - Iteration 15(85.86): Solving with small max solve time: 5.40s for window days 0 to 27
+2025-11-19 17:22:34,021 - LNS_Test_2 - DEBUG - Iteration 15: No feasible solution found (status: 0)
+2025-11-19 17:22:34,021 - LNS_Test_2 - DEBUG - Iteration 16(92.13): Solving with small max solve time: 5.40s for window days 0 to 27
+2025-11-19 17:22:40,319 - LNS_Test_2 - DEBUG - Iteration 16: No feasible solution found (status: 0)
+2025-11-19 17:22:40,319 - LNS_Test_2 - DEBUG - Iteration 17(98.43): Solving with small max solve time: 5.40s for window days 0 to 27
+2025-11-19 17:22:46,654 - LNS_Test_2 - DEBUG - Iteration 17: No feasible solution found (status: 0)
+2025-11-19 17:22:46,654 - LNS_Test_2 - DEBUG - Iteration 18(104.77): Solving with small max solve time: 5.40s for window days 0 to 27
+2025-11-19 17:22:53,004 - LNS_Test_2 - DEBUG - Iteration 18: No feasible solution found (status: 0)
+2025-11-19 17:22:53,004 - LNS_Test_2 - INFO - LNS completed: 18 iterations, 0 improvements, total time: 111.12s, final objective: 5491.0
+2025-11-19 17:22:53,004 - LNS_Test_2 - INFO - LNS solve completed in 123.63 seconds
+2025-11-19 17:22:53,004 - LNS_Test_2 - INFO - Final objective value: 5491.0
+2025-11-19 17:22:53,004 - LNS_Test_2 - INFO - Results saved to lns_parameter_tests/batch_20251119_171626

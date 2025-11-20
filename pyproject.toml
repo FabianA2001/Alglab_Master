@@ -11,7 +11,8 @@ dependencies = [
     "ortools>=9.11.4210",
     "pydantic",
     "pandas",
-    "streamlit"
+    "streamlit",
+    "tqdm",
     
 ]
 
@@ -24,6 +25,8 @@ dev = [
 
 [project.scripts]
 main = "src.main:main"
+lns-find = "src.LNS.find_lns_parameter:main"
+lns-show = "src.LNS.show_parameter:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

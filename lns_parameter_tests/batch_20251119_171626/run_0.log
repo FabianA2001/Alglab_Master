@@ -1,0 +1,53 @@
+2025-11-19 17:16:26,794 - LNS_Test_0 - INFO - Starting LNS test run 0
+2025-11-19 17:16:26,794 - LNS_Test_0 - INFO - Instance: Instance9
+2025-11-19 17:16:26,794 - LNS_Test_0 - INFO - Parameters: {'timeout_seconds': 120, 'small_runtime_base': 0.01, 'strong_improvement_threshold': 0.01}
+2025-11-19 17:16:26,794 - LNS_Test_0 - INFO - Loading instance...
+2025-11-19 17:16:26,797 - LNS_Test_0 - INFO - Creating LNS solver...
+2025-11-19 17:16:39,980 - LNS_Test_0 - INFO - LNS initialized with search_window_size=7, timeout_seconds=106.81698107719421, small_runtime_seconds_base=0.01
+2025-11-19 17:16:39,980 - LNS_Test_0 - DEBUG - Initial solution objective value: 444.0
+2025-11-19 17:16:39,980 - LNS_Test_0 - INFO - Starting LNS solve...
+2025-11-19 17:16:39,980 - LNS_Test_0 - INFO - Starting LNS solve process
+2025-11-19 17:16:39,980 - LNS_Test_0 - DEBUG - Iteration 1(0.00): Solving with small max solve time: 10.80s for window days 0 to 27
+2025-11-19 17:16:51,102 - LNS_Test_0 - DEBUG - Iteration 1: Found solution with objective 447.0
+2025-11-19 17:16:51,102 - LNS_Test_0 - DEBUG - Iteration 1: No improvement (current best: 444.0)
+2025-11-19 17:16:51,102 - LNS_Test_0 - DEBUG - No improvement: Increasing window size from 27 to 27
+2025-11-19 17:16:51,102 - LNS_Test_0 - DEBUG - Iteration 2(11.12): Solving with small max solve time: 10.80s for window days 0 to 27
+2025-11-19 17:17:02,238 - LNS_Test_0 - DEBUG - Iteration 2: Found solution with objective 478.0
+2025-11-19 17:17:02,239 - LNS_Test_0 - DEBUG - Iteration 2: No improvement (current best: 444.0)
+2025-11-19 17:17:02,239 - LNS_Test_0 - DEBUG - No improvement: Increasing window size from 27 to 27
+2025-11-19 17:17:02,239 - LNS_Test_0 - DEBUG - Iteration 3(22.26): Solving with small max solve time: 10.80s for window days 0 to 27
+2025-11-19 17:17:13,426 - LNS_Test_0 - DEBUG - Iteration 3: Found solution with objective 546.0
+2025-11-19 17:17:13,426 - LNS_Test_0 - DEBUG - Iteration 3: No improvement (current best: 444.0)
+2025-11-19 17:17:13,426 - LNS_Test_0 - DEBUG - No improvement: Increasing window size from 27 to 27
+2025-11-19 17:17:13,426 - LNS_Test_0 - DEBUG - Iteration 4(33.45): Solving with small max solve time: 10.80s for window days 0 to 27
+2025-11-19 17:17:24,686 - LNS_Test_0 - DEBUG - Iteration 4: Found solution with objective 585.0
+2025-11-19 17:17:24,686 - LNS_Test_0 - DEBUG - Iteration 4: No improvement (current best: 444.0)
+2025-11-19 17:17:24,686 - LNS_Test_0 - DEBUG - No improvement: Increasing window size from 27 to 27
+2025-11-19 17:17:24,686 - LNS_Test_0 - DEBUG - Iteration 5(44.71): Solving with small max solve time: 10.80s for window days 0 to 27
+2025-11-19 17:17:35,951 - LNS_Test_0 - DEBUG - Iteration 5: Found solution with objective 705.0
+2025-11-19 17:17:35,951 - LNS_Test_0 - DEBUG - Iteration 5: No improvement (current best: 444.0)
+2025-11-19 17:17:35,964 - LNS_Test_0 - DEBUG - No improvement: Increasing window size from 27 to 27
+2025-11-19 17:17:35,964 - LNS_Test_0 - DEBUG - Iteration 6(55.98): Solving with small max solve time: 10.80s for window days 0 to 27
+2025-11-19 17:17:47,277 - LNS_Test_0 - DEBUG - Iteration 6: Found solution with objective 571.0
+2025-11-19 17:17:47,277 - LNS_Test_0 - DEBUG - Iteration 6: No improvement (current best: 444.0)
+2025-11-19 17:17:47,277 - LNS_Test_0 - DEBUG - No improvement: Increasing window size from 27 to 27
+2025-11-19 17:17:47,277 - LNS_Test_0 - DEBUG - Iteration 7(67.30): Solving with small max solve time: 10.80s for window days 0 to 27
+2025-11-19 17:17:58,636 - LNS_Test_0 - DEBUG - Iteration 7: Found solution with objective 918.0
+2025-11-19 17:17:58,636 - LNS_Test_0 - DEBUG - Iteration 7: No improvement (current best: 444.0)
+2025-11-19 17:17:58,636 - LNS_Test_0 - DEBUG - No improvement: Increasing window size from 27 to 27
+2025-11-19 17:17:58,636 - LNS_Test_0 - DEBUG - Iteration 8(78.66): Solving with small max solve time: 10.80s for window days 0 to 27
+2025-11-19 17:18:10,055 - LNS_Test_0 - DEBUG - Iteration 8: Found solution with objective 994.0
+2025-11-19 17:18:10,055 - LNS_Test_0 - DEBUG - Iteration 8: No improvement (current best: 444.0)
+2025-11-19 17:18:10,055 - LNS_Test_0 - DEBUG - No improvement: Increasing window size from 27 to 27
+2025-11-19 17:18:10,056 - LNS_Test_0 - DEBUG - Iteration 9(90.08): Solving with small max solve time: 10.80s for window days 0 to 27
+2025-11-19 17:18:21,509 - LNS_Test_0 - DEBUG - Iteration 9: Found solution with objective 1202.0
+2025-11-19 17:18:21,509 - LNS_Test_0 - DEBUG - Iteration 9: No improvement (current best: 444.0)
+2025-11-19 17:18:21,510 - LNS_Test_0 - DEBUG - No improvement: Increasing window size from 27 to 27
+2025-11-19 17:18:21,510 - LNS_Test_0 - DEBUG - Iteration 10(101.53): Solving with small max solve time: 10.80s for window days 0 to 27
+2025-11-19 17:18:32,994 - LNS_Test_0 - DEBUG - Iteration 10: Found solution with objective 1047.0
+2025-11-19 17:18:32,995 - LNS_Test_0 - DEBUG - Iteration 10: No improvement (current best: 444.0)
+2025-11-19 17:18:32,995 - LNS_Test_0 - DEBUG - No improvement: Increasing window size from 27 to 27
+2025-11-19 17:18:32,995 - LNS_Test_0 - INFO - LNS completed: 10 iterations, 0 improvements, total time: 113.01s, final objective: 444.0
+2025-11-19 17:18:32,995 - LNS_Test_0 - INFO - LNS solve completed in 126.20 seconds
+2025-11-19 17:18:32,995 - LNS_Test_0 - INFO - Final objective value: 444.0
+2025-11-19 17:18:32,995 - LNS_Test_0 - INFO - Results saved to lns_parameter_tests/batch_20251119_171626

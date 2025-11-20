@@ -1,0 +1,16 @@
+{
+  "run_id": 2,
+  "instance_name": "Instance9",
+  "parameters": {
+    "timeout_seconds": 120,
+    "small_runtime_base": 0.005,
+    "strong_improvement_threshold": 0.01
+  },
+  "objective_value": 5491.0,
+  "solve_status": "2",
+  "runtime_seconds": 123.63026261329651,
+  "iterations": 0,
+  "improvements": 0,
+  "timestamp": "2025-11-19T17:20:49.371069",
+  "log_file": "lns_parameter_tests/batch_20251119_171626/run_2.log"
+}

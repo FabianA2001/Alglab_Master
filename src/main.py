@@ -39,6 +39,9 @@ def get_tes_data() -> instace.Instance:
     test_file = Path.joinpath(
         Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance9.txt"
     )
+    # test_file = Path.joinpath(
+    #     Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance13.txt"
+    # )
     return parseTXT.parse_txt(test_file)
 
 
@@ -79,9 +82,8 @@ def run_lns_example():
     inst = get_tes_data()
     lns_solver = lns.LNS(
         inst,
-        small_runtime_seconds=10,
         timeout_seconds=60,
-        search_window_size_max=inst.number_of_days // 2,
+        start_search_window_size=5,
     )
     improved_solution = lns_solver.solve()
     # improved_solution.print_all_variables_values()

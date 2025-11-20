@@ -1,0 +1,11 @@
+{
+  "instance_name": "Instance9",
+  "instance_path": "data/instance_raw/Instance9.txt",
+  "parameters": {
+    "timeout_seconds": 120,
+    "small_runtime_base": 0.02,
+    "strong_improvement_threshold": 0.05
+  },
+  "timestamp": "2025-11-19T17:24:56.926025",
+  "run_id": 4
+}
