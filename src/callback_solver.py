@@ -62,6 +62,6 @@ class Callback_Solver(cp_model.CpSolverSolutionCallback):
 
         ratio = satisfied_wishes / total_weights
 
-        if ratio > 0.5:
+        if ratio >= 0.8:
             print("Gute Lösung -> StopSearch()")
             self.StopSearch()
