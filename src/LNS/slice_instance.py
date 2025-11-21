@@ -77,7 +77,8 @@ class slice_instance:
         # edit employees
         employees = {}
         for uid, emp in old_instance.employees.items():
-            employees[uid] = self.edit_max_numbers_of_shifts_for_emploeey(uid, emp)
+            emp_with_shifts = self.edit_max_numbers_of_shifts_for_emploeey(uid, emp)
+            employees[uid] = self.edit_work_time_for_emploeey(uid, emp_with_shifts)
 
         # Kopiere shift_types (Referenz auf dieselben ShiftType-Objekte)
         shift_types = old_instance.shift_types.copy()
@@ -144,4 +145,38 @@ class slice_instance:
             new_max_numbers_of_shifts[shift_type_uid] = new_max
 
         new_emp.max_numbers_of_shifts = new_max_numbers_of_shifts
+        return new_emp
+
+    def edit_work_time_for_emploeey(
+        self, uid: employee.EmployeeUid, old_emp: employee.Employee
+    ) -> employee.Employee:
+        new_emp = old_emp.model_copy()
+
+        # Zähle Arbeitszeit (in Minuten) außerhalb des Windows
+        minutes_outside_window = 0
+
+        # Iteriere durch alle Tage außerhalb des erweiterten Windows
+        for day in range(self.inst.number_of_days):
+            if day < self.extended_start or day > self.extended_end:
+                # Tag liegt außerhalb des Windows
+                for shift_type_uid in self.inst.shift_types:
+                    if self.sol.is_employee_assigned(day, shift_type_uid, uid):
+                        # Hole die Länge des Shift-Typs
+                        shift_type = self.inst.shift_types[shift_type_uid]
+                        minutes_outside_window += shift_type.length
+
+        # Passe max_minutes_assigned an
+        assert old_emp.max_minutes_assigned >= minutes_outside_window, (
+            f"Employee {uid} has more minutes assigned outside the window ({minutes_outside_window}) "
+            f"than their maximum allowed ({old_emp.max_minutes_assigned})."
+        )
+        new_emp.max_minutes_assigned = max(
+            0, old_emp.max_minutes_assigned - minutes_outside_window
+        )
+
+        # Passe auch min_minutes_assigned an
+        new_emp.min_minutes_assigned = max(
+            0, old_emp.min_minutes_assigned - minutes_outside_window
+        )
+
         return new_emp
