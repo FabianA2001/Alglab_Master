@@ -18,7 +18,7 @@ from .module import (
 )
 from .module.solverConstraints import SolverConstraints
 from .solution import Solution
-from .callback_solver import Callback_Solver
+from .callback_early_stop import Callback_Early_Stop
 
 
 class Solver:
@@ -57,14 +57,14 @@ class Solver:
         self.solve_time = (datetime.now() - self.start_solve_time).total_seconds()
         return self.handle_results(status, solver, disabled_constraints)
 
-    def solve_with_callback(
+    def solve_with_early_stop(
         self,
         log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
         disabled_constraints: list[SolverConstraints] = [],
         **solver_params,
     ):
-        callback = Callback_Solver(self.instance, self.vars)
+        callback = Callback_Early_Stop(self.instance, self.vars)
         return self.solve(
             log_search_progress,
             max_time_in_seconds,
@@ -247,7 +247,7 @@ class Solver:
         self.start_solve_time = datetime.now()
         # status = solver.Solve(self.vars.model)
         ##mit Callback
-        callback = Callback_Solver(self.instance, self.vars)
+        callback = Callback_Early_Stop(self.instance, self.vars)
         status = solver.SolveWithSolutionCallback(self.vars.model, callback)
         ###
         self.solve_time = (datetime.now() - self.start_solve_time).total_seconds()

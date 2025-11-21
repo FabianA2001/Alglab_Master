@@ -20,7 +20,7 @@ from .module.solverConstraints import SolverConstraints
 from .solution import Solution
 
 
-class Callback_Solver(cp_model.CpSolverSolutionCallback):
+class Callback_Early_Stop(cp_model.CpSolverSolutionCallback):
     def __init__(self, instance: instace.Instance, vars: shift_vars.Shift_vars):
         super().__init__()
         self.instance = instance
@@ -62,6 +62,6 @@ class Callback_Solver(cp_model.CpSolverSolutionCallback):
 
         ratio = satisfied_wishes / total_weights
 
-        if ratio > 0.5:
+        if ratio >= 0.8:
             print("Gute Lösung -> StopSearch()")
             self.StopSearch()
