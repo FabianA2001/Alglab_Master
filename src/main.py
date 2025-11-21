@@ -115,7 +115,7 @@ def calculate_all_instancen():
     for instance in get_all_instancen():
         vars = Shift_vars(instance)
         solv = Solver(instance, vars)
-        sol = solv.solve(max_time_in_seconds=60)
+        sol = solv.solve(max_time_in_seconds=180)
         print(sol.solve_status)
         if (
             sol.solve_status == cp_model.OPTIMAL
@@ -157,8 +157,8 @@ def main() -> None:
     # get_test_solution_from_model()
     # try_compare_solutions()
     # run_lns_example()
-    # calculate_all_instancen()
-    print_some_infos()
+    calculate_all_instancen()
+    # print_some_infos()
 
 
 if __name__ == "__main__":
