@@ -139,6 +139,39 @@ class LNS:
                         else:
                             solver_instance.vars.model.Add(var == 0)
 
+    def fix_first_and_last_day(
+        self, extended_start: int, extended_end: int, solver_instance: solver.Solver
+    ):
+        """Fixiert die Zuweisungen des ersten und letzten Tages des erweiterten Fensters mit den Werten der gegebenen Lösung."""
+
+        # Fixiere den ersten Tag (extended_start)
+        for shift_type_uid in solver_instance.instance.shift_types:
+            for emp_id in solver_instance.instance.employees:
+                assigned = self.old_solution.is_employee_assigned(
+                    extended_start, shift_type_uid, emp_id
+                )
+                # Tag 0 in der window_instance entspricht extended_start in der alten Instanz
+                var = solver_instance.vars.vars[(0, shift_type_uid, emp_id)]
+                if assigned:
+                    solver_instance.vars.model.Add(var == 1)
+                else:
+                    solver_instance.vars.model.Add(var == 0)
+
+        # Fixiere den letzten Tag (extended_end)
+        last_day_in_window = extended_end - extended_start
+        for shift_type_uid in solver_instance.instance.shift_types:
+            for emp_id in solver_instance.instance.employees:
+                assigned = self.old_solution.is_employee_assigned(
+                    extended_end, shift_type_uid, emp_id
+                )
+                var = solver_instance.vars.vars[
+                    (last_day_in_window, shift_type_uid, emp_id)
+                ]
+                if assigned:
+                    solver_instance.vars.model.Add(var == 1)
+                else:
+                    solver_instance.vars.model.Add(var == 0)
+
     def update_search_window(self, improvement: float):
         """
         Passt die Größe des Suchfensters basierend auf der Verbesserung an.
@@ -279,6 +312,11 @@ class LNS:
             solvr = solver.Solver(
                 window_instance, solver.shift_vars.Shift_vars(window_instance)
             )
+
+            # Fixiere den ersten und letzten Tag des erweiterten Fensters
+            extended_start = max(self.MIN_DAY, self.start_day - 1)
+            extended_end = min(self.MAX_DAY, self.end_day + 1)
+            self.fix_first_and_last_day(extended_start, extended_end, solvr)
 
             solv = solvr.solve(
                 log_search_progress=False,
