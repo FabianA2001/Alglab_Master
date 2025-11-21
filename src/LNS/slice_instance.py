@@ -1,5 +1,5 @@
 from .. import solution, solver
-from ..inputTypes import instace
+from ..inputTypes import employee, instace
 
 
 def creat_solver_with_window_instance(
@@ -26,6 +26,9 @@ class slice_instance:
         self.min_day = min_day
         self.end_day = end
         self.max_day = max_day
+        self.extended_start = max(self.min_day, self.start_day - 1)
+        self.extended_end = min(self.max_day, self.end_day + 1)
+
         self.window_instance = self.create_window_instance()
 
     def get_sliced_instance(self) -> instace.Instance:
@@ -34,15 +37,11 @@ class slice_instance:
     def fix_first_and_last_day(self, solver_instance: solver.Solver):
         """Fixiert die Zuweisungen des ersten und letzten Tages des erweiterten Fensters mit den Werten der gegebenen Lösung."""
 
-        # Fixiere den ersten und letzten Tag des erweiterten Fensters
-        extended_start = max(self.min_day, self.start_day - 1)
-        extended_end = min(self.max_day, self.end_day + 1)
-
         # Fixiere den ersten Tag (extended_start)
         for shift_type_uid in solver_instance.instance.shift_types:
             for emp_id in solver_instance.instance.employees:
                 assigned = self.sol.is_employee_assigned(
-                    extended_start, shift_type_uid, emp_id
+                    self.extended_start, shift_type_uid, emp_id
                 )
                 # Tag 0 in der window_instance entspricht extended_start in der alten Instanz
                 var = solver_instance.vars.vars[(0, shift_type_uid, emp_id)]
@@ -52,11 +51,11 @@ class slice_instance:
                     solver_instance.vars.model.Add(var == 0)
 
         # Fixiere den letzten Tag (extended_end)
-        last_day_in_window = extended_end - extended_start
+        last_day_in_window = self.extended_end - self.extended_start
         for shift_type_uid in solver_instance.instance.shift_types:
             for emp_id in solver_instance.instance.employees:
                 assigned = self.sol.is_employee_assigned(
-                    extended_end, shift_type_uid, emp_id
+                    self.extended_end, shift_type_uid, emp_id
                 )
                 var = solver_instance.vars.vars[
                     (last_day_in_window, shift_type_uid, emp_id)
@@ -75,8 +74,10 @@ class slice_instance:
         extended_end = min(self.max_day, self.end_day + 1)
         days_in_window = extended_end - extended_start + 1
 
-        # Kopiere employees (Referenz auf dieselben Employee-Objekte)
-        employees = old_instance.employees.copy()
+        # edit employees
+        employees = {}
+        for uid, emp in old_instance.employees.items():
+            employees[uid] = self.edit_max_numbers_of_shifts_for_emploeey(uid, emp)
 
         # Kopiere shift_types (Referenz auf dieselben ShiftType-Objekte)
         shift_types = old_instance.shift_types.copy()
@@ -111,3 +112,36 @@ class slice_instance:
         )
 
         return window_instance
+
+    def edit_max_numbers_of_shifts_for_emploeey(
+        self, uid: employee.EmployeeUid, old_emp: employee.Employee
+    ) -> employee.Employee:
+        new_emp = old_emp.model_copy()
+
+        # Zähle Shifts außerhalb des Windows für jeden Shift-Typ
+        shifts_outside_window = {
+            shift_type_uid: 0 for shift_type_uid in self.inst.shift_types
+        }
+
+        # Iteriere durch alle Tage außerhalb des erweiterten Windows
+        for day in range(self.inst.number_of_days):
+            if day < self.extended_start or day > self.extended_end:
+                # Tag liegt außerhalb des Windows
+                for shift_type_uid in self.inst.shift_types:
+                    if self.sol.is_employee_assigned(day, shift_type_uid, uid):
+                        shifts_outside_window[shift_type_uid] += 1
+
+        # Passe max_numbers_of_shifts für jeden Shift-Typ an
+        new_max_numbers_of_shifts = {}
+        for shift_type_uid, max_shifts in old_emp.max_numbers_of_shifts.items():
+            # Reduziere das Maximum um die bereits außerhalb zugewiesenen Shifts
+            shifts_used_outside = shifts_outside_window.get(shift_type_uid, 0)
+            assert max_shifts >= shifts_used_outside, (
+                f"Employee {uid} has more shifts assigned outside the window ({shifts_used_outside}) "
+                f"than their maximum allowed ({max_shifts}) for shift type {shift_type_uid}."
+            )
+            new_max = max(0, max_shifts - shifts_used_outside)
+            new_max_numbers_of_shifts[shift_type_uid] = new_max
+
+        new_emp.max_numbers_of_shifts = new_max_numbers_of_shifts
+        return new_emp
