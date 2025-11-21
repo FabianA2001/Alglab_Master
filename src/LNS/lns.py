@@ -5,6 +5,7 @@ from ortools.sat.python import cp_model
 
 from .. import solution, solver
 from ..inputTypes import instace
+from . import slice_instance
 
 
 class StopAfterMinTimeAndFirstSolution(cp_model.CpSolverSolutionCallback):
@@ -121,57 +122,6 @@ class LNS:
         else:
             raise ValueError("Input must be a Solution or an Instance")
 
-    def fix_outside_window(
-        self, start_day: int, end_day: int, solver_instance: solver.Solver
-    ):
-        """Fixiert die Zuweisungen außerhalb des Suchfensters in der Solver-Instanz."""
-
-        for day in range(solver_instance.instance.number_of_days):
-            if day < start_day or day > end_day:
-                for shift_type_uid in solver_instance.instance.shift_types:
-                    for emp_id in solver_instance.instance.employees:
-                        assigned = self.old_solution.is_employee_assigned(
-                            day, shift_type_uid, emp_id
-                        )
-                        var = solver_instance.vars.vars[(day, shift_type_uid, emp_id)]
-                        if assigned:
-                            solver_instance.vars.model.Add(var == 1)
-                        else:
-                            solver_instance.vars.model.Add(var == 0)
-
-    def fix_first_and_last_day(
-        self, extended_start: int, extended_end: int, solver_instance: solver.Solver
-    ):
-        """Fixiert die Zuweisungen des ersten und letzten Tages des erweiterten Fensters mit den Werten der gegebenen Lösung."""
-
-        # Fixiere den ersten Tag (extended_start)
-        for shift_type_uid in solver_instance.instance.shift_types:
-            for emp_id in solver_instance.instance.employees:
-                assigned = self.old_solution.is_employee_assigned(
-                    extended_start, shift_type_uid, emp_id
-                )
-                # Tag 0 in der window_instance entspricht extended_start in der alten Instanz
-                var = solver_instance.vars.vars[(0, shift_type_uid, emp_id)]
-                if assigned:
-                    solver_instance.vars.model.Add(var == 1)
-                else:
-                    solver_instance.vars.model.Add(var == 0)
-
-        # Fixiere den letzten Tag (extended_end)
-        last_day_in_window = extended_end - extended_start
-        for shift_type_uid in solver_instance.instance.shift_types:
-            for emp_id in solver_instance.instance.employees:
-                assigned = self.old_solution.is_employee_assigned(
-                    extended_end, shift_type_uid, emp_id
-                )
-                var = solver_instance.vars.vars[
-                    (last_day_in_window, shift_type_uid, emp_id)
-                ]
-                if assigned:
-                    solver_instance.vars.model.Add(var == 1)
-                else:
-                    solver_instance.vars.model.Add(var == 0)
-
     def update_search_window(self, improvement: float):
         """
         Passt die Größe des Suchfensters basierend auf der Verbesserung an.
@@ -241,52 +191,6 @@ class LNS:
         assert self.start_day >= self.MIN_DAY
         assert self.end_day <= self.MAX_DAY
 
-    def create_window_instance(self) -> instace.Instance:
-        """Erstellt eine Instanz, die das aktuelle Suchfenster plus einen Tag davor und danach umfasst."""
-        old_instance = self.old_solution.instance
-
-        # Erweitere Fenster um einen Tag vor und nach (falls möglich)
-        extended_start = max(self.MIN_DAY, self.start_day - 1)
-        extended_end = min(self.MAX_DAY, self.end_day + 1)
-        days_in_window = extended_end - extended_start + 1
-
-        # Kopiere employees (Referenz auf dieselben Employee-Objekte)
-        employees = old_instance.employees.copy()
-
-        # Kopiere shift_types (Referenz auf dieselben ShiftType-Objekte)
-        shift_types = old_instance.shift_types.copy()
-
-        # Erstelle neue shifts für das erweiterte Fenster
-        from collections import defaultdict
-
-        shifts = defaultdict(dict)
-        for day_offset in range(days_in_window):
-            old_day = extended_start + day_offset
-            for shift_type_uid in old_instance.shift_types:
-                # Kopiere den Shift vom alten Tag
-                shifts[day_offset][shift_type_uid] = old_instance.get_shift(
-                    old_day, shift_type_uid
-                )
-
-        # Berechne neue weekend_days (angepasst an neuen day-Index)
-        weekend_days = set()
-        for old_weekend_day in old_instance.weekend_days:
-            if extended_start <= old_weekend_day <= extended_end:
-                new_day = old_weekend_day - extended_start
-                weekend_days.add(new_day)
-
-        # Erstelle neue Instanz mit __init__
-        window_instance = instace.Instance(
-            name=f"{old_instance.name}_window_{extended_start}_{extended_end}",
-            employees=employees,
-            number_of_days=days_in_window,
-            weekend_days=weekend_days,
-            shifts=shifts,
-            shift_types=shift_types,
-        )
-
-        return window_instance
-
     def solve(self) -> solution.Solution:
         self.logger.info("Starting LNS solve process")
         start_time = time.time()
@@ -308,15 +212,13 @@ class LNS:
                 f"for window days {self.start_day} to {self.end_day}"
             )
 
-            window_instance = self.create_window_instance()
-            solvr = solver.Solver(
-                window_instance, solver.shift_vars.Shift_vars(window_instance)
+            solvr = slice_instance.creat_solver_with_window_instance(
+                sol=self.old_solution,
+                start=self.start_day,
+                min_day=self.MIN_DAY,
+                end=self.end_day,
+                max_day=self.MAX_DAY,
             )
-
-            # Fixiere den ersten und letzten Tag des erweiterten Fensters
-            extended_start = max(self.MIN_DAY, self.start_day - 1)
-            extended_end = min(self.MAX_DAY, self.end_day + 1)
-            self.fix_first_and_last_day(extended_start, extended_end, solvr)
 
             solv = solvr.solve(
                 log_search_progress=False,
