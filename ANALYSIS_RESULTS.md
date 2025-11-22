@@ -4,17 +4,27 @@
 
 | Instance | Tage | MA | Wunsch-Erfüllung | Schicht-Auslastung | Solver Status |
 |----------|------|----|-----------------|--------------------|---------------|
-| Instance1 | 14 | 8 | **80.8%** | 91.5% | 4 (Optimal) |
-| Instance13 | 28 | 120 | 68.0% | 97.1% | 2 (Feasible) |
-| Instance1ExtraLong | 28 | 8 | 84.6% | 93.0% | 4 (Optimal) |
-| Instance2 | 14 | 14 | 71.0% | 92.6% | 2 (Feasible) |
-| Instance3 | 14 | 20 | **98.4%** | 93.5% | 4 (Optimal) |
-| Instance4 | 28 | 10 | **90.1%** | 91.2% | 2 (Feasible) |
-| Instance5 | 28 | 16 | 73.6% | 96.5% | 2 (Feasible) |
-| Instance6 | 28 | 18 | 76.3% | 94.3% | 2 (Feasible) |
-| Instance7 | 28 | 20 | 78.6% | 97.1% | 2 (Feasible) |
-| Instance8 | 28 | 30 | 72.0% | 97.1% | 2 (Feasible) |
-| Instance9 | 28 | 36 | **89.7%** | **99.0%** | 2 (Feasible) |
+| Instance1 | 14 | 8 | 80.8% | 91.5% | 4 (Optimal) |
+| Instance10 | 28 | 40 | 90.8% | 93.5% | 2 (Feasible) |
+| Instance11 | 28 | 50 | 93.8% | 98.6% | 2 (Feasible) |
+| Instance12 | 28 | 60 | 78.7% | 95.6% | 2 (Feasible) |
+| Instance13 | 28 | 120 | 72.9% | 98.2% | 2 (Feasible) |
+| Instance14 | 42 | 32 | 85.8% | 103.6% | 2 (Feasible) |
+| Instance15 | 42 | 45 | 66.1% | 101.0% | 2 (Feasible) |
+| Instance16 | 56 | 20 | 82.1% | 104.3% | 2 (Feasible) |
+| Instance17 | 56 | 32 | 84.6% | 102.6% | 2 (Feasible) |
+| Instance18 | 84 | 22 | 80.9% | 101.4% | 2 (Feasible) |
+| Instance19 | 84 | 40 | 81.5% | 101.5% | 2 (Feasible) |
+| Instance1ExtraLong | 28 | 8 | 80.8% | 91.5% | 4 (Optimal) |
+| Instance2 | 14 | 14 | 71.0% | 92.6% | 4 (Optimal) |
+| Instance20 | 182 | 50 | 70.0% | 115.7% | 2 (Feasible) |
+| Instance3 | 14 | 20 | 98.4% | 93.5% | 4 (Optimal) |
+| Instance4 | 28 | 10 | 85.9% | 90.7% | 2 (Feasible) |
+| Instance5 | 28 | 16 | 77.4% | 96.5% | 2 (Feasible) |
+| Instance6 | 28 | 18 | 80.7% | 94.6% | 2 (Feasible) |
+| Instance7 | 28 | 20 | 81.5% | 96.8% | 2 (Feasible) |
+| Instance8 | 28 | 30 | 71.6% | 97.9% | 2 (Feasible) |
+| Instance9 | 28 | 36 | 89.2% | 99.0% | 2 (Feasible) |
 
 ## Metriken erklärt
 
@@ -32,62 +42,31 @@
 - **`below_preferred`**: Wie viele Mitarbeiter unter der gewünschten Besetzung fehlen
 - **`above_preferred`**: Wie viele Mitarbeiter über der gewünschten Besetzung hinzugekommen sind
 
-## Wunscherfüllung
+## Zusammenfassung
 
-**Beste Erfüllung:**
-- 🥇 **Instance3**: 98.4% (14 Tage, 20 MA)
-- 🥈 **Instance9**: 89.7% (28 Tage, 36 MA)
-- 🥉 **Instance4**: 90.1% (28 Tage, 10 MA)
+**Wunscherfüllung:**
+- 🥇 Best: **Instance3** (98.4%)
+- 🥉 Worst: **Instance15** (66.1%)
+- Ø Durchschnitt: **81.2%**
 
-**Schwächste Erfüllung:**
-- Instance13: 68.0% (28 Tage, 120 MA) - sehr komplexe Instanz
-- Instance2: 71.0% (14 Tage, 14 MA)
-- Instance8: 72.0% (28 Tage, 30 MA)
+**Schichtauslastung:**
+- 🥇 Best: **Instance20** (115.7%)
+- 🥉 Worst: **Instance4** (90.7%)
+- Ø Durchschnitt: **98.1%**
 
-**Durchschnitt: 80.4%**
+**Solver-Status:**
+- ✅ OPTIMAL (Status 4): 4 Instanzen
+- ⏳ FEASIBLE (Status 2): 17 Instanzen
 
-## Schichtauslastung
+## Erkenntnisse
 
-**Beste Auslastung:**
-- 🥇 **Instance9**: 99.0% (fast perfekt besetzt)
-- 🥈 **Instance13**: 97.1%
-- 🥈 **Instance7**: 97.1%
+### Korrelation: Größe vs. Erfüllung
 
-**Schwächste Auslastung:**
-- Instance4: 91.2%
-- Instance2: 92.6%
-- Instance1ExtraLong: 93.0%
-
-**Durchschnitt: 94.5%**
-
-## Korrelation: Größe vs. Erfüllung
-
-- **Kleine Instanzen (8-20 MA)**: Meist bessere Wunscherfüllung (71-98.4%)
-- **Große Instanzen (30-120 MA)**: Schlechtere Wunscherfüllung (68-72%)
-- **Mittlere Instanzen (16-20 MA)**: Gute Balance (78.6-89.7%)
+**Kleine Instanzen (≤20 MA)**: Meist bessere Wunscherfüllung
+**Große Instanzen (>20 MA)**: Schlechtere Wunscherfüllung
 
 **Tendenz**: Mit mehr Mitarbeitern ist es schwerer, individuelle Wünsche zu erfüllen.
 
-## Solver-Status
+### Solver-Performance
 
-- **Status 4 (OPTIMAL)**: 3 Instanzen (Instance1, Instance3, Instance1ExtraLong)
-  - Solvetime: 0.07 - 0.12s
-  
-- **Status 2 (FEASIBLE)**: 8 Instanzen
-  - Solvetime: 60.02 - 60.09s (bei Timeout!)
-
-→ Die OPTIMAL-Lösungen sind meist **schneller und haben bessere Metriken**
-
-## Detaillierte Problemschichten
-
-### Instance6: Überbesetzung
-- Tag 17: Schicht 1 ist zu 200% besetzt (4 statt 2 Mitarbeiter)
-- Tag 17: Schicht 2 und 3 sind zu 150% besetzt
-
-### Instance13: Kritische Unterbelegung
-- Tag 5-6: Mehrere Schichten zu 20-25% besetzt
-- Grund: 120 Mitarbeiter mit vielen Einschränkungen (komplexe Instanz)
-
-### Instance8: Bestimmte Schichten unbesetzt
-- Tag 5 und 9: Schicht 4 komplett unbesetzt (0/5, 0/3)
-- Könnte Constraint-Verstoß sein oder nicht genug verfügbare Mitarbeiter
+→ OPTIMAL-Lösungen sind meist **schneller und haben bessere Metriken** als FEASIBLE-Lösungen (Timeout)
