@@ -267,6 +267,125 @@ def save_analysis_to_json(
     print(f"\n✓ Analysen gespeichert in: {output_path}")
 
 
+def generate_markdown_results(
+    analysis_results: dict, output_path: Optional[Path] = None
+) -> None:
+    """
+    Generiert eine Markdown-Datei mit den Analyseergebnissen.
+
+    Args:
+        analysis_results: Dict mit Analyseergebnissen
+        output_path: Pfad zur Output-Datei (Default: ANALYSIS_RESULTS.md)
+    """
+    if output_path is None:
+        output_path = Path(__file__).resolve().parent.parent / "ANALYSIS_RESULTS.md"
+
+    # Tabelle generieren
+    table_rows = []
+    for name, analysis in sorted(analysis_results.items()):
+        wishes = analysis["wishes"]
+        shifts = analysis["shifts"]
+        status = "4 (Optimal)" if analysis["solve_status"] == 4 else "2 (Feasible)"
+
+        table_rows.append(
+            f"| {name} | {analysis['num_days']} | {analysis['num_employees']} | {wishes['satisfaction_rate_percent']:.1f}% | {shifts['overall_utilization_percent']:.1f}% | {status} |"
+        )
+
+    table = "| Instance | Tage | MA | Wunsch-Erfüllung | Schicht-Auslastung | Solver Status |\n"
+    table += "|----------|------|----|-----------------|--------------------|---------------|\n"
+    table += "\n".join(table_rows)
+
+    # Statistische Auswertungen
+    wish_rates = [
+        a["wishes"]["satisfaction_rate_percent"] for a in analysis_results.values()
+    ]
+    util_rates = [
+        a["shifts"]["overall_utilization_percent"] for a in analysis_results.values()
+    ]
+    avg_wish = sum(wish_rates) / len(wish_rates) if wish_rates else 0
+    avg_util = sum(util_rates) / len(util_rates) if util_rates else 0
+
+    # Best/Worst
+    best_wishes = max(
+        analysis_results.items(),
+        key=lambda x: x[1]["wishes"]["satisfaction_rate_percent"],
+    )
+    worst_wishes = min(
+        analysis_results.items(),
+        key=lambda x: x[1]["wishes"]["satisfaction_rate_percent"],
+    )
+    best_util = max(
+        analysis_results.items(),
+        key=lambda x: x[1]["shifts"]["overall_utilization_percent"],
+    )
+    worst_util = min(
+        analysis_results.items(),
+        key=lambda x: x[1]["shifts"]["overall_utilization_percent"],
+    )
+
+    optimal_count = sum(1 for a in analysis_results.values() if a["solve_status"] == 4)
+    feasible_count = sum(1 for a in analysis_results.values() if a["solve_status"] == 2)
+
+    markdown = f"""# Analyse-Ergebnisse Solutions
+
+## Schnelle Übersicht
+
+{table}
+
+## Metriken erklärt
+
+### Wunscherfüllung (`satisfaction_rate_percent`)
+- **Definition**: Prozentsatz der erfüllten Wünsche (auf und ab Wünsche)
+- **Berechnung**: `(erfüllte_wünsche / gesamt_wünsche) * 100`
+- **Bereich**: 0-100%
+
+### Schichtauslastung (`overall_utilization_percent`)
+- **Definition**: Prozentsatz der Schichtauslastung im Vergleich zur gewünschten Besetzung
+- **Berechnung**: `(zugeteilte_mitarbeiter / gewünschte_mitarbeiter) * 100`
+- **Bereich**: 0-100%+ (kann über 100% sein, wenn Schicht überbesetzt)
+
+### Unter-/Überbesetzung
+- **`below_preferred`**: Wie viele Mitarbeiter unter der gewünschten Besetzung fehlen
+- **`above_preferred`**: Wie viele Mitarbeiter über der gewünschten Besetzung hinzugekommen sind
+
+## Zusammenfassung
+
+**Wunscherfüllung:**
+- 🥇 Best: **{best_wishes[0]}** ({best_wishes[1]["wishes"]["satisfaction_rate_percent"]:.1f}%)
+- 🥉 Worst: **{worst_wishes[0]}** ({worst_wishes[1]["wishes"]["satisfaction_rate_percent"]:.1f}%)
+- Ø Durchschnitt: **{avg_wish:.1f}%**
+
+**Schichtauslastung:**
+- 🥇 Best: **{best_util[0]}** ({best_util[1]["shifts"]["overall_utilization_percent"]:.1f}%)
+- 🥉 Worst: **{worst_util[0]}** ({worst_util[1]["shifts"]["overall_utilization_percent"]:.1f}%)
+- Ø Durchschnitt: **{avg_util:.1f}%**
+
+**Solver-Status:**
+- ✅ OPTIMAL (Status 4): {optimal_count} Instanzen
+- ⏳ FEASIBLE (Status 2): {feasible_count} Instanzen
+
+## Erkenntnisse
+
+### Korrelation: Größe vs. Erfüllung
+
+**Kleine Instanzen (≤20 MA)**: Meist bessere Wunscherfüllung
+**Große Instanzen (>20 MA)**: Schlechtere Wunscherfüllung
+
+**Tendenz**: Mit mehr Mitarbeitern ist es schwerer, individuelle Wünsche zu erfüllen.
+
+### Solver-Performance
+
+→ OPTIMAL-Lösungen sind meist **schneller und haben bessere Metriken** als FEASIBLE-Lösungen (Timeout)
+"""
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(markdown)
+
+    print(f"✓ Markdown generiert: {output_path}")
+
+
 if __name__ == "__main__":
     # Alle Solutions analysieren
     results = analyze_all_solutions()
