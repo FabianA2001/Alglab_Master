@@ -428,3 +428,9 @@ class Solver_for_window(solver.Solver):
                         self.vars.model.Add(has_day_off[i] == 1).OnlyEnforceIf(
                             ends_here
                         )
+
+    def block_employee_on_day(self, employee_uid: employee.EmployeeUid, day: int):
+        for shift_type_uid in self.instance.shift_types:
+            self.vars.model.Add(
+                self.vars.get_var(day - 1, shift_type_uid, employee_uid) == 0
+            )

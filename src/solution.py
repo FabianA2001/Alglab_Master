@@ -380,10 +380,10 @@ def _check_all_constraints(
         if constraint_name in solution.disabled_constraints:
             continue  # Überspringe deaktivierte Constraints
         is_valid, violations = check_func(solution)
-        if not is_valid:
-            print(
-                f"Constraint '{constraint_name.name}' verletzt: {len(violations)} Verstöße gefunden."
-            )
+        # if not is_valid:
+        # print(
+        #     f"Constraint '{constraint_name.name}' verletzt: {len(violations)} Verstöße gefunden."
+        # )
         results[constraint_name.name] = (is_valid, violations)
         if not is_valid:
             all_valid = False

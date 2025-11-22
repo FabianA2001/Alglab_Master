@@ -33,7 +33,10 @@ class LNS:
         sol_or_instance: solution.Solution | instace.Instance,
         percent_search_time_first_solution: float = 0.1,
         timeout_seconds: float = 180,
-        small_runtime_base: float = 0.01,  # * number_of_days * (number_of_shift_types + number_of_employees)
+        # small_runtime_base: float = 0.01,  # * number_of_days * (number_of_shift_types + number_of_employees)
+        # HACK
+        small_runtime_base: float = 0.1,  # * number_of_days * (number_of_shift_types + number_of_employees)
+        ####################
         start_search_window_size: int = 7,
         search_window_size_min: int = 3,
         window_increase_factor: float = 1.3,
@@ -213,14 +216,13 @@ class LNS:
         # Iteriere über alle Tage im erweiterten Fenster
         for window_day in range(self.end_day - self.start_day + 1):
             original_day = self.start_day + window_day
+            actual_day = window_day + 1
 
             # Kopiere alle Shift-Zuweisungen für diesen Tag
             for shift_type_uid in updated_solution.instance.shift_types:
                 for emp_uid in updated_solution.instance.employees:
                     # Hole den Wert aus der neuen Lösung
-                    new_value = new_solution.vars[
-                        (window_day + 1, shift_type_uid, emp_uid)
-                    ]
+                    new_value = new_solution.vars[(actual_day, shift_type_uid, emp_uid)]
                     # Setze den Wert in der kopierten Lösung
                     updated_solution.set_var(
                         original_day, shift_type_uid, emp_uid, new_value
@@ -229,7 +231,7 @@ class LNS:
             if original_day in updated_solution.instance.weekend_days:
                 for emp_uid in updated_solution.instance.employees:
                     new_weekend_value = new_solution.weekend_vars.get(
-                        (window_day, emp_uid), 0
+                        (actual_day + 1, emp_uid), 0
                     )
                     updated_solution.set_weekend_var(
                         original_day, emp_uid, new_weekend_value
@@ -238,10 +240,10 @@ class LNS:
             # Kopiere above/below preferred Variablen
             for shift_type_uid in updated_solution.instance.shift_types:
                 new_above = new_solution.above_prefferd_vars.get(
-                    (window_day, shift_type_uid), 0
+                    (actual_day, shift_type_uid), 0
                 )
                 new_below = new_solution.below_prefferd_vars.get(
-                    (window_day, shift_type_uid), 0
+                    (actual_day, shift_type_uid), 0
                 )
                 updated_solution.set_above_prefferd_var(
                     original_day, shift_type_uid, new_above
@@ -327,11 +329,15 @@ class LNS:
                 max_day=self.MAX_DAY,
             ).get_solver()
 
-            # TODO wieder raus nehmen
+            # HACK wieder raus nehmen
             # Deaktiviere Weekend-Constraints für LNS-Subprobleme, da sie auf Tage außerhalb des Fensters zugreifen
             from ..module.solverConstraints import SolverConstraints
 
-            disabled_for_window = [SolverConstraints.max_weekend_days]
+            disabled_for_window = [
+                SolverConstraints.max_weekend_days,
+                SolverConstraints.minimum_consecutive_days_off,
+                SolverConstraints.minimum_consecutive_shifts,
+            ]
 
             sol = solvr.solve(
                 log_search_progress=False,
@@ -350,17 +356,17 @@ class LNS:
                 continue
             sol.to_json_file("temp_lns_bevor_merge.json")
             sol = self.merge_solutions(sol)
-            # if not sol.checkt_constraints[0]:
-            #     for cst, satisfied in sol.checkt_constraints[1].items():
-            #         if not satisfied[0]:
-            #             self.logger.warning(
-            #                 f"Iteration {iteration}: Merged solution violates constraint: {cst}"
-            #             )
-            #     assert False, "Merged solution violates constraints!"
             sol.to_json_file("temp_lns_solution.json")
-            import sys
+            if not sol.checkt_constraints[0]:
+                for cst, satisfied in sol.checkt_constraints[1].items():
+                    if not satisfied[0]:
+                        self.logger.warning(
+                            f"Iteration {iteration}: Merged solution violates constraint: {cst}"
+                        )
+                        for v in satisfied[1]:
+                            self.logger.warning(f"\t\t\tViolation: {v}")
 
-            sys.exit(0)
+                assert False, "Merged solution violates constraints!"
 
             self.logger.debug(
                 f"Iteration {iteration}: Found solution with objective {sol.objective_value}"

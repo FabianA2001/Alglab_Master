@@ -80,8 +80,9 @@ def t_single_day_validation():
 def run_lns_example():
     # old_sol = Solution.from_json_file("Instance9")
     inst = get_tes_data()
+    sol = Solution.from_json_file("Instance9")
     lns_solver = lns.LNS(
-        inst,
+        sol,
         timeout_seconds=60,
         start_search_window_size=5,
     )
