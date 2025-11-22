@@ -28,35 +28,57 @@ class Solver_for_window(solver.Solver):
     ):
         if max_consecutive_shifts <= 0:
             return
-        # prefix_active[i] = 1, wenn bis i-1 alle TRUE sind
-        prefix_active = [
+        # all_previus_aktive[i] = 1, wenn bis i-1 alle TRUE sind
+        all_previus_aktive = [
             self.vars.model.NewBoolVar(f"prefix_active_{i}_for_{employee_uid}")
             for i in range(max_consecutive_shifts)
         ]
-        prefix_true = [
+        # is_assigend[i] = 1, wenn an Tag i der Mitarbeiter einen Dienst hat
+        is_assigend = [
             self.vars.model.NewBoolVar(f"prefix_true_{i}")
             for i in range(max_consecutive_shifts)
         ]
         for i in range(max_consecutive_shifts):
-            day = i
-            # prefix_true[i] = 1, wenn an Tag i der Mitarbeiter einen Dienst hat
             shift_vars = [
-                self.vars.vars[(day, shift_type_uid, employee_uid)]
+                self.vars.vars[(i, shift_type_uid, employee_uid)]
                 for shift_type_uid in self.instance.shift_types
             ]
-            self.vars.model.AddMaxEquality(prefix_true[i], shift_vars)
+            self.vars.model.AddMaxEquality(is_assigend[i], shift_vars)
 
             if i == 0:
-                # prefix_active[0] = 1
-                self.vars.model.Add(prefix_active[0] == 1)
+                # all_previus_aktive[0] = 1
+                self.vars.model.Add(all_previus_aktive[0] == 1)
             else:
-                # prefix_active[i] = prefix_active[i-1] AND prefix_true[i-1]
+                # all_previus_aktive[i] = all_previus_aktive[i-1] AND is_assigend[i-1]
                 self.vars.model.AddBoolAnd(
-                    [prefix_active[i - 1], prefix_true[i - 1]]
-                ).OnlyEnforceIf(prefix_active[i])
+                    [all_previus_aktive[i - 1], is_assigend[i - 1]]
+                ).OnlyEnforceIf(all_previus_aktive[i])
                 self.vars.model.AddBoolOr(
-                    [prefix_active[i - 1].Not(), prefix_true[i - 1].Not()]
-                ).OnlyEnforceIf(prefix_active[i].Not())
+                    [all_previus_aktive[i - 1].Not(), is_assigend[i - 1].Not()]
+                ).OnlyEnforceIf(all_previus_aktive[i].Not())
+
+        # Wenn alle ersten max_consecutive_shifts Tage eine Schicht haben,
+        # dann darf Tag max_consecutive_shifts keine Schicht haben
+        if max_consecutive_shifts < self.instance.number_of_days:
+            next_day_shift_vars = [
+                self.vars.vars[(max_consecutive_shifts, shift_type_uid, employee_uid)]
+                for shift_type_uid in self.instance.shift_types
+            ]
+            next_day_has_shift = self.vars.model.NewBoolVar(
+                f"next_day_has_shift_after_max_cons_{employee_uid}"
+            )
+            self.vars.model.AddMaxEquality(next_day_has_shift, next_day_shift_vars)
+
+            # Wenn all_previus_aktive[last] UND is_assigend[last] beide 1 sind,
+            # dann müssen alle ersten max_consecutive_shifts Tage Schichten haben
+            # In diesem Fall darf next_day_has_shift nicht 1 sein
+            self.vars.model.AddBoolOr(
+                [
+                    all_previus_aktive[-1].Not(),
+                    is_assigend[-1].Not(),
+                    next_day_has_shift.Not(),
+                ]
+            )
 
     def add_end_maximum_consecutive_shifts_constraints(
         self, employee_uid: employee.EmployeeUid, max_consecutive_shifts: int
@@ -92,6 +114,30 @@ class Solver_for_window(solver.Solver):
                 self.vars.model.AddBoolOr(
                     [suffix_active[i + 1].Not(), suffix_true[i + 1].Not()]
                 ).OnlyEnforceIf(suffix_active[i].Not())
+
+        # Wenn alle letzten max_consecutive_shifts Tage eine Schicht haben,
+        # dann darf der Tag vor dem ersten dieser Tage keine Schicht haben
+        if max_consecutive_shifts < self.instance.number_of_days:
+            prev_day = self.instance.number_of_days - max_consecutive_shifts - 1
+            prev_day_shift_vars = [
+                self.vars.vars[(prev_day, shift_type_uid, employee_uid)]
+                for shift_type_uid in self.instance.shift_types
+            ]
+            prev_day_has_shift = self.vars.model.NewBoolVar(
+                f"prev_day_has_shift_before_max_cons_{employee_uid}"
+            )
+            self.vars.model.AddMaxEquality(prev_day_has_shift, prev_day_shift_vars)
+
+            # Wenn suffix_active[0] UND suffix_true[0] beide 1 sind,
+            # dann müssen alle letzten max_consecutive_shifts Tage Schichten haben
+            # In diesem Fall darf prev_day_has_shift nicht 1 sein
+            self.vars.model.AddBoolOr(
+                [
+                    suffix_active[0].Not(),
+                    suffix_true[0].Not(),
+                    prev_day_has_shift.Not(),
+                ]
+            )
 
     def add_start_minimum_consecutive_shifts_constraints(
         self, employee_uid: employee.EmployeeUid, min_consecutive_shifts: int
