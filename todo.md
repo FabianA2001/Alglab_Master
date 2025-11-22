@@ -4,30 +4,33 @@
 - website
 - - upper / lower bound
 
-- Solution callback
 
 - pre commit
 
 - rename solution to report
 
+- *matching*
 
 - edit gui for solution edit:
-    - min weight (soft)
-    - max weight (soft)
-    - block emploeey X (hard)
-    - assing emploeey X (hard)
+    - rework
+    - "send " in streamlit
 
-    - (min assinged (hard))
-    - (max assinged (hard))
+- lns
+    - better slicing
+    - seed random
 
-- instance scaling 
-    - large neighborhood search
+- better objektiv funktion
+    - soft 
+    - hard maybe
 
-- minimize changes
+- benchmark compare solver
 
-- *better constraints*
-- *all shifts min half*
 
 
 
 https://d-krupke.github.io/cpsat-primer/test_driven_optimization.html#full-solver
+
+
+
+
+lns: https://d-krupke.github.io/cpsat-primer/09_lns.html
