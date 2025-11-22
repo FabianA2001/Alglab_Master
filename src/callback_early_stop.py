@@ -20,7 +20,7 @@ from .module.solverConstraints import SolverConstraints
 from .solution import Solution
 
 
-class Callback_Solver(cp_model.CpSolverSolutionCallback):
+class Callback_Early_Stop(cp_model.CpSolverSolutionCallback):
     def __init__(self, instance: instace.Instance, vars: shift_vars.Shift_vars):
         super().__init__()
         self.instance = instance
