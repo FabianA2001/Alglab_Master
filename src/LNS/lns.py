@@ -1,4 +1,5 @@
 import logging
+import random
 import time
 
 from ortools.sat.python import cp_model
@@ -23,13 +24,13 @@ class StopAfterMinTimeAndFirstSolution(cp_model.CpSolverSolutionCallback):
             self.StopSearch()
 
 
+# TODO disabled_constraints erlauben
 class LNS:
     MIN_SMALL_SEARCH_TIME: float = 2.0  # sec
 
     def __init__(
         self,
         sol_or_instance: solution.Solution | instace.Instance,
-        disabled_constraints=None,
         percent_search_time_first_solution: float = 0.1,
         timeout_seconds: float = 180,
         small_runtime_base: float = 0.01,  # * number_of_days * (number_of_shift_types + number_of_employees)
@@ -67,24 +68,27 @@ class LNS:
         self.strong_improvement_threshold = strong_improvement_threshold
 
         self.MIN_DAY: int = 0
-        self.start_day: int = self.MIN_DAY
         self.MAX_DAY: int = self.old_solution.instance.number_of_days - 1
-        self.end_day: int = self.MAX_DAY
         self.start_search_window_size: int = start_search_window_size
         self.search_window_size_min = search_window_size_min
+        self.start_day: int = random.randint(
+            self.MIN_DAY,
+            max(
+                self.MIN_DAY,
+                self.MAX_DAY - self.start_search_window_size,
+            ),
+        )
+        # HACK Löschen
+        ###################
+        self.start_day: int = 2
+        ###################
+        self.end_day: int = self.start_day + self.start_search_window_size
 
         # time parameters
         self.timeout_seconds: float = timeout_seconds
         self.small_runtime_milliseconds_base: float = small_runtime_base
         self.timeout_seconds: float = max(
             0.0, timeout_seconds - create_time_first_solution
-        )
-
-        # disabled constraints
-        self.disabled_constraints = (
-            disabled_constraints
-            if disabled_constraints is not None
-            else self.old_solution.disabled_constraints
         )
 
         # logging info
@@ -162,8 +166,6 @@ class LNS:
                 )
             return new_window_size
 
-        import random
-
         new_window_size = __calculate_new_window_size()
 
         # Fenster verschieben/anpassen
@@ -191,6 +193,111 @@ class LNS:
         assert self.start_day >= self.MIN_DAY
         assert self.end_day <= self.MAX_DAY
 
+    def merge_solutions(self, new_solution: solution.Solution) -> solution.Solution:
+        """
+        Integriert die neue Lösung aus dem Suchfenster in die alte Gesamtlösung.
+
+        Args:
+            new_solution: Die neue Lösung aus dem Suchfenster
+
+        Returns:
+            Eine neue Solution-Instanz mit den integrierten Änderungen
+        """
+        # Erstelle eine Kopie der alten Lösung
+        import copy
+
+        updated_solution = copy.deepcopy(self.old_solution)
+
+        updated_solution.disabled_constraints = new_solution.disabled_constraints
+
+        # Iteriere über alle Tage im erweiterten Fenster
+        for window_day in range(self.end_day - self.start_day + 1):
+            original_day = self.start_day + window_day
+
+            # Kopiere alle Shift-Zuweisungen für diesen Tag
+            for shift_type_uid in updated_solution.instance.shift_types:
+                for emp_uid in updated_solution.instance.employees:
+                    # Hole den Wert aus der neuen Lösung
+                    new_value = new_solution.vars[
+                        (window_day + 1, shift_type_uid, emp_uid)
+                    ]
+                    # Setze den Wert in der kopierten Lösung
+                    updated_solution.set_var(
+                        original_day, shift_type_uid, emp_uid, new_value
+                    )
+            # Kopiere Weekend-Variablen falls der Tag ein Wochenendtag ist
+            if original_day in updated_solution.instance.weekend_days:
+                for emp_uid in updated_solution.instance.employees:
+                    new_weekend_value = new_solution.weekend_vars.get(
+                        (window_day, emp_uid), 0
+                    )
+                    updated_solution.set_weekend_var(
+                        original_day, emp_uid, new_weekend_value
+                    )
+
+            # Kopiere above/below preferred Variablen
+            for shift_type_uid in updated_solution.instance.shift_types:
+                new_above = new_solution.above_prefferd_vars.get(
+                    (window_day, shift_type_uid), 0
+                )
+                new_below = new_solution.below_prefferd_vars.get(
+                    (window_day, shift_type_uid), 0
+                )
+                updated_solution.set_above_prefferd_var(
+                    original_day, shift_type_uid, new_above
+                )
+                updated_solution.set_below_prefferd_var(
+                    original_day, shift_type_uid, new_below
+                )
+
+        # Berechne den neuen objective value der gesamten Lösung
+        objective_value = self._calculate_objective_value(updated_solution)
+        updated_solution.set_objective_value(objective_value)
+
+        return updated_solution
+
+    def _calculate_objective_value(self, sol: solution.Solution) -> float:
+        """
+        Berechnet den objective value einer Lösung basierend auf den Zuweisungen.
+        """
+        objective_value = 0.0
+
+        # Penalty für Mitarbeiter-Zuweisungen
+        for employee_uid in sol.instance.employees:
+            for day in range(sol.instance.number_of_days):
+                for type_uid in sol.instance.shifts[day]:
+                    is_assigned = sol.vars.get((day, type_uid, employee_uid), 0)
+
+                    # Penalty wenn NICHT zugewiesen (aber gewünscht)
+                    objective_value += sol.instance.get_shift(
+                        day=day, type_uid=type_uid
+                    ).penalty_assigned_day_employee.get(employee_uid, 0) * (
+                        1 - is_assigned
+                    )
+
+                    # Penalty wenn zugewiesen (aber nicht gewünscht)
+                    objective_value += (
+                        sol.instance.get_shift(
+                            day=day, type_uid=type_uid
+                        ).penalty_not_assigned_day_employee.get(employee_uid, 0)
+                        * is_assigned
+                    )
+
+        # Penalty für above/below preferred
+        for day in range(sol.instance.number_of_days):
+            for type_uid in sol.instance.shifts[day]:
+                below = sol.below_prefferd_vars.get((day, type_uid), 0)
+                above = sol.above_prefferd_vars.get((day, type_uid), 0)
+
+                objective_value += (
+                    below * sol.instance.shifts[day][type_uid].weight_below_preferred
+                )
+                objective_value += (
+                    above * sol.instance.shifts[day][type_uid].weight_above_preferred
+                )
+
+        return objective_value
+
     def solve(self) -> solution.Solution:
         self.logger.info("Starting LNS solve process")
         start_time = time.time()
@@ -212,45 +319,64 @@ class LNS:
                 f"for window days {self.start_day} to {self.end_day}"
             )
 
-            solvr = slice_instance.creat_solver_with_window_instance(
+            solvr = slice_instance.Slice_instance(
                 sol=self.old_solution,
                 start=self.start_day,
                 min_day=self.MIN_DAY,
                 end=self.end_day,
                 max_day=self.MAX_DAY,
-            )
+            ).get_solver()
 
-            solv = solvr.solve(
+            # TODO wieder raus nehmen
+            # Deaktiviere Weekend-Constraints für LNS-Subprobleme, da sie auf Tage außerhalb des Fensters zugreifen
+            from ..module.solverConstraints import SolverConstraints
+
+            disabled_for_window = [SolverConstraints.max_weekend_days]
+
+            sol = solvr.solve(
                 log_search_progress=False,
                 max_time_in_seconds=small_max_solve_time,
-                disabled_constraints=self.disabled_constraints,
+                disabled_constraints=disabled_for_window,
             )
 
             if not (
-                solv.solve_status == cp_model.OPTIMAL
-                or solv.solve_status == cp_model.FEASIBLE
+                sol.solve_status == cp_model.OPTIMAL
+                or sol.solve_status == cp_model.FEASIBLE
             ):
                 self.logger.debug(
-                    f"Iteration {iteration}: No feasible solution found (status: {solv.solve_status})"
+                    f"Iteration {iteration}: No feasible solution found (status: {sol.solve_status})"
                 )
 
                 continue
+            sol.to_json_file("temp_lns_bevor_merge.json")
+            sol = self.merge_solutions(sol)
+            # if not sol.checkt_constraints[0]:
+            #     for cst, satisfied in sol.checkt_constraints[1].items():
+            #         if not satisfied[0]:
+            #             self.logger.warning(
+            #                 f"Iteration {iteration}: Merged solution violates constraint: {cst}"
+            #             )
+            #     assert False, "Merged solution violates constraints!"
+            sol.to_json_file("temp_lns_solution.json")
+            import sys
+
+            sys.exit(0)
 
             self.logger.debug(
-                f"Iteration {iteration}: Found solution with objective {solv.objective_value}"
+                f"Iteration {iteration}: Found solution with objective {sol.objective_value}"
             )
 
             improvement = 0
-            if solv.objective_value < self.old_solution.objective_value:
+            if sol.objective_value < self.old_solution.objective_value:
                 improvements += 1
-                improvement = self.old_solution.objective_value - solv.objective_value
+                improvement = self.old_solution.objective_value - sol.objective_value
                 self.logger.info(
                     f"Iteration {iteration}: Found improvement! "
                     f"Old objective: {self.old_solution.objective_value}, "
-                    f"New objective: {solv.objective_value}, "
+                    f"New objective: {sol.objective_value}, "
                     f"Improvement: {improvement}"
                 )
-                self.old_solution = solv
+                self.old_solution = sol
             else:
                 self.logger.debug(
                     f"Iteration {iteration}: No improvement (current best: {self.old_solution.objective_value})"

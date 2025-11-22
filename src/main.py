@@ -156,8 +156,8 @@ def main() -> None:
     # sol = Solution.from_json_file("Instance1")
     # get_test_solution_from_model()
     # try_compare_solutions()
-    # run_lns_example()
-    calculate_all_instancen()
+    run_lns_example()
+    # calculate_all_instancen()
     # print_some_infos()
 
 
