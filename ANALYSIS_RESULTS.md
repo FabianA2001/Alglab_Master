@@ -1,4 +1,4 @@
-# Analyse-Zusammenfassung der Solutions
+# Analyse-Ergebnisse Solutions
 
 ## Schnelle Übersicht
 
@@ -16,9 +16,23 @@
 | Instance8 | 28 | 30 | 72.0% | 97.1% | 2 (Feasible) |
 | Instance9 | 28 | 36 | **89.7%** | **99.0%** | 2 (Feasible) |
 
-## Erkenntnisse
+## Metriken erklärt
 
-### Wunscherfüllung
+### Wunscherfüllung (`satisfaction_rate_percent`)
+- **Definition**: Prozentsatz der erfüllten Wünsche (auf und ab Wünsche)
+- **Berechnung**: `(erfüllte_wünsche / gesamt_wünsche) * 100`
+- **Bereich**: 0-100%
+
+### Schichtauslastung (`overall_utilization_percent`)
+- **Definition**: Prozentsatz der Schichtauslastung im Vergleich zur gewünschten Besetzung
+- **Berechnung**: `(zugeteilte_mitarbeiter / gewünschte_mitarbeiter) * 100`
+- **Bereich**: 0-100%+ (kann über 100% sein, wenn Schicht überbesetzt)
+
+### Unter-/Überbesetzung
+- **`below_preferred`**: Wie viele Mitarbeiter unter der gewünschten Besetzung fehlen
+- **`above_preferred`**: Wie viele Mitarbeiter über der gewünschten Besetzung hinzugekommen sind
+
+## Wunscherfüllung
 
 **Beste Erfüllung:**
 - 🥇 **Instance3**: 98.4% (14 Tage, 20 MA)
@@ -32,7 +46,7 @@
 
 **Durchschnitt: 80.4%**
 
-### Schichtauslastung
+## Schichtauslastung
 
 **Beste Auslastung:**
 - 🥇 **Instance9**: 99.0% (fast perfekt besetzt)
@@ -46,7 +60,7 @@
 
 **Durchschnitt: 94.5%**
 
-### Korrelation: Größe vs. Erfüllung
+## Korrelation: Größe vs. Erfüllung
 
 - **Kleine Instanzen (8-20 MA)**: Meist bessere Wunscherfüllung (71-98.4%)
 - **Große Instanzen (30-120 MA)**: Schlechtere Wunscherfüllung (68-72%)
@@ -54,7 +68,7 @@
 
 **Tendenz**: Mit mehr Mitarbeitern ist es schwerer, individuelle Wünsche zu erfüllen.
 
-### Solver-Status
+## Solver-Status
 
 - **Status 4 (OPTIMAL)**: 3 Instanzen (Instance1, Instance3, Instance1ExtraLong)
   - Solvetime: 0.07 - 0.12s
@@ -63,23 +77,6 @@
   - Solvetime: 60.02 - 60.09s (bei Timeout!)
 
 → Die OPTIMAL-Lösungen sind meist **schneller und haben bessere Metriken**
-
-## Vergleich mit Callback-Solver
-
-Die Analysen nutzen die **gleiche Logik** wie der Callback-Solver:
-
-```python
-# Wünsche zählen
-for shift in shifts:
-    if penalty_assigned > 0 and employee_assigned:
-        satisfied_wishes += 1
-
-# Schichtauslastung
-assigned = sum(1 for emp if is_assigned)
-utilization = (assigned / preferred) * 100
-```
-
-Das bedeutet: Die Analyse-Metriken sind **direkt vergleichbar mit den Callback-Metriken während des Solving**!
 
 ## Detaillierte Problemschichten
 
@@ -94,21 +91,3 @@ Das bedeutet: Die Analyse-Metriken sind **direkt vergleichbar mit den Callback-M
 ### Instance8: Bestimmte Schichten unbesetzt
 - Tag 5 und 9: Schicht 4 komplett unbesetzt (0/5, 0/3)
 - Könnte Constraint-Verstoß sein oder nicht genug verfügbare Mitarbeiter
-
-## Empfehlungen
-
-1. **Instanzen mit Status 2 (FEASIBLE)**:
-   - Könnten länger gelöst werden für bessere Qualität
-   - Aktuelle Solvetime: 60s (wahrscheinlich Timeout)
-
-2. **Wunscherfüllung verbessern**:
-   - Für große Instanzen (30+ MA): Erreichbar sind ~70-90%
-   - Für kleine Instanzen: Erreichbar sind ~80-98%
-
-3. **Schichtauslastung**:
-   - Durchschnittlich 94.5% - sehr gute Auslastung
-   - Schwankungen gibt es hauptsächlich bei speziellen Anforderungen
-
-4. **Debugging**:
-   - Instance13, Instance6 und Instance8 genauer analysieren
-   - Überprüfen ob Constraints korrekt definiert sind
