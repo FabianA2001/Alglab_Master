@@ -339,7 +339,6 @@ class LNS:
             disabled_for_window = [
                 SolverConstraints.max_weekend_days,
                 SolverConstraints.minimum_consecutive_days_off,
-                SolverConstraints.minimum_consecutive_shifts,
             ]
 
             sol = solvr.solve(
@@ -359,6 +358,7 @@ class LNS:
                 continue
             sol.to_json_file("temp_lns_bevor_merge.json")
             sol = self.merge_solutions(sol)
+            print("Merged solution created")
             sol.to_json_file("temp_lns_solution.json")
             if not sol.checkt_constraints[0]:
                 for cst, satisfied in sol.checkt_constraints[1].items():

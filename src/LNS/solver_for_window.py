@@ -142,139 +142,28 @@ class Solver_for_window(solver.Solver):
     def add_start_minimum_consecutive_shifts_constraints(
         self, employee_uid: employee.EmployeeUid, min_consecutive_shifts: int
     ):
-        if min_consecutive_shifts <= 0:
-            return
-        # Prüft, ob am Anfang des Fensters die Mindestanzahl aufeinanderfolgender Schichten eingehalten wird
-        # Wenn eine Schicht am Anfang startet, müssen mindestens min_consecutive_shifts Schichten folgen
-        for start_day in range(min_consecutive_shifts):
-            # has_shift[i] = 1, wenn an Tag i der Mitarbeiter einen Dienst hat
-            has_shift = [
-                self.vars.model.NewBoolVar(
-                    f"start_min_cons_has_shift_{start_day}_{i}_for_{employee_uid}"
+        for day in range(min_consecutive_shifts):
+            shifts_vars = []
+            for shift_type_uid in self.instance.shift_types:
+                shifts_vars.append(
+                    self.vars.get_var(day + 1, shift_type_uid, employee_uid)
                 )
-                for i in range(min_consecutive_shifts)
-            ]
-
-            for i in range(min_consecutive_shifts):
-                day = start_day + i
-                if day >= self.instance.number_of_days:
-                    break
-                shift_vars = [
-                    self.vars.vars[(day, shift_type_uid, employee_uid)]
-                    for shift_type_uid in self.instance.shift_types
-                ]
-                self.vars.model.AddMaxEquality(has_shift[i], shift_vars)
-
-            # Wenn start_day eine Schicht hat und start_day-1 keine Schicht hat (oder start_day=0),
-            # dann müssen die nächsten min_consecutive_shifts Tage alle Schichten haben
-            if start_day == 0:
-                # Wenn Tag 0 eine Schicht hat, müssen die nächsten min_consecutive_shifts-1 Tage auch Schichten haben
-                for i in range(
-                    1,
-                    min(
-                        min_consecutive_shifts, self.instance.number_of_days - start_day
-                    ),
-                ):
-                    self.vars.model.Add(has_shift[i] == 1).OnlyEnforceIf(has_shift[0])
-            else:
-                # Prüfe ob vorheriger Tag keine Schicht hat
-                prev_shift_vars = [
-                    self.vars.vars[(start_day - 1, shift_type_uid, employee_uid)]
-                    for shift_type_uid in self.instance.shift_types
-                ]
-                has_prev_shift = self.vars.model.NewBoolVar(
-                    f"start_min_cons_has_prev_{start_day}_for_{employee_uid}"
-                )
-                self.vars.model.AddMaxEquality(has_prev_shift, prev_shift_vars)
-
-                # Wenn start_day Schicht hat UND start_day-1 keine hat, dann Mindestanzahl erzwingen
-                starts_here = self.vars.model.NewBoolVar(
-                    f"start_min_cons_starts_{start_day}_for_{employee_uid}"
-                )
-                self.vars.model.AddBoolAnd(
-                    [has_shift[0], has_prev_shift.Not()]
-                ).OnlyEnforceIf(starts_here)
-                self.vars.model.AddBoolOr(
-                    [has_shift[0].Not(), has_prev_shift]
-                ).OnlyEnforceIf(starts_here.Not())
-
-                for i in range(
-                    1,
-                    min(
-                        min_consecutive_shifts, self.instance.number_of_days - start_day
-                    ),
-                ):
-                    self.vars.model.Add(has_shift[i] == 1).OnlyEnforceIf(starts_here)
+            self.vars.model.Add(sum(shifts_vars) == 1)
 
     def add_end_minimum_consecutive_shifts_constraints(
         self, employee_uid: employee.EmployeeUid, min_consecutive_shifts: int
     ):
-        if min_consecutive_shifts <= 0:
-            return
-        # Prüft, ob am Ende des Fensters die Mindestanzahl aufeinanderfolgender Schichten eingehalten wird
-        # Wenn eine Schicht am Ende endet, müssen mindestens min_consecutive_shifts Schichten davor sein
-        for end_day in range(
-            self.instance.number_of_days - min_consecutive_shifts,
-            self.instance.number_of_days,
-        ):
-            # has_shift[i] = 1, wenn an Tag (end_day - min_consecutive_shifts + 1 + i) der Mitarbeiter einen Dienst hat
-            has_shift = [
-                self.vars.model.NewBoolVar(
-                    f"end_min_cons_has_shift_{end_day}_{i}_for_{employee_uid}"
-                )
-                for i in range(min_consecutive_shifts)
-            ]
-
-            for i in range(min_consecutive_shifts):
-                day = end_day - min_consecutive_shifts + 1 + i
-                if day < 0:
-                    continue
-                shift_vars = [
-                    self.vars.vars[(day, shift_type_uid, employee_uid)]
-                    for shift_type_uid in self.instance.shift_types
-                ]
-                self.vars.model.AddMaxEquality(has_shift[i], shift_vars)
-
-            # Wenn end_day eine Schicht hat und end_day+1 keine Schicht hat (oder end_day=last),
-            # dann müssen die vorherigen min_consecutive_shifts Tage alle Schichten haben
-            if end_day == self.instance.number_of_days - 1:
-                # Wenn letzter Tag eine Schicht hat, müssen die vorherigen min_consecutive_shifts-1 Tage auch Schichten haben
-                for i in range(
-                    max(
-                        0,
-                        min_consecutive_shifts
-                        - (self.instance.number_of_days - end_day),
+        last_modifibarbe_day = self.instance.number_of_days - 2
+        assert min_consecutive_shifts <= last_modifibarbe_day
+        for day in range(min_consecutive_shifts):
+            shifts_vars = []
+            for shift_type_uid in self.instance.shift_types:
+                shifts_vars.append(
+                    self.vars.get_var(
+                        last_modifibarbe_day - day, shift_type_uid, employee_uid
                     )
-                ):
-                    if end_day - min_consecutive_shifts + 1 + i >= 0:
-                        self.vars.model.Add(has_shift[i] == 1).OnlyEnforceIf(
-                            has_shift[-1]
-                        )
-            else:
-                # Prüfe ob nächster Tag keine Schicht hat
-                next_shift_vars = [
-                    self.vars.vars[(end_day + 1, shift_type_uid, employee_uid)]
-                    for shift_type_uid in self.instance.shift_types
-                ]
-                has_next_shift = self.vars.model.NewBoolVar(
-                    f"end_min_cons_has_next_{end_day}_for_{employee_uid}"
                 )
-                self.vars.model.AddMaxEquality(has_next_shift, next_shift_vars)
-
-                # Wenn end_day Schicht hat UND end_day+1 keine hat, dann Mindestanzahl erzwingen
-                ends_here = self.vars.model.NewBoolVar(
-                    f"end_min_cons_ends_{end_day}_for_{employee_uid}"
-                )
-                self.vars.model.AddBoolAnd(
-                    [has_shift[-1], has_next_shift.Not()]
-                ).OnlyEnforceIf(ends_here)
-                self.vars.model.AddBoolOr(
-                    [has_shift[-1].Not(), has_next_shift]
-                ).OnlyEnforceIf(ends_here.Not())
-
-                for i in range(max(0, min_consecutive_shifts - 1)):
-                    if end_day - min_consecutive_shifts + 1 + i >= 0:
-                        self.vars.model.Add(has_shift[i] == 1).OnlyEnforceIf(ends_here)
+            self.vars.model.Add(sum(shifts_vars) == 1)
 
     def add_start_minimum_consecutive_days_off_constraints(
         self, employee_uid: employee.EmployeeUid, min_consecutive_days_off: int

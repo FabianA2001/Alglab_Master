@@ -26,7 +26,7 @@ class Slice_instance:
         self.fix_first_and_last_day(self.solvr)
         # # TODO rework to also use modules
         self.update_maximum_consecutive_shifts()
-        # self.update_minimum_consecutive_shifts()
+        self.update_minimum_consecutive_shifts()
         # self.update_minimum_consecutive_days_off()
 
     def get_solver(self) -> solver_for_window.Solver_for_window:
@@ -218,8 +218,6 @@ class Slice_instance:
     def update_maximum_consecutive_shifts(self):
         """Aktualisiert die max_number_consecutive_shifts für alle Mitarbeiter basierend auf den Zuweisungen außerhalb des Fensters."""
         for emp_uid, emp in self.window_instance.employees.items():
-            # print(f"mitarbeiter: {emp.name}")
-            # Zähle die assingend tage for den erweiterten Starttag rückwärts
             current_consecutive_shifts = 0
             for day in range(self.start_day - 1, self.min_day - 1, -1):
                 assigneds = []
@@ -240,9 +238,6 @@ class Slice_instance:
             self.solvr.add_start_maximum_consecutive_shifts_constraints(
                 emp_uid, remaing_forbidden_days
             )
-            # print(
-            #     f"verbiete am start {remaing_forbidden_days} für {self.window_instance.employees[emp_uid].name}"
-            # )
 
         # Zähle die assigned Tage nach dem erweiterten Endtag vorwärts
         for emp_uid, emp in self.window_instance.employees.items():
@@ -279,10 +274,7 @@ class Slice_instance:
                 if self.extended_end != -1:
                     # Last modifiable day is before the fixed extended_end day
                     last_modifiable_day = self.solvr.instance.number_of_days - 2
-                # else:
-                #     # Last day is modifiable
-                #     last_modifiable_day = self.solvr.instance.number_of_days - 1
-                self.solvr.block_employee_on_day(emp_uid, last_modifiable_day)
+                    self.solvr.block_employee_on_day(emp_uid, last_modifiable_day)
             else:
                 # Still have room for more consecutive shifts, add constraint
                 self.solvr.add_end_maximum_consecutive_shifts_constraints(
@@ -290,51 +282,51 @@ class Slice_instance:
                 )
 
     def update_minimum_consecutive_shifts(self):
-        start = self.extended_start if self.extended_start != -1 else self.start_day
-        end = self.extended_end if self.extended_end != -1 else self.end_day
         for emp_uid, emp in self.window_instance.employees.items():
-            # Zähle die assingend tage for den erweiterten Starttag rückwärts
-
             current_consecutive_shifts = 0
-            for day in range(start - 1, -1, self.max_day + 1):
+            for day in range(self.start_day - 1, self.min_day - 1, -1):
+                assigneds = []
                 for shift_type_uid in self.inst.shift_types:
-                    is_assigned = self.sol.is_employee_assigned(
-                        day, shift_type_uid, emp_uid
+                    assigneds.append(
+                        self.sol.is_employee_assigned(day, shift_type_uid, emp_uid)
                     )  # None bedeutet beliebiger Shift-Typ
-                    if is_assigned:
-                        current_consecutive_shifts += 1
-                    else:
-                        break  # Stoppe, wenn ein freier Tag gefunden wird
+                if max(assigneds):
+                    current_consecutive_shifts += 1
+                else:
+                    break  # Stoppe, wenn ein freier Tag gefunden wird
             if current_consecutive_shifts == 0:
                 continue
 
-            remaing_needet_days = max(
+            remaing_needed_days = max(
                 0, emp.min_number_consecutive_shifts - current_consecutive_shifts
             )
             self.solvr.add_start_minimum_consecutive_shifts_constraints(
-                emp_uid, remaing_needet_days
+                emp_uid, remaing_needed_days
             )
 
         # Zähle die assigned Tage nach dem erweiterten Endtag vorwärts
         for emp_uid, emp in self.window_instance.employees.items():
             current_consecutive_shifts = 0
-            for day in range(end + 1, self.max_day + 1):
+            for day in range(self.end_day + 1, self.max_day + 1):
+                assigneds = []
                 for shift_type_uid in self.inst.shift_types:
-                    is_assigned = self.sol.is_employee_assigned(
-                        day, shift_type_uid, emp_uid
-                    )
-                    if is_assigned:
-                        current_consecutive_shifts += 1
-                    else:
-                        break  # Stoppe, wenn ein freier Tag gefunden wird
+                    assigneds.append(
+                        self.sol.is_employee_assigned(day, shift_type_uid, emp_uid)
+                    )  # None bedeutet beliebiger Shift-Typ
+                if max(assigneds):
+                    current_consecutive_shifts += 1
+                else:
+                    break  # Stoppe, wenn ein freier Tag gefunden wird
+
             if current_consecutive_shifts == 0:
                 continue
 
-            remaing_needet_days = max(
+            remaing_needed_days = max(
                 0, emp.min_number_consecutive_shifts - current_consecutive_shifts
             )
+
             self.solvr.add_end_minimum_consecutive_shifts_constraints(
-                emp_uid, remaing_needet_days
+                emp_uid, remaing_needed_days
             )
 
     def update_minimum_consecutive_days_off(self):
@@ -342,7 +334,7 @@ class Slice_instance:
         for emp_uid, emp in self.window_instance.employees.items():
             # Zähle die freien tage for den erweiterten Starttag rückwärts
             current_consecutive_days_off = 0
-            for day in range(start - 1, -1, self.max_day + 1):
+            for day in range(start - 1, -1, -1):
                 is_assigned_any_shift = False
                 for shift_type_uid in self.inst.shift_types:
                     if self.sol.is_employee_assigned(day, shift_type_uid, emp_uid):
