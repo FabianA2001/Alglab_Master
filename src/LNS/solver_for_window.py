@@ -168,155 +168,28 @@ class Solver_for_window(solver.Solver):
     def add_start_minimum_consecutive_days_off_constraints(
         self, employee_uid: employee.EmployeeUid, min_consecutive_days_off: int
     ):
-        if min_consecutive_days_off <= 0:
-            return
-        # Prüft, ob am Anfang des Fensters die Mindestanzahl aufeinanderfolgender freier Tage eingehalten wird
-        # Wenn eine freie Tag-Sequenz am Anfang startet, müssen mindestens min_consecutive_days_off Tage frei sein
-        for start_day in range(min_consecutive_days_off):
-            # has_day_off[i] = 1, wenn an Tag i der Mitarbeiter keinen Dienst hat
-            has_day_off = [
-                self.vars.model.NewBoolVar(
-                    f"start_min_days_off_has_day_off_{start_day}_{i}_for_{employee_uid}"
+        for day in range(min_consecutive_days_off):
+            shifts_vars = []
+            for shift_type_uid in self.instance.shift_types:
+                shifts_vars.append(
+                    self.vars.get_var(day + 1, shift_type_uid, employee_uid)
                 )
-                for i in range(min_consecutive_days_off)
-            ]
-
-            for i in range(min_consecutive_days_off):
-                day = start_day + i
-                if day >= self.instance.number_of_days:
-                    break
-                shift_vars = [
-                    self.vars.vars[(day, shift_type_uid, employee_uid)]
-                    for shift_type_uid in self.instance.shift_types
-                ]
-                has_shift = self.vars.model.NewBoolVar(
-                    f"start_min_days_off_has_shift_{start_day}_{i}_for_{employee_uid}"
-                )
-                self.vars.model.AddMaxEquality(has_shift, shift_vars)
-                # has_day_off[i] = NOT has_shift
-                self.vars.model.Add(has_day_off[i] == 1 - has_shift)
-
-            # Wenn start_day ein freier Tag ist und start_day-1 eine Schicht hat (oder start_day=0),
-            # dann müssen die nächsten min_consecutive_days_off Tage alle frei sein
-            if start_day == 0:
-                # Wenn Tag 0 frei ist, müssen die nächsten min_consecutive_days_off-1 Tage auch frei sein
-                for i in range(
-                    1,
-                    min(
-                        min_consecutive_days_off,
-                        self.instance.number_of_days - start_day,
-                    ),
-                ):
-                    self.vars.model.Add(has_day_off[i] == 1).OnlyEnforceIf(
-                        has_day_off[0]
-                    )
-            else:
-                # Prüfe ob vorheriger Tag eine Schicht hat
-                prev_shift_vars = [
-                    self.vars.vars[(start_day - 1, shift_type_uid, employee_uid)]
-                    for shift_type_uid in self.instance.shift_types
-                ]
-                has_prev_shift = self.vars.model.NewBoolVar(
-                    f"start_min_days_off_has_prev_{start_day}_for_{employee_uid}"
-                )
-                self.vars.model.AddMaxEquality(has_prev_shift, prev_shift_vars)
-
-                # Wenn start_day frei ist UND start_day-1 eine Schicht hat, dann Mindestanzahl erzwingen
-                starts_here = self.vars.model.NewBoolVar(
-                    f"start_min_days_off_starts_{start_day}_for_{employee_uid}"
-                )
-                self.vars.model.AddBoolAnd(
-                    [has_day_off[0], has_prev_shift]
-                ).OnlyEnforceIf(starts_here)
-                self.vars.model.AddBoolOr(
-                    [has_day_off[0].Not(), has_prev_shift.Not()]
-                ).OnlyEnforceIf(starts_here.Not())
-
-                for i in range(
-                    1,
-                    min(
-                        min_consecutive_days_off,
-                        self.instance.number_of_days - start_day,
-                    ),
-                ):
-                    self.vars.model.Add(has_day_off[i] == 1).OnlyEnforceIf(starts_here)
+            self.vars.model.Add(sum(shifts_vars) == 0)
 
     def add_end_minimum_consecutive_days_off_constraints(
         self, employee_uid: employee.EmployeeUid, min_consecutive_days_off: int
     ):
-        if min_consecutive_days_off <= 0:
-            return
-        # Prüft, ob am Ende des Fensters die Mindestanzahl aufeinanderfolgender freier Tage eingehalten wird
-        # Wenn eine freie Tag-Sequenz am Ende endet, müssen mindestens min_consecutive_days_off Tage frei gewesen sein
-        for end_day in range(
-            self.instance.number_of_days - min_consecutive_days_off,
-            self.instance.number_of_days,
-        ):
-            # has_day_off[i] = 1, wenn an Tag (end_day - min_consecutive_days_off + 1 + i) der Mitarbeiter keinen Dienst hat
-            has_day_off = [
-                self.vars.model.NewBoolVar(
-                    f"end_min_days_off_has_day_off_{end_day}_{i}_for_{employee_uid}"
-                )
-                for i in range(min_consecutive_days_off)
-            ]
-
-            for i in range(min_consecutive_days_off):
-                day = end_day - min_consecutive_days_off + 1 + i
-                if day < 0:
-                    continue
-                shift_vars = [
-                    self.vars.vars[(day, shift_type_uid, employee_uid)]
-                    for shift_type_uid in self.instance.shift_types
-                ]
-                has_shift = self.vars.model.NewBoolVar(
-                    f"end_min_days_off_has_shift_{end_day}_{i}_for_{employee_uid}"
-                )
-                self.vars.model.AddMaxEquality(has_shift, shift_vars)
-                # has_day_off[i] = NOT has_shift
-                self.vars.model.Add(has_day_off[i] == 1 - has_shift)
-
-            # Wenn end_day ein freier Tag ist und end_day+1 eine Schicht hat (oder end_day=last),
-            # dann müssen die vorherigen min_consecutive_days_off Tage alle frei gewesen sein
-            if end_day == self.instance.number_of_days - 1:
-                # Wenn letzter Tag frei ist, müssen die vorherigen min_consecutive_days_off-1 Tage auch frei sein
-                for i in range(
-                    max(
-                        0,
-                        min_consecutive_days_off
-                        - (self.instance.number_of_days - end_day),
+        last_modifibarbe_day = self.instance.number_of_days - 2
+        assert min_consecutive_days_off <= last_modifibarbe_day
+        for day in range(min_consecutive_days_off):
+            shifts_vars = []
+            for shift_type_uid in self.instance.shift_types:
+                shifts_vars.append(
+                    self.vars.get_var(
+                        last_modifibarbe_day - day, shift_type_uid, employee_uid
                     )
-                ):
-                    if end_day - min_consecutive_days_off + 1 + i >= 0:
-                        self.vars.model.Add(has_day_off[i] == 1).OnlyEnforceIf(
-                            has_day_off[-1]
-                        )
-            else:
-                # Prüfe ob nächster Tag eine Schicht hat
-                next_shift_vars = [
-                    self.vars.vars[(end_day + 1, shift_type_uid, employee_uid)]
-                    for shift_type_uid in self.instance.shift_types
-                ]
-                has_next_shift = self.vars.model.NewBoolVar(
-                    f"end_min_days_off_has_next_{end_day}_for_{employee_uid}"
                 )
-                self.vars.model.AddMaxEquality(has_next_shift, next_shift_vars)
-
-                # Wenn end_day frei ist UND end_day+1 eine Schicht hat, dann Mindestanzahl erzwingen
-                ends_here = self.vars.model.NewBoolVar(
-                    f"end_min_days_off_ends_{end_day}_for_{employee_uid}"
-                )
-                self.vars.model.AddBoolAnd(
-                    [has_day_off[-1], has_next_shift]
-                ).OnlyEnforceIf(ends_here)
-                self.vars.model.AddBoolOr(
-                    [has_day_off[-1].Not(), has_next_shift.Not()]
-                ).OnlyEnforceIf(ends_here.Not())
-
-                for i in range(max(0, min_consecutive_days_off - 1)):
-                    if end_day - min_consecutive_days_off + 1 + i >= 0:
-                        self.vars.model.Add(has_day_off[i] == 1).OnlyEnforceIf(
-                            ends_here
-                        )
+            self.vars.model.Add(sum(shifts_vars) == 0)
 
     def block_employee_on_day(self, employee_uid: employee.EmployeeUid, day: int):
         for shift_type_uid in self.instance.shift_types:
