@@ -1,3 +1,4 @@
+import pytest
 from cpsat_utils.testing import AssertModelInfeasible
 
 from src.inputTypes import employee, instace, shiftType
@@ -62,7 +63,16 @@ def test_add_end_maximum_consecutive_shifts_constraints():
             )
 
 
-def test_add_start_minimum_consecutive_shifts_constraints():
+@pytest.mark.parametrize(
+    "min_consecutive,day0_value,day1_value",
+    [
+        (2, 0, 0),
+        (2, 1, 0),
+    ],
+)
+def test_add_start_minimum_consecutive_shifts_constraints(
+    min_consecutive, day0_value, day1_value
+):
     lokal_shift_types = [shiftType.ShiftType() for _ in range(1)]
     lokal_employee = employee.Employee()
     instance = instace.Instance.create(
@@ -76,14 +86,17 @@ def test_add_start_minimum_consecutive_shifts_constraints():
             instance,
             Shift_vars(instance, model=model),
         )
-        solv.add_start_minimum_consecutive_shifts_constraints(lokal_employee.uid, 3)
-        # Erzwinge eine Schicht an Tag 0, aber keine an Tag 1
-        # Das verletzt die Minimum-Constraint (min 3 aufeinanderfolgende)
+        solv.add_start_minimum_consecutive_shifts_constraints(
+            lokal_employee.uid, min_consecutive
+        )
+        # Erzwinge Schichten gemäß Parametern
         model.Add(
-            solv.vars.get_var(0, lokal_shift_types[0].uid, lokal_employee.uid) == 1
+            solv.vars.get_var(0, lokal_shift_types[0].uid, lokal_employee.uid)
+            == day0_value
         )
         model.Add(
-            solv.vars.get_var(1, lokal_shift_types[0].uid, lokal_employee.uid) == 0
+            solv.vars.get_var(1, lokal_shift_types[0].uid, lokal_employee.uid)
+            == day1_value
         )
 
 
