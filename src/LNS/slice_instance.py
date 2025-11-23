@@ -26,8 +26,8 @@ class Slice_instance:
         self.fix_first_and_last_day(self.solvr)
         # # TODO rework to also use modules
         self.update_maximum_consecutive_shifts()
-        self.update_minimum_consecutive_shifts()
-        self.update_minimum_consecutive_days_off()
+        # self.update_minimum_consecutive_shifts()
+        # self.update_minimum_consecutive_days_off()
 
     def get_solver(self) -> solver_for_window.Solver_for_window:
         return self.solvr
@@ -35,7 +35,7 @@ class Slice_instance:
     def fix_first_and_last_day(self, solver_instance: solver.Solver):
         """Fixiert die Zuweisungen des ersten und letzten Tages des erweiterten Fensters mit den Werten der gegebenen Lösung."""
 
-        if self.extended_start == -1:
+        if self.extended_start != -1:
             # Fixiere den ersten Tag (extended_start)
             for shift_type_uid in solver_instance.instance.shift_types:
                 for emp_id in solver_instance.instance.employees:
@@ -49,7 +49,7 @@ class Slice_instance:
                     else:
                         solver_instance.vars.model.Add(var == 0)
 
-        if self.extended_end == -1:
+        if self.extended_end != -1:
             # Fixiere den letzten Tag (extended_end)
             last_day_in_window = self.extended_end - self.extended_start
             for shift_type_uid in solver_instance.instance.shift_types:
@@ -127,11 +127,13 @@ class Slice_instance:
             shift_type_uid: 0 for shift_type_uid in self.inst.shift_types
         }
 
-        start = self.extended_start if self.extended_start != -1 else self.start_day
-        end = self.extended_end if self.extended_end != -1 else self.end_day
+        # Berechne die tatsächlichen Fenstergrenzen (wie in create_window_instance)
+        window_start = max(self.min_day, self.start_day - 1)
+        window_end = min(self.max_day, self.end_day + 1)
+
         # Iteriere durch alle Tage außerhalb des erweiterten Windows
         for day in range(self.inst.number_of_days):
-            if day < start or day > end:
+            if day < window_start or day > window_end:
                 # Tag liegt außerhalb des Windows
                 for shift_type_uid in self.inst.shift_types:
                     if self.sol.is_employee_assigned(day, shift_type_uid, uid):
@@ -159,11 +161,14 @@ class Slice_instance:
 
         # Zähle Arbeitszeit (in Minuten) außerhalb des Windows
         minutes_outside_window = 0
-        start = self.extended_start if self.extended_start != -1 else self.start_day
-        end = self.extended_end if self.extended_end != -1 else self.end_day
+
+        # Berechne die tatsächlichen Fenstergrenzen (wie in create_window_instance)
+        window_start = max(self.min_day, self.start_day - 1)
+        window_end = min(self.max_day, self.end_day + 1)
+
         # Iteriere durch alle Tage außerhalb des erweiterten Windows
         for day in range(self.inst.number_of_days):
-            if day < start or day > end:
+            if day < window_start or day > window_end:
                 # Tag liegt außerhalb des Windows
                 for shift_type_uid in self.inst.shift_types:
                     if self.sol.is_employee_assigned(day, shift_type_uid, uid):
