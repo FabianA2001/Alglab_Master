@@ -432,5 +432,5 @@ class Solver_for_window(solver.Solver):
     def block_employee_on_day(self, employee_uid: employee.EmployeeUid, day: int):
         for shift_type_uid in self.instance.shift_types:
             self.vars.model.Add(
-                self.vars.get_var(day - 1, shift_type_uid, employee_uid) == 0
+                self.vars.get_var(day, shift_type_uid, employee_uid) == 0
             )

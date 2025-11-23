@@ -274,11 +274,20 @@ class Slice_instance:
             #     f"verbiete am ende {remaing_forbidden_days} für {self.window_instance.employees[emp_uid].name}"
             # )
             if remaing_forbidden_days == 0:
-                self.solvr.block_employee_on_day(emp_uid, self.end_day)
-
-            self.solvr.add_end_maximum_consecutive_shifts_constraints(
-                emp_uid, remaing_forbidden_days
-            )
+                # Employee has reached max consecutive shifts after window
+                # We need to block the last modifiable day in the window
+                if self.extended_end != -1:
+                    # Last modifiable day is before the fixed extended_end day
+                    last_modifiable_day = self.solvr.instance.number_of_days - 2
+                # else:
+                #     # Last day is modifiable
+                #     last_modifiable_day = self.solvr.instance.number_of_days - 1
+                self.solvr.block_employee_on_day(emp_uid, last_modifiable_day)
+            else:
+                # Still have room for more consecutive shifts, add constraint
+                self.solvr.add_end_maximum_consecutive_shifts_constraints(
+                    emp_uid, remaing_forbidden_days
+                )
 
     def update_minimum_consecutive_shifts(self):
         start = self.extended_start if self.extended_start != -1 else self.start_day
