@@ -218,20 +218,9 @@ class Slice_instance:
     def update_maximum_consecutive_shifts(self):
         """Aktualisiert die max_number_consecutive_shifts für alle Mitarbeiter basierend auf den Zuweisungen außerhalb des Fensters."""
         for emp_uid, emp in self.window_instance.employees.items():
-            current_consecutive_shifts = 0
-            for day in range(self.start_day - 1, self.min_day - 1, -1):
-                assigneds = []
-                for shift_type_uid in self.inst.shift_types:
-                    assigneds.append(
-                        self.sol.is_employee_assigned(day, shift_type_uid, emp_uid)
-                    )  # None bedeutet beliebiger Shift-Typ
-                if max(assigneds):
-                    current_consecutive_shifts += 1
-                else:
-                    break  # Stoppe, wenn ein freier Tag gefunden wird
+            current_consecutive_shifts = self.count_assigned_shifts_start(emp_uid)
             if current_consecutive_shifts == 0:
                 continue
-
             remaing_forbidden_days = max(
                 0, emp.max_number_consecutive_shifts - current_consecutive_shifts
             )
@@ -241,18 +230,7 @@ class Slice_instance:
 
         # Zähle die assigned Tage nach dem erweiterten Endtag vorwärts
         for emp_uid, emp in self.window_instance.employees.items():
-            current_consecutive_shifts = 0
-            for day in range(self.end_day + 1, self.max_day + 1):
-                assigneds = []
-                for shift_type_uid in self.inst.shift_types:
-                    assigneds.append(
-                        self.sol.is_employee_assigned(day, shift_type_uid, emp_uid)
-                    )  # None bedeutet beliebiger Shift-Typ
-                if max(assigneds):
-                    current_consecutive_shifts += 1
-                else:
-                    break  # Stoppe, wenn ein freier Tag gefunden wird
-
+            current_consecutive_shifts = self.count_assigned_shifts_end(emp_uid)
             if current_consecutive_shifts == 0:
                 continue
 
@@ -264,10 +242,6 @@ class Slice_instance:
             remaing_forbidden_days = (
                 emp.max_number_consecutive_shifts - current_consecutive_shifts
             )
-
-            # print(
-            #     f"verbiete am ende {remaing_forbidden_days} für {self.window_instance.employees[emp_uid].name}"
-            # )
             if remaing_forbidden_days == 0:
                 # Employee has reached max consecutive shifts after window
                 # We need to block the last modifiable day in the window
@@ -283,17 +257,7 @@ class Slice_instance:
 
     def update_minimum_consecutive_shifts(self):
         for emp_uid, emp in self.window_instance.employees.items():
-            current_consecutive_shifts = 0
-            for day in range(self.start_day - 1, self.min_day - 1, -1):
-                assigneds = []
-                for shift_type_uid in self.inst.shift_types:
-                    assigneds.append(
-                        self.sol.is_employee_assigned(day, shift_type_uid, emp_uid)
-                    )  # None bedeutet beliebiger Shift-Typ
-                if max(assigneds):
-                    current_consecutive_shifts += 1
-                else:
-                    break  # Stoppe, wenn ein freier Tag gefunden wird
+            current_consecutive_shifts = self.count_assigned_shifts_start(emp_uid)
             if current_consecutive_shifts == 0:
                 continue
 
@@ -306,18 +270,7 @@ class Slice_instance:
 
         # Zähle die assigned Tage nach dem erweiterten Endtag vorwärts
         for emp_uid, emp in self.window_instance.employees.items():
-            current_consecutive_shifts = 0
-            for day in range(self.end_day + 1, self.max_day + 1):
-                assigneds = []
-                for shift_type_uid in self.inst.shift_types:
-                    assigneds.append(
-                        self.sol.is_employee_assigned(day, shift_type_uid, emp_uid)
-                    )  # None bedeutet beliebiger Shift-Typ
-                if max(assigneds):
-                    current_consecutive_shifts += 1
-                else:
-                    break  # Stoppe, wenn ein freier Tag gefunden wird
-
+            current_consecutive_shifts = self.count_assigned_shifts_end(emp_uid)
             if current_consecutive_shifts == 0:
                 continue
 
@@ -377,3 +330,31 @@ class Slice_instance:
             self.solvr.add_end_minimum_consecutive_days_off_constraints(
                 emp_uid, remaing_needet_days_off
             )
+
+    def count_assigned_shifts_start(self, emp_uid: employee.EmployeeUid) -> int:
+        current_consecutive_shifts = 0
+        for day in range(self.start_day - 1, self.min_day - 1, -1):
+            assigneds = []
+            for shift_type_uid in self.inst.shift_types:
+                assigneds.append(
+                    self.sol.is_employee_assigned(day, shift_type_uid, emp_uid)
+                )  # None bedeutet beliebiger Shift-Typ
+            if max(assigneds):
+                current_consecutive_shifts += 1
+            else:
+                break  # Stoppe, wenn ein freier Tag gefunden wird
+        return current_consecutive_shifts
+
+    def count_assigned_shifts_end(self, emp_uid: employee.EmployeeUid) -> int:
+        current_consecutive_shifts = 0
+        for day in range(self.end_day + 1, self.max_day + 1):
+            assigneds = []
+            for shift_type_uid in self.inst.shift_types:
+                assigneds.append(
+                    self.sol.is_employee_assigned(day, shift_type_uid, emp_uid)
+                )  # None bedeutet beliebiger Shift-Typ
+            if max(assigneds):
+                current_consecutive_shifts += 1
+            else:
+                break  # Stoppe, wenn ein freier Tag gefunden wird
+        return current_consecutive_shifts
