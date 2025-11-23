@@ -50,8 +50,9 @@ class Slice_instance:
                         solver_instance.vars.model.Add(var == 0)
 
         if self.extended_end != -1:
-            # Fixiere den letzten Tag (extended_end)
-            last_day_in_window = self.extended_end - self.extended_start
+            # Calculate the actual window boundaries independent of extended_start
+            window_start = max(self.min_day, self.start_day - 1)
+            last_day_in_window = self.extended_end - window_start
             for shift_type_uid in solver_instance.instance.shift_types:
                 for emp_id in solver_instance.instance.employees:
                     assigned = self.sol.is_employee_assigned(

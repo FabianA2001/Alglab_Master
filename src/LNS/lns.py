@@ -216,7 +216,10 @@ class LNS:
         # Iteriere über alle Tage im erweiterten Fenster
         for window_day in range(self.end_day - self.start_day + 1):
             original_day = self.start_day + window_day
-            actual_day = window_day + 1
+            if self.start_day != 0:
+                actual_day = window_day + 1
+            else:
+                actual_day = window_day
 
             # Kopiere alle Shift-Zuweisungen für diesen Tag
             for shift_type_uid in updated_solution.instance.shift_types:
@@ -231,7 +234,7 @@ class LNS:
             if original_day in updated_solution.instance.weekend_days:
                 for emp_uid in updated_solution.instance.employees:
                     new_weekend_value = new_solution.weekend_vars.get(
-                        (actual_day + 1, emp_uid), 0
+                        (actual_day, emp_uid), 0
                     )
                     updated_solution.set_weekend_var(
                         original_day, emp_uid, new_weekend_value
