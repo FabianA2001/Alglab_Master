@@ -341,10 +341,9 @@ class LNS:
                 SolverConstraints.minimum_consecutive_shifts,
             ]
 
-            sol = solvr.solve(
+            sol = solvr.solve_window(
                 log_search_progress=False,
                 max_time_in_seconds=small_max_solve_time,
-                disabled_constraints=disabled_for_window,
             )
 
             if not (
@@ -360,6 +359,7 @@ class LNS:
             sol = self.merge_solutions(sol)
             print("Merged solution created")
             sol.to_json_file("temp_lns_solution.json")
+            sol.disabled_constraints = disabled_for_window
             if not sol.checkt_constraints[0]:
                 for cst, satisfied in sol.checkt_constraints[1].items():
                     if not satisfied[0]:

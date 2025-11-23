@@ -2,6 +2,7 @@ from ortools.sat.python import cp_model
 
 from .. import solver
 from ..inputTypes import employee
+from ..module.solverConstraints import SolverConstraints
 from ..solution import Solution
 
 
@@ -20,6 +21,13 @@ class Solver_for_window(solver.Solver):
             max_time_in_seconds=max_time_in_seconds,
             stop_after_first_solution=stop_after_first_solution,
             callback=callback,
+            disabled_constraints=[
+                SolverConstraints.max_Cons_Shifts,
+                SolverConstraints.minimum_consecutive_days_off,
+                SolverConstraints.minimum_consecutive_shifts,
+                # HACK vlt wieder rein
+                SolverConstraints.max_weekend_days,
+            ],
             **solver_params,
         )
 
