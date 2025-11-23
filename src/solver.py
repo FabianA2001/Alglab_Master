@@ -3,6 +3,7 @@ from datetime import datetime
 from ortools.sat.python import cp_model
 
 from . import shift_vars
+from .callback_early_stop import Callback_Early_Stop
 from .inputTypes import instace
 from .module import (
     cover_requirements,
@@ -18,7 +19,6 @@ from .module import (
 )
 from .module.solverConstraints import SolverConstraints
 from .solution import Solution
-from .callback_early_stop import Callback_Early_Stop
 
 
 class Solver:
@@ -255,10 +255,7 @@ class Solver:
 
     def set_constraints(
         self,
-        log_search_progress: bool = True,
-        max_time_in_seconds: float = 60.0,
         disabled_constraints: list[SolverConstraints] = [],
-        **solver_params,
     ):
         if SolverConstraints.days_off not in disabled_constraints:
             days_off.Days_off().build(self.instance, self.vars)
