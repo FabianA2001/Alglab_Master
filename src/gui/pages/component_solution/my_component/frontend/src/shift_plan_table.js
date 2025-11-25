@@ -39,6 +39,98 @@ let filteredEmployee = '';
 
 export var dataDict = {"cover_weights": {}, "added_employees": {}, "removed_employees": {}};
 
+function createHeaderColumn(shiftTypeInfo) {
+    // Shift type cell with multi-line layout
+        const tdShiftType = document.createElement('td');
+        tdShiftType.className = 'row-cell';
+
+        // Create container for the shift type info
+        const shiftTypeContainer = document.createElement('div');
+
+        // Name (bold)
+        const nameDiv = document.createElement('div');
+        nameDiv.textContent = shiftTypeInfo.name;
+        nameDiv.className = 'shift-name';
+        shiftTypeContainer.appendChild(nameDiv);
+
+        // Start time
+        const startDiv = document.createElement('div');
+        startDiv.className = 'shift-time';
+        startDiv.textContent = `Start: ${shiftTypeInfo.start_time}`;
+        shiftTypeContainer.appendChild(startDiv);
+
+        // End time
+        const endDiv = document.createElement('div');
+        endDiv.className = 'shift-time';
+        endDiv.textContent = `Ende: ${shiftTypeInfo.end_time}`;
+        shiftTypeContainer.appendChild(endDiv);
+
+        tdShiftType.appendChild(shiftTypeContainer);
+        return tdShiftType;
+}
+
+function createShiftFullness(cellData) {
+    const diffDiv = document.createElement('div');
+    diffDiv.className = 'diff-info';
+
+    const diff = cellData.difference;
+    if (diff > 0) {
+        diffDiv.textContent = `+${diff} (${cellData.actual}/${cellData.preferred})`;
+        diffDiv.style.color = CONFIG.colors?.differencePositiveColor || '#ff9800'; // Orange for a lot
+    } else if (diff < 0) {
+        diffDiv.textContent = `${diff} (${cellData.actual}/${cellData.preferred})`;
+        diffDiv.style.color = CONFIG.colors?.differenceNegativeColor || '#f44336'; // Red for less then desired
+    } else {
+        diffDiv.textContent = `✓ (${cellData.actual}/${cellData.preferred})`;
+        diffDiv.style.color = CONFIG.colors?.differencePerfectColor || '#4CAF50'; // Green for perfect
+    }
+
+    return diffDiv;
+}
+
+function createCoverModifications(shiftTypeInfo, cellData, day){
+    // Create container for the upper part
+    const cover_weight = document.createElement('div');
+    cover_weight.className = 'cover-weight';
+
+    // Unique identifiers using day and shiftType
+    const checkboxId = `checkbox-${day}-${shiftTypeInfo.name}`;
+    const textFieldId = `textfield-${day}-${shiftTypeInfo.name}`;
+
+    // Create checkbox
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.id = checkboxId;
+    checkbox.className = 'cover-requirement-checkbox';
+
+    // Create text field
+    const textField = document.createElement('input');
+    textField.type = 'number';
+    textField.disabled = true;
+    textField.style.width = '100%';
+    textField.id = textFieldId;
+    textField.className = 'cover-requirement-textfield';
+    textField.value = cellData.weight;
+
+    // Event listener for the checkbox
+    checkbox.addEventListener('change', () => {
+        textField.disabled = !checkbox.checked; // Enable/disable text field
+    });
+
+    // Append checkbox and text field to upper part
+    cover_weight.appendChild(checkbox);
+    cover_weight.appendChild(textField);
+    
+    checkbox.addEventListener('change', () => updateData(day, shiftTypeInfo.name));
+    textField.addEventListener('input', () => {
+        if (checkbox.checked) {
+            dataDict["cover_weights"][day][shiftTypeInfo.name] = parseInt(textField.value) || 0;
+        }
+    });
+
+    return cover_weight;
+}
+
 // Render the table with data
 function renderTable(shiftPlanData, read_only) {
     if (!shiftPlanData) {
@@ -76,35 +168,11 @@ function renderTable(shiftPlanData, read_only) {
     // Create data rows
     let totalAssignments = 0;
     shiftPlanData.shift_types_info.forEach((shiftTypeInfo, index) => {
+        // rows
         const tr = document.createElement('tr');
 
-        // Shift type cell with multi-line layout
-        const tdShiftType = document.createElement('td');
-        tdShiftType.className = 'row-cell';
-
-        // Create container for the shift type info
-        const shiftTypeContainer = document.createElement('div');
-
-        // Name (bold)
-        const nameDiv = document.createElement('div');
-        nameDiv.textContent = shiftTypeInfo.name;
-        nameDiv.className = 'shift-name';
-        shiftTypeContainer.appendChild(nameDiv);
-
-        // Start time
-        const startDiv = document.createElement('div');
-        startDiv.className = 'shift-time';
-        startDiv.textContent = `Start: ${shiftTypeInfo.start_time}`;
-        shiftTypeContainer.appendChild(startDiv);
-
-        // End time
-        const endDiv = document.createElement('div');
-        endDiv.className = 'shift-time';
-        endDiv.textContent = `Ende: ${shiftTypeInfo.end_time}`;
-        shiftTypeContainer.appendChild(endDiv);
-
-        tdShiftType.appendChild(shiftTypeContainer);
-        tr.appendChild(tdShiftType);
+        // Add column header cell
+        tr.appendChild(createHeaderColumn(shiftTypeInfo));
 
         // Day cells
         for (let day = 0; day < shiftPlanData.num_days; day++) {
@@ -112,77 +180,24 @@ function renderTable(shiftPlanData, read_only) {
             td.className = 'row-cell';
             const cellData = shiftPlanData.data[index][day];
 
-            // Erstelle Container für die Zelle
+            // Day Shift Cell
             const cellContainer = document.createElement('div');
             cellContainer.className = 'cell-container';
 
-            // Zeige Differenz-Information an der Spitze
+            // Show how many people are working per shift
             if (cellData.preferred !== undefined) {
-                const diffDiv = document.createElement('div');
-                diffDiv.className = 'diff-info';
 
-                const diff = cellData.difference;
-                if (diff > 0) {
-                    diffDiv.textContent = `+${diff} (${cellData.actual}/${cellData.preferred})`;
-                    diffDiv.style.color = CONFIG.colors?.differencePositiveColor || '#ff9800'; // Orange für zu viele
-                } else if (diff < 0) {
-                    diffDiv.textContent = `${diff} (${cellData.actual}/${cellData.preferred})`;
-                    diffDiv.style.color = CONFIG.colors?.differenceNegativeColor || '#f44336'; // Rot für zu wenige
-                } else {
-                    diffDiv.textContent = `✓ (${cellData.actual}/${cellData.preferred})`;
-                    diffDiv.style.color = CONFIG.colors?.differencePerfectColor || '#4CAF50'; // Grün für perfekt
-                }
+                // Add Cover weight modification capability
+                cellContainer.appendChild(createCoverModifications(shiftTypeInfo, cellData, day));
 
-                cellContainer.appendChild(diffDiv);
+                td.appendChild(createShiftFullness(cellData));
 
-                // Create container for the upper part
-                const cover_weight = document.createElement('div');
-                cover_weight.className = 'cover-weight';
-
-                // Unique identifiers using day and shiftType
-                const checkboxId = `checkbox-${day}-${shiftTypeInfo.name}`;
-                const textFieldId = `textfield-${day}-${shiftTypeInfo.name}`;
-
-                // Create checkbox
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = checkboxId;
-                checkbox.className = 'cover-requirement-checkbox';
-
-                // Create text field
-                const textField = document.createElement('input');
-                textField.type = 'number';
-                textField.disabled = true;
-                textField.style.width = '100%';
-                textField.id = textFieldId;
-                textField.className = 'cover-requirement-textfield';
-                textField.value = cellData.weight;
-
-                // Event listener for the checkbox
-                checkbox.addEventListener('change', () => {
-                    textField.disabled = !checkbox.checked; // Enable/disable text field
-                });
-
-                // Append checkbox and text field to upper part
-                cover_weight.appendChild(checkbox);
-                cover_weight.appendChild(textField);
-
-                // Positioning the upper part in the cell
-                cellContainer.appendChild(cover_weight);
-
-                td.appendChild(diffDiv);
-
-                checkbox.addEventListener('change', () => updateData(day, shiftTypeInfo.name));
-                textField.addEventListener('input', () => {
-                    if (checkbox.checked) {
-                        dataDict["cover_weights"][day][shiftTypeInfo.name] = parseInt(textField.value) || 0;
-                    }
-                });
             }
+
             let employees = cellData.employees;
             const force_assigned_employees = cellData.force_assigned_employees;
             const banned_employees = cellData.banned_employees;
-            //remove extra forced assigned employees, so that we can add them at the end of this funciton as forced assigned
+            //remove extra forced assigned (Constraint employee = 1) employees, so that we can add them at the end of this function as forced assigned
             employees = employees.filter(item => !force_assigned_employees.includes(item))
             employees.push(...banned_employees)
 
@@ -197,10 +212,15 @@ function renderTable(shiftPlanData, read_only) {
             const addEmployeeContainer = document.createElement('div');
             addEmployeeContainer.className = 'employee-badge-container';
 
-            // Create a button for adding employees
+            // Create a button for adding employees to the current day and shift
             const addEmployeeButton = document.createElement('button');
             addEmployeeButton.textContent = 'Add Employee';
             addEmployeeButton.className = 'add-employee-button';
+            // Event listener for the Add Employee button
+            addEmployeeButton.addEventListener('click', () => {
+                // Toggle visibility of the selection container
+                selectionContainer.style.display = selectionContainer.style.display === 'none' ? 'block' : 'none';
+            });
 
             // Create a dropdown for employee selection
             const selectionContainer = document.createElement('div');
@@ -246,12 +266,6 @@ function renderTable(shiftPlanData, read_only) {
                 selectionContainer.appendChild(option);
             });
 
-            // Event listener for the Add Employee button
-            addEmployeeButton.addEventListener('click', () => {
-                // Toggle visibility of the selection container
-                selectionContainer.style.display = selectionContainer.style.display === 'none' ? 'block' : 'none';
-            });
-
             // Append elements to the badge container
             addEmployeeContainer.appendChild(addEmployeeButton);
             addEmployeeContainer.appendChild(selectionContainer);
@@ -266,7 +280,7 @@ function renderTable(shiftPlanData, read_only) {
                     const badge = document.createElement('span');
                     badge.className = 'employee-badge';
                     badge.textContent = empName;
-                    badge.id = `badge-${shiftTypeInfo.name}-${day}-${index}`; // Unique ID for the badge
+                    badge.id = `badge-${shiftTypeInfo.name}-${day}-${index}`;
                     
                     const removeButton = document.createElement('span');
                     removeButton.innerHTML = '&times;';
@@ -320,10 +334,49 @@ function renderTable(shiftPlanData, read_only) {
     tableInfo.textContent = `Gesamt: ${shiftPlanData.shift_types_info.length} Schichttypen, ${shiftPlanData.num_days} Tage, ${totalAssignments} Zuweisungen`;
 }
 
-// Handle search input
-function handleSearch(event, shiftPlanData, read_only) {
-    filteredEmployee = event.target.value;
-    renderTable(shiftPlanData, read_only);
+function handleSearch(event) {
+    const filteredEmployee = event.target.value.trim(); // Trim whitespace
+
+    let filteredBadges = document.querySelectorAll(".employee-badge");
+
+    // If the input is empty, reset all badges and return
+    if (filteredEmployee === "") {
+        filteredBadges.forEach((element) => {
+            element.parentElement.parentElement.className = "employee-list"; // Reset to default class
+        });
+        return; // Exit the function early
+    }
+
+    const searchTerms = filteredEmployee.split(" "); // Split input into search terms
+
+    // Create a map to track whether each parent should be marked
+    const parentMap = new Map();
+
+    filteredBadges.forEach((element) => {
+        const textContent = element.textContent.toLowerCase();
+        const isMatch = searchTerms.some(term => textContent.includes(term.toLowerCase()));
+
+        // Get the parent element
+        const parentElement = element.parentElement.parentElement;
+
+        // Track if this parent should be marked
+        if (!parentMap.has(parentElement)) {
+            parentMap.set(parentElement, false); // Initialize as not marked
+        }
+
+        if (isMatch) {
+            parentMap.set(parentElement, true); // Mark this parent if a match is found
+        }
+    });
+
+    // Apply classes based on the parentMap
+    parentMap.forEach((shouldMark, parent) => {
+        if (shouldMark) {
+            parent.className = "marked employee-list"; // Mark if a match was found
+        } else {
+            parent.className = "employee-list"; // Reset if no matches were found
+        }
+    });
 }
 
 // Export initialization function

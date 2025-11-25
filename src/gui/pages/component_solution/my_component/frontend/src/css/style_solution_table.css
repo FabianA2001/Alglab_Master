@@ -110,6 +110,9 @@
     color: #555; /* Color for time text */
 }
 
+.marked {
+    background-color: rgba(255, 165, 0, 0.5);
+}
 .cover-weight, .employee-list {
     display: flex; /* Flex for checkbox and text field align */
     align-items: center; /* Center items vertically */
@@ -121,6 +124,7 @@
 .employee-list {
     display: flex;
     flex-wrap: wrap;
+    padding-top: 5px;
     gap: 6px;
     justify-content: center; /* Center horizontally */
 }
