@@ -110,6 +110,7 @@ class Solver:
     ) -> Solution:
         """Handles the different results returned by the solver and returns a solution."""
         solution = Solution(self.instance)  # Create a new Solution instance
+        solution.solve_status = status
         if status in [cp_model.OPTIMAL, cp_model.FEASIBLE]:
             self.store_solution(
                 solver, solution
@@ -119,7 +120,6 @@ class Solver:
             # else:
             #     print("Feasible solution found but not optimal.")
             solution.objective_value = solver.ObjectiveValue()
-            solution.solve_status = status
             solution.instance = self.instance
             solution.disabled_constraints = disabled_constraints
             solution.solve_time = self.solve_time
@@ -127,10 +127,13 @@ class Solver:
             return solution  # Return the populated solution
         elif status == cp_model.INFEASIBLE:
             self.process_infeasible_solution()
+            return solution
         elif status == cp_model.UNKNOWN:
             self.process_unknown_status()
+            return solution
         elif status == cp_model.MODEL_INVALID:
             self.process_invalid_model()
+            return solution
 
         return solution  # Return an empty solution for cases where no valid solution was found
 
