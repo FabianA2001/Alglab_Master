@@ -78,8 +78,6 @@ def solution_to_html_data(sol: solution.Solution) -> dict:
                 shift_type_uid
             ].ban_employee_day_shift:
                 banned_employees.append(sol.instance.employees[emp_id].name)
-            print(f"day {day} - shift {shift_type_uid}")
-            print(force_assign_employees)
             # Hole die bevorzugte Anzahl an Mitarbeitern für diese Schicht
             shift = sol.instance.get_shift(day, shift_type_uid)
             preferred_count = shift.preffert_number_employees
@@ -145,15 +143,16 @@ def render_shift_plan_component(
         instance.name = instance.name + "_1"
         # does changing the instance refreash everything that the remaining changes do not happen?
 
+    # TODO should I reset, considering I am showing everything in the frontend
+    for key, shift_dict in instance.shifts.items():
+        for type_uid, shift_detail in shift_dict.items():
+            instance.shifts[key][type_uid].ban_employee_day_shift = set()
+            instance.shifts[key][type_uid].assign_employee_day_shift = set()
     if len(solution_changes_response["added_employees"]) > 0:
         for day, shift_type_dict in solution_changes_response[
             "added_employees"
         ].items():
             for shift_type, employees in shift_type_dict.items():
-                # TODO should I reset, considering I am showing everything in the frontend
-                instance.shifts[int(day)][
-                    hash_string(shift_type)
-                ].assign_employee_day_shift = set()
                 for employee in employees:
                     instance.shifts[int(day)][
                         hash_string(shift_type)
@@ -165,10 +164,6 @@ def render_shift_plan_component(
             "removed_employees"
         ].items():
             for shift_type, employees in shift_type_dict.items():
-                # TODO should I reset, considering I am showing everything in the frontend
-                instance.shifts[int(day)][
-                    hash_string(shift_type)
-                ].ban_employee_day_shift = set()
                 for employee in employees:
                     instance.shifts[int(day)][
                         hash_string(shift_type)
@@ -360,9 +355,9 @@ def show():
 
     show_compare_solutions()
 
-    df, df_columns = show_solution_employee_changes()
-    st.dataframe(
-        df,
-        use_container_width=True,
-        hide_index=True,
-    )
+    # df, df_columns = show_solution_employee_changes()
+    # st.dataframe(
+    #     df,
+    #     use_container_width=True,
+    #     hide_index=True,
+    # )
