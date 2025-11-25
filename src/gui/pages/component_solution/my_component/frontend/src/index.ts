@@ -82,19 +82,8 @@ function onRender(event: Event): void {
         }
         // Initialize the shift plan table with the provided solution data
         initShiftPlanTable(shift_plan_solution, extra_options["read_only"])
-        const searchInput = document.getElementById('searchInput') as HTMLInputElement;
         if(extra_options["read_only"]){
           set_coverage_unchangable();
-        }
-        if (searchInput) {
-            searchInput.addEventListener('input', function () {
-                const searchValue = searchInput.value; // No more TypeScript error
-                console.log('Search Value:', searchValue);
-                // Send the value back to Streamlit
-                //Streamlit.setComponentValue(searchValue);
-            });
-        } else {
-            console.error('Search input not found.');
         }
     }
 
