@@ -33,7 +33,7 @@ def solve(**kwargs) -> solution.Solution:
     instance = kwargs["instance"]
     disabled_constraints = kwargs["disabled_constraints"]
     sol = solver.Solver(instance, shift_vars.Shift_vars(instance))
-    sol = sol.solve(
+    sol = sol.solve_with_early_stop(
         log_search_progress=False,
         disabled_constraints=disabled_constraints,
         max_time_in_seconds=kwargs["timeout_seconds"],
