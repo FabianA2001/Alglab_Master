@@ -190,6 +190,13 @@ def show_solution_employee_changes():
     # bring the solutions into a more managable structure
     for i, sol in enumerate(reversed(st.session_state[SSN.solutions.name])):
         newer_solution = {"selected": {}, "deselected": {}}
+        # TODO Test if the instance solutions belong to the same original instance more specifically 
+        if sol.instance.number_of_days != st.session_state[SSN.solutions.name][-1].instance.number_of_days:
+            continue
+        if len(sol.instance.shift_types) != len(st.session_state[SSN.solutions.name][-1].instance.shift_types):
+            continue
+        if len(sol.instance.employees) != len(st.session_state[SSN.solutions.name][-1].instance.employees):
+            continue
         for keys, selected in sol.vars.items():
             shift_name = sol.instance.shift_types[keys[1]].name
             employee_name = sol.instance.employees[keys[2]].name
@@ -355,9 +362,9 @@ def show():
 
     show_compare_solutions()
 
-    # df, df_columns = show_solution_employee_changes()
-    # st.dataframe(
-    #     df,
-    #     use_container_width=True,
-    #     hide_index=True,
-    # )
+    df, df_columns = show_solution_employee_changes()
+    st.dataframe(
+        df,
+        use_container_width=True,
+        hide_index=True,
+    )
