@@ -1,12 +1,34 @@
 from ortools.sat.python import cp_model
 
-from .. import solver
-from ..inputTypes import employee
+from .. import shift_vars, solver
+from ..inputTypes import employee, instace
+from ..module.shift_assignment_module import ShiftAssignmentModule
 from ..module.solverConstraints import SolverConstraints
 from ..solution import Solution
 
 
 class Solver_for_window(solver.Solver):
+    def __init__(
+        self,
+        instance: instace.Instance,
+        vars: shift_vars.Shift_vars,
+        disabled_constraints: list[SolverConstraints] = [],
+        add_module_constraints: list[ShiftAssignmentModule] = [],
+    ):
+        # HACK Weekend raus
+        super().__init__(
+            instance,
+            vars,
+            disabled_constraints
+            + [
+                SolverConstraints.max_Cons_Shifts,
+                SolverConstraints.max_weekend_days,
+                SolverConstraints.minimum_consecutive_days_off,
+                SolverConstraints.minimum_consecutive_shifts,
+            ],
+            add_module_constraints,
+        )
+
     def solve_window(
         self,
         log_search_progress: bool = True,
@@ -21,13 +43,6 @@ class Solver_for_window(solver.Solver):
             max_time_in_seconds=max_time_in_seconds,
             stop_after_first_solution=stop_after_first_solution,
             callback=callback,
-            disabled_constraints=[
-                SolverConstraints.max_Cons_Shifts,
-                SolverConstraints.minimum_consecutive_days_off,
-                SolverConstraints.minimum_consecutive_shifts,
-                # HACK vlt wieder rein
-                SolverConstraints.max_weekend_days,
-            ],
             **solver_params,
         )
 
