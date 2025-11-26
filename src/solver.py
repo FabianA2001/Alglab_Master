@@ -276,15 +276,17 @@ class Solver:
                 self.instance, self.vars
             )
         if SolverConstraints.max_Cons_Shifts not in disabled_constraints:
-            max_Cons_shifts_new.Max_Cons_Shifts_new().build(self.instance, self.vars)
+            max_Cons_shifts_new.Max_Cons_Shifts_Automaton().build(
+                self.instance, self.vars
+            )
         if SolverConstraints.max_weekend_days not in disabled_constraints:
             max_weekend_days.Max_weekend_days().build(self.instance, self.vars)
         if SolverConstraints.minimum_consecutive_days_off not in disabled_constraints:
-            minimum_consecutove_days_off_new.Minimum_consecutive_days_off_new().build(
+            minimum_consecutove_days_off_new.Min_Cons_Days_Off_Automaton().build(
                 self.instance, self.vars
             )
         if SolverConstraints.minimum_consecutive_shifts not in disabled_constraints:
-            minimum_consecutive_shifts_new.Minimum_consecutive_shifts_new().build(
+            minimum_consecutive_shifts_new.Min_Cons_Shifts_Automaton().build(
                 self.instance, self.vars
             )
         if SolverConstraints.minMaxWorkTime not in disabled_constraints:

@@ -47,47 +47,54 @@ class Min_Cons_Days_Off_Automaton(ShiftAssignmentModule):
         for employee_uid in instance.employees:
             D = instance.employees[employee_uid].min_number_consecutive_days_off
 
+            # Sonderfall: kein Minimum -> nichts zu erzwingen
+            if D <= 0:
+                continue
+
             # Zustände:
             # 0       = working
             # 1..D    = off, aber noch nicht lang genug
             # long    = D+2   = gültiger langer off-block (>=D)
             # fail    = D+1   = Fehlerzustand: ein off-block war zu kurz
-
             start = 0
             fail = D + 1
             long = D + 2
 
             # akzeptierende Endzustände:
             # 0 (endet arbeitend)
-            # D (genau D Tage off und dann wieder arbeit)
+            # D (exakt D Off-Tage erreicht und dann wieder Arbeit)
             # long (langer Off-Block >=D)
             accept = [0, D, long]
 
             transitions = []
 
-            # working
-            transitions.append((0, 1, 0))  # arbeitet weiter
-            transitions.append((0, 0, 1))  # beginnt off-block
+            # working-state 0:
+
+            transitions.append((0, 1, 0))  # weiter arbeiten
+            transitions.append((0, 0, 1))  # beginne off-block
 
             # states 1..D-1 (Off-Block, noch zu kurz)
+
             for s in range(1, D):
                 transitions.append((s, 0, s + 1))  # off-block wächst
-                transitions.append((s, 1, fail))  # Ende zu früh -> Fehler
+                transitions.append((s, 1, fail))  # zu früh wieder arbeiten -> Fehler
 
             # state D (genau D Off-Tage erreicht)
-            transitions.append((D, 0, long))  # längerer off-block
-            transitions.append((D, 1, 0))  # genau D -> off-block endet gültig
+
+            transitions.append((D, 0, long))
+            transitions.append((D, 1, 0))
 
             # long off block (>=D)
-            transitions.append((long, 0, long))  # weiter off
-            transitions.append((long, 1, 0))  # gültig beendet
+
+            transitions.append((long, 0, long))
+            transitions.append((long, 1, 0))
 
             # fail state (einmal fail -> immer fail)
             transitions.append((fail, 0, fail))
             transitions.append((fail, 1, fail))
 
             sequence = [
-                1 - vars.work_vars[(day, employee_uid)]  # OFF=1, WORK=0
+                vars.work_vars[(day, employee_uid)]
                 for day in range(instance.number_of_days)
             ]
 
