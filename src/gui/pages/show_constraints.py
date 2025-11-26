@@ -17,6 +17,8 @@ CONSTRAINT_NAME_MAPPING = {
     SolverConstraints.minMaxWorkTime: "Min/Max Worktime",
     SolverConstraints.shift_assignment_single_day_validation: "Single Day Assignment",
     SolverConstraints.shift_rotation_constraint: "Shift Rotation",
+    SolverConstraints.assign_employee_day_shift: "Assign Employees",
+    SolverConstraints.ban_employee_day_shift: "Ban Employees",
 }
 
 

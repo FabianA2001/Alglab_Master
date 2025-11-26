@@ -23,8 +23,8 @@ def solve_warm_start(**kwargs) -> solution.Solution:
         disabled_constraints=disabled_constraints,
         max_time_in_seconds=kwargs["timeout_seconds"],
     )
-
-    sol.to_json_file(instance.name)
+    if sol.solve_status == 4 or sol.solve_status == 2:
+        sol.to_json_file(instance.name)
     return sol
 
 
@@ -38,7 +38,8 @@ def solve(**kwargs) -> solution.Solution:
         disabled_constraints=disabled_constraints,
         max_time_in_seconds=kwargs["timeout_seconds"],
     )
-    sol.to_json_file(instance.name)
+    if sol.solve_status == 4 or sol.solve_status == 2:
+        sol.to_json_file(instance.name)
     return sol
 
 
@@ -53,8 +54,8 @@ def solve_with_lns(**kwargs) -> solution.Solution:
         log_level=logging.ERROR,
     )
     sol = lns_solver.solve()
-
-    sol.to_json_file(sol.instance.name)
+    if sol.solve_status == 4 or sol.solve_status == 2:
+        sol.to_json_file(sol.instance.name)
     return sol
 
 
@@ -139,6 +140,8 @@ def show():
     toggle_constraint(solver.SolverConstraints.minMaxWorkTime)
     toggle_constraint(solver.SolverConstraints.shift_assignment_single_day_validation)
     toggle_constraint(solver.SolverConstraints.shift_rotation_constraint)
+    toggle_constraint(solver.SolverConstraints.assign_employee_day_shift)
+    toggle_constraint(solver.SolverConstraints.ban_employee_day_shift)
 
     st.session_state[SSN.disabled_constraints.name] = disabled_constraints_value
     disabled_constraints: list[solver.SolverConstraints] = []
@@ -223,16 +226,37 @@ def show():
                 # Solver finished
                 try:
                     solution = future.result()
-                    st.session_state[SSN.solutions.name].append(solution)
+                    st.session_state[SSN.solver_future.name] = None
                     elapsed_time = (
-                        time.time() - st.session_state[SSN.solver_start_time.name]
-                    )
+                            time.time() - st.session_state[SSN.solver_start_time.name]
+                        )
                     st.session_state[SSN.solver_running.name] = False
                     st.session_state[SSN.solver_executor.name].shutdown(wait=False)
-                    st.success(
-                        f"Lösung gefunden! (Laufzeit: {elapsed_time:.2f} Sekunden)"
-                    )
-                    st.write("Gehe zur Solution-Seite um das Ergebnis zu sehen.")
+                    if solution.solve_status == 2:
+                        st.session_state[SSN.solutions.name].append(solution)
+                        st.success(
+                            f"A solution has been found! (Runtime: {elapsed_time:.2f} seconds)"
+                        )
+                        st.write("Go to solution page to see the solution.")
+                    elif solution.solve_status == 0:
+                        st.error(
+                            f"The Time limit has been reached without finding a solution (Runtime: {elapsed_time:.2f} seconds)"
+                        )
+                    elif solution.solve_status == 1:
+                        st.error(
+                            f"Model isn't valid (Runtime: {elapsed_time:.2f} seconds)"
+                        )
+                    elif solution.solve_status == 3:
+                        st.error(
+                            f"Model is infeasible (Runtime: {elapsed_time:.2f} seconds)"
+                        )
+                    elif solution.solve_status == 4:
+                        st.session_state[SSN.solutions.name].append(solution)
+                        st.success(
+                            f"An optimal solution has been found! (Runtime: {elapsed_time:.2f} seconds)"
+                        )
+                        st.write("Go to solution page to see the solution.")
+
                 except Exception as e:
                     st.error(f"Fehler beim Lösen: {str(e)}")
                     st.session_state[SSN.solver_running.name] = False

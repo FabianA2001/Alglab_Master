@@ -1,6 +1,7 @@
 import { Streamlit, RenderData } from "streamlit-component-lib"
-import { dataDict, initShiftPlanTable, reset_dataDict, set_coverage_unchangable, remove_changable_employee_options } from "./shift_plan_table.js"; // 
+import { dataDict, initShiftPlanTable} from "./shift_plan_table.js"; // 
 
+// TODO make simpler styles
 /**
  * The component's render function. This will be called immediately after
  * the component is initially loaded, and then again every time the
@@ -13,85 +14,12 @@ function onRender(event: Event): void {
     // RenderData.args is the JSON dictionary of arguments sent from the
     // Python script.
     let name = data.args["name"]
-    console.log("Render data received:", data.args)
     if (data.args["render_option"] == "shift_plan_solution") {
         let shift_plan_solution = JSON.parse(data.args["data"])
         let extra_options = JSON.parse(data.args["extra_options"])
-        console.log("Shift plan solution received:", shift_plan_solution)
-        if (!document.getElementById('shift-plan-app')) {
-            // Dynamically add the HTML for the shift plan app
-            const shiftPlanAppHTML = `
-        <div id="shift-plan-app">
-          <div class="filter-container">
-            <input 
-              type="text" 
-              id="searchInput" 
-              class="filter-input" 
-              placeholder="Nach Mitarbeiter suchen..."
-            >
-          </div>
-          <div class="shift-plan-container">
-            <table class="shift-plan-table" id="shiftPlanTable">
-              <thead>
-                <tr id="headerRow"></tr>
-              </thead>
-              <tbody id="tableBody"></tbody>
-            </table>
-          </div>
-          <div class="table-info" id="tableInfo"></div>
-        </div>
-      `;
-            // Insert the HTML into the body or a specific container
-            document.body.insertAdjacentHTML('beforeend', shiftPlanAppHTML);
-            if (!extra_options["read_only"]) {
-              // Create a MutationObserver to look for changes in the entire document body
-              const observer_add_cover_button = new MutationObserver(() => {
-              const tableInfo = document.getElementById("tableInfo");
-                    if (tableInfo) {
-                        tableInfo.insertAdjacentHTML('afterend', `<button id="submit_cover_change">Submit Changes</button>`); // Call the function to add the button
-                        observer_add_cover_button.disconnect(); // Stop observing once the button is added
-                    }
-                }
-              );
-
-              // Start observing the body element for added nodes
-              observer_add_cover_button.observe(document.body, {
-                  childList: true, // Observe changes to child nodes
-                  subtree: true    // Also observe changes to descendants
-              });
-              const observer = new MutationObserver(() => {
-                  const button = document.getElementById('submit_cover_change');
-                  if (button) {
-                      console.log("Button found, setting onclick function.");
-                      // Define the onPressed function
-                      button.onclick = function () {
-                          Streamlit.setComponentValue(dataDict);
-                          reset_dataDict(); // Reset the dataDict after submission
-                      };
-                      observer.disconnect(); // Stop observing once the button is found
-                  }
-              });
-
-              // Start observing the document for child additions
-              observer.observe(document.body, { childList: true, subtree: true });
-            }
-        }
         // Initialize the shift plan table with the provided solution data
-        initShiftPlanTable(shift_plan_solution)
-        const searchInput = document.getElementById('searchInput') as HTMLInputElement;
+        initShiftPlanTable(shift_plan_solution, extra_options["read_only"])
         if(extra_options["read_only"]){
-          set_coverage_unchangable();
-          remove_changable_employee_options();
-        }
-        if (searchInput) {
-            searchInput.addEventListener('input', function () {
-                const searchValue = searchInput.value; // No more TypeScript error
-                console.log('Search Value:', searchValue);
-                // Send the value back to Streamlit
-                //Streamlit.setComponentValue(searchValue);
-            });
-        } else {
-            console.error('Search input not found.');
         }
     }
 

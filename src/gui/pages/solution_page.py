@@ -22,9 +22,11 @@ def on_change_solution():
             st.session_state.solution_selectbox
         )
         st.session_state[SSN.solutions.name].append(loaded_solution)
+        st.session_state[SSN.instance.name] = loaded_solution.instance
         st.success(
             f"Lösung '{st.session_state.solution_selectbox}' erfolgreich geladen!"
         )
+        st.session_state[SSN.allow_resolve.name] = True
     except Exception as e:
         st.error(f"Fehler beim Laden der Lösung: {e}")
 
@@ -63,10 +65,19 @@ def solution_to_html_data(sol: solution.Solution) -> dict:
         row = []
         for day in days:
             assigned_employees = []
+            force_assign_employees = []
+            banned_employees = []
             for emp_id in sol.instance.employees:
                 if sol.is_employee_assigned(day, shift_type_uid, emp_id):
                     assigned_employees.append(sol.instance.employees[emp_id].name)
-
+            for emp_id in sol.instance.shifts[day][
+                shift_type_uid
+            ].assign_employee_day_shift:
+                force_assign_employees.append(sol.instance.employees[emp_id].name)
+            for emp_id in sol.instance.shifts[day][
+                shift_type_uid
+            ].ban_employee_day_shift:
+                banned_employees.append(sol.instance.employees[emp_id].name)
             # Hole die bevorzugte Anzahl an Mitarbeitern für diese Schicht
             shift = sol.instance.get_shift(day, shift_type_uid)
             preferred_count = shift.preffert_number_employees
@@ -78,6 +89,8 @@ def solution_to_html_data(sol: solution.Solution) -> dict:
                     "employees": assigned_employees,
                     "preferred": preferred_count,
                     "actual": actual_count,
+                    "banned_employees": banned_employees,
+                    "force_assigned_employees": force_assign_employees,
                     "difference": difference,
                     "weight": sol.instance.shifts[day][
                         shift_type_uid
@@ -119,18 +132,53 @@ def render_shift_plan_component(
     if read_only:
         return
     st.markdown(f"The selected employee is: {solution_changes_response}")
-    if "cover_weights" in solution_changes_response:
-        instance = sol.instance.model_copy(deep=True)
+    instance = sol.instance.model_copy(deep=True)
+    if len(solution_changes_response["cover_weights"]) > 0:
         for day, shift_type_dict in solution_changes_response["cover_weights"].items():
             for shift_type, value in shift_type_dict.items():
                 # TODO what about weight_above_preferred?
                 instance.shifts[int(day)][
                     hash_string(shift_type)
                 ].weight_below_preferred = int(value)
-                instance.name = instance.name + "eddited_cover_requirements"
+        instance.name = instance.name + "_1"
+        # does changing the instance refreash everything that the remaining changes do not happen?
+
+    # TODO should I reset, considering I am showing everything in the frontend
+    for key, shift_dict in instance.shifts.items():
+        for type_uid, shift_detail in shift_dict.items():
+            instance.shifts[key][type_uid].ban_employee_day_shift = set()
+            instance.shifts[key][type_uid].assign_employee_day_shift = set()
+    if len(solution_changes_response["added_employees"]) > 0:
+        for day, shift_type_dict in solution_changes_response[
+            "added_employees"
+        ].items():
+            for shift_type, employees in shift_type_dict.items():
+                for employee in employees:
+                    instance.shifts[int(day)][
+                        hash_string(shift_type)
+                    ].assign_employee_day_shift.add(hash_string(employee))
+        instance.name = instance.name + "_2"
+
+    if len(solution_changes_response["removed_employees"]) > 0:
+        for day, shift_type_dict in solution_changes_response[
+            "removed_employees"
+        ].items():
+            for shift_type, employees in shift_type_dict.items():
+                for employee in employees:
+                    instance.shifts[int(day)][
+                        hash_string(shift_type)
+                    ].ban_employee_day_shift.add(hash_string(employee))
+        instance.name = instance.name + "_3"
+    if (
+        len(solution_changes_response["cover_weights"]) > 0
+        or len(solution_changes_response["added_employees"]) > 0
+        or len(solution_changes_response["removed_employees"]) > 0
+    ):
         st.session_state[SSN.instance.name] = instance
-        st.success("Instance updated with new cover requirements from component.")
+        st.success("Instance updated with the removed employees.")
         st.session_state[SSN.allow_resolve.name] = True
+    # TODO add reset parameters for employee add and remove
+    return
 
 
 def show_solution_employee_changes():
@@ -142,6 +190,13 @@ def show_solution_employee_changes():
     # bring the solutions into a more managable structure
     for i, sol in enumerate(reversed(st.session_state[SSN.solutions.name])):
         newer_solution = {"selected": {}, "deselected": {}}
+        # TODO Test if the instance solutions belong to the same original instance more specifically 
+        if sol.instance.number_of_days != st.session_state[SSN.solutions.name][-1].instance.number_of_days:
+            continue
+        if len(sol.instance.shift_types) != len(st.session_state[SSN.solutions.name][-1].instance.shift_types):
+            continue
+        if len(sol.instance.employees) != len(st.session_state[SSN.solutions.name][-1].instance.employees):
+            continue
         for keys, selected in sol.vars.items():
             shift_name = sol.instance.shift_types[keys[1]].name
             employee_name = sol.instance.employees[keys[2]].name

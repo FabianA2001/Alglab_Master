@@ -12,3 +12,5 @@ class SolverConstraints(enum.Enum):
     minMaxWorkTime = enum.auto()
     shift_assignment_single_day_validation = enum.auto()
     shift_rotation_constraint = enum.auto()
+    assign_employee_day_shift = enum.auto()
+    ban_employee_day_shift = enum.auto()

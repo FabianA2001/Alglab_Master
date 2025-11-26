@@ -273,7 +273,7 @@ def show_instance_information(instance):
                     f"**{shift_type_name}** {'🌙 (Wochenende)' if shift.is_weekend else ''}"
                 )
 
-                col1, col2, col3 = st.columns(3)
+                col1, col2, col3, col4, col5 = st.columns(5)
                 with col1:
                     st.write("**Bevorzugte Besetzung:**")
                     st.write(f"Anzahl: {shift.preffert_number_employees}")
@@ -309,7 +309,26 @@ def show_instance_information(instance):
                             st.write(f"- {emp_name}: Gewicht {penalty}")
                     else:
                         st.write("Keine")
-
+                with col4:
+                    st.write("**Forced Assignment:**")
+                    for key, shift_dict in instance.shifts.items():
+                        for type_uid, shift_detail in shift_dict.items():
+                            for emp_uid in instance.shifts[key][type_uid].ban_employee_day_shift:
+                                emp = instance.employees.get(emp_uid)
+                                emp_name = (
+                                    emp.name if emp else f"UID ...{str(emp_uid)[-4:]}"
+                                )
+                                st.write(f"- {emp_name}")
+                with col5:
+                    st.write("**Banned employees:**")
+                    for key, shift_dict in instance.shifts.items():
+                        for type_uid, shift_detail in shift_dict.items():
+                            for emp_uid in instance.shifts[key][type_uid].assign_employee_day_shift:
+                                emp = instance.employees.get(emp_uid)
+                                emp_name = (
+                                    emp.name if emp else f"UID ...{str(emp_uid)[-4:]}"
+                                )
+                                st.write(f"- {emp_name}")
                 st.divider()
 
 
