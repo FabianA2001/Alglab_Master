@@ -15,6 +15,10 @@ from .module import (
     minMaxWorkTime,
     shift_assignment_single_day_validation,
     shift_rotation_constraint,
+    days_off_new,
+    max_Cons_shifts_new,
+    minimum_consecutove_days_off_new,
+    minimum_consecutive_shifts_new,
 )
 from .module.solverConstraints import SolverConstraints
 from .solution import Solution
@@ -48,7 +52,7 @@ class Solver:
         for key, value in solver_params.items():
             setattr(solver.parameters, key, value)
 
-        self.vars.model.Minimize(self.objevtive_value())
+        self.vars.model.Minimize(self.objective_value_new())
         self.start_solve_time = datetime.now()
         if callback is not None:
             status = solver.SolveWithSolutionCallback(self.vars.model, callback)
@@ -225,7 +229,7 @@ class Solver:
                     # If the assignment has changed, add the change weight
 
                     objective_value += changes_weight * changed
-        return objective_value + self.objevtive_value()
+        return objective_value + self.objective_value_new()
 
     def solve_min_changes(
         self,
@@ -261,7 +265,7 @@ class Solver:
         **solver_params,
     ):
         if SolverConstraints.days_off not in disabled_constraints:
-            days_off.Days_off().build(self.instance, self.vars)
+            days_off_new.Days_off_new().build(self.instance, self.vars)
         if SolverConstraints.cover_requirements not in disabled_constraints:
             cover_requirements.Cover_requirements().build(self.instance, self.vars)
         if (
@@ -272,15 +276,15 @@ class Solver:
                 self.instance, self.vars
             )
         if SolverConstraints.max_Cons_Shifts not in disabled_constraints:
-            max_Cons_Shifts.Max_Cons_Shifts().build(self.instance, self.vars)
+            max_Cons_shifts_new.Max_Cons_Shifts_new().build(self.instance, self.vars)
         if SolverConstraints.max_weekend_days not in disabled_constraints:
             max_weekend_days.Max_weekend_days().build(self.instance, self.vars)
         if SolverConstraints.minimum_consecutive_days_off not in disabled_constraints:
-            minimum_consecutive_days_off.Minimum_consecutive_days_off().build(
+            minimum_consecutove_days_off_new.Minimum_consecutive_days_off_new().build(
                 self.instance, self.vars
             )
         if SolverConstraints.minimum_consecutive_shifts not in disabled_constraints:
-            minimum_consecutive_shifts.Minimum_consecutive_shifts().build(
+            minimum_consecutive_shifts_new.Minimum_consecutive_shifts_new().build(
                 self.instance, self.vars
             )
         if SolverConstraints.minMaxWorkTime not in disabled_constraints:
@@ -296,3 +300,37 @@ class Solver:
             shift_assignment_single_day_validation.Single_day_validation().build(
                 self.instance, self.vars
             )
+
+    def objective_value_new(self):
+        objective_value = 0
+        for employee_uid in self.instance.employees:
+            for day in range(self.instance.number_of_days):
+                for type_uid in self.instance.shifts[day]:
+                    objective_value += self.instance.get_shift(
+                        day=day, type_uid=type_uid
+                    ).penalty_assigned_day_employee.get(employee_uid, 0) * (
+                        1 - self.vars.vars[(day, type_uid, employee_uid)]
+                    )
+                    objective_value += (
+                        self.instance.shifts[day][
+                            type_uid
+                        ].penalty_not_assigned_day_employee.get(employee_uid, 0)
+                        * self.vars.vars[(day, type_uid, employee_uid)]
+                    )
+        for day in range(self.instance.number_of_days):
+            for type_uid in self.instance.shifts[day]:
+                objective_value += (
+                    self.vars.below_prefferd_vars[(day, type_uid)]
+                    * self.instance.shifts[day][type_uid].weight_below_preferred
+                )
+                objective_value += (
+                    self.vars.below_threshold_vars[(day, type_uid)]
+                    * self.instance.shifts[day][type_uid].weight_below_preferred
+                    * 2
+                )
+
+                # objective_value += (
+                #     self.vars.above_prefferd_vars[(day, type_uid)]
+                #     * self.instance.shifts[day][type_uid].weight_above_preferred
+                # )
+        return objective_value
