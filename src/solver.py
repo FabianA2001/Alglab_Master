@@ -44,7 +44,6 @@ class Solver:
         max_time_in_seconds: float = 60.0,
         stop_after_first_solution: bool = False,
         callback: cp_model.CpSolverSolutionCallback | None = None,
-        **solver_params,
     ) -> Solution:
         self.set_constraints()
         solver = cp_model.CpSolver()
@@ -53,9 +52,6 @@ class Solver:
 
         if stop_after_first_solution:
             solver.parameters.stop_after_first_solution = True
-
-        for key, value in solver_params.items():
-            setattr(solver.parameters, key, value)
 
         self.vars.model.Minimize(self.objevtive_value())
         self.start_solve_time = datetime.now()
@@ -70,7 +66,6 @@ class Solver:
         self,
         log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
-        **solver_params,
     ):
         callback = Callback_Early_Stop(self.instance, self.vars)
         return self.solve(
@@ -236,15 +231,11 @@ class Solver:
         solution: Solution,
         log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
-        **solver_params,
     ) -> Solution:
         self.set_constraints()
         solver = cp_model.CpSolver()
         solver.parameters.log_search_progress = log_search_progress
         solver.parameters.max_time_in_seconds = max_time_in_seconds
-
-        for key, value in solver_params.items():
-            setattr(solver.parameters, key, value)
 
         self.vars.model.Minimize(self.objective_value_weight_changes(solution=solution))
         self.start_solve_time = datetime.now()

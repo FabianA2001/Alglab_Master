@@ -35,7 +35,6 @@ class Solver_for_window(solver.Solver):
         max_time_in_seconds: float = 60.0,
         stop_after_first_solution: bool = False,
         callback: cp_model.CpSolverSolutionCallback | None = None,
-        **solver_params,
     ) -> Solution:
         # TODO : add support for disabling constraints in the windowed solver
         return super().solve(
@@ -43,7 +42,6 @@ class Solver_for_window(solver.Solver):
             max_time_in_seconds=max_time_in_seconds,
             stop_after_first_solution=stop_after_first_solution,
             callback=callback,
-            **solver_params,
         )
 
     def add_start_maximum_consecutive_shifts_constraints(
