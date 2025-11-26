@@ -23,6 +23,13 @@ class Slice_instance:
         maximum_consecutive_shifts_config = (
             self.calulate_maximum_consecutive_shifts_config()
         )
+        minimum_consecutive_days_off_config = (
+            self.calulate_minimum_consecutive_days_off_config()
+        )
+        minimum_consecutive_shifts_config = (
+            self.calulate_minimum_consecutive_shifts_config()
+        )
+
         self.solvr = solver_for_window.Solver_for_window(
             self.window_instance,
             solver.shift_vars.Shift_vars(self.window_instance),
@@ -31,12 +38,11 @@ class Slice_instance:
             ],
         )
         self.fix_first_and_last_day(self.solvr)
-        # # TODO rework to also use modules
 
+        # TODO rework to also use modulesi
         self.update_maximum_consecutive_shifts(maximum_consecutive_shifts_config)
-        # HACK wieder rein
-        # self.update_minimum_consecutive_shifts()
-        # self.update_minimum_consecutive_days_off()
+        self.update_minimum_consecutive_shifts(minimum_consecutive_shifts_config)
+        self.update_minimum_consecutive_days_off(minimum_consecutive_days_off_config)
 
     def get_solver(self) -> solver_for_window.Solver_for_window:
         return self.solvr
@@ -278,60 +284,103 @@ class Slice_instance:
                     emp_uid, end_vorbidden_days
                 )
 
-    def update_minimum_consecutive_shifts(self):
+    def update_minimum_consecutive_shifts(
+        self, config: dict[employee.EmployeeUid, tuple[int, int]]
+    ):
         for emp_uid, emp in self.window_instance.employees.items():
-            current_consecutive_shifts = self.count_assigned_shifts_start(emp_uid)
-            if current_consecutive_shifts == 0:
-                continue
-
-            remaing_needed_days = max(
-                0, emp.min_number_consecutive_shifts - current_consecutive_shifts
+            config_emp = config.get(emp_uid)
+            assert config_emp is not None, (
+                f"Employee {emp_uid} not found in minimum consecutive shifts config."
             )
-            self.solvr.add_start_minimum_consecutive_shifts_constraints(
-                emp_uid, remaing_needed_days
-            )
+            start_needed, end_needed = config_emp
 
-        # Zähle die assigned Tage nach dem erweiterten Endtag vorwärts
+            if start_needed > 0:
+                self.solvr.add_start_minimum_consecutive_shifts_constraints(
+                    emp_uid, start_needed
+                )
+
+            if end_needed > 0:
+                self.solvr.add_end_minimum_consecutive_shifts_constraints(
+                    emp_uid, end_needed
+                )
+
+    def update_minimum_consecutive_days_off(
+        self, config: dict[employee.EmployeeUid, tuple[int, int]]
+    ):
         for emp_uid, emp in self.window_instance.employees.items():
-            current_consecutive_shifts = self.count_assigned_shifts_end(emp_uid)
-            if current_consecutive_shifts == 0:
-                continue
-
-            remaing_needed_days = max(
-                0, emp.min_number_consecutive_shifts - current_consecutive_shifts
+            config_emp = config.get(emp_uid)
+            assert config_emp is not None, (
+                f"Employee {emp_uid} not found in minimum consecutive days-off config."
             )
+            start_needed, end_needed = config_emp
 
-            self.solvr.add_end_minimum_consecutive_shifts_constraints(
-                emp_uid, remaing_needed_days
-            )
+            if start_needed > 0:
+                self.solvr.add_start_minimum_consecutive_days_off_constraints(
+                    emp_uid, start_needed
+                )
 
-    def update_minimum_consecutive_days_off(self):
+            if end_needed > 0:
+                self.solvr.add_end_minimum_consecutive_days_off_constraints(
+                    emp_uid, end_needed
+                )
+
+    def calulate_minimum_consecutive_shifts_config(
+        self,
+    ) -> dict[employee.EmployeeUid, tuple[int, int]]:
+        """Create config dict for minimum consecutive shifts (start_needed, end_needed).
+
+        start_needed: how many more consecutive assigned days are required at the
+        start of the window to satisfy the employee's min_number_consecutive_shifts.
+
+        end_needed: same for the end of the window.
+        """
+        config: dict[employee.EmployeeUid, tuple[int, int]] = {}
         for emp_uid, emp in self.window_instance.employees.items():
-            # Zähle die freien tage for den erweiterten Starttag rückwärts
-            current_consecutive_days_off = self.count_not_assigned_shifts_start(emp_uid)
+            start_consecutive = self.count_assigned_shifts_start(emp_uid)
+            if start_consecutive == 0:
+                start_needed = 0
+            else:
+                start_needed = max(
+                    0, emp.min_number_consecutive_shifts - start_consecutive
+                )
 
-            if current_consecutive_days_off == 0:
-                continue
+            end_consecutive = self.count_assigned_shifts_end(emp_uid)
+            if end_consecutive == 0:
+                end_needed = 0
+            else:
+                end_needed = max(0, emp.min_number_consecutive_shifts - end_consecutive)
 
-            remaing_needet_days_off = max(
-                0, emp.min_number_consecutive_days_off - current_consecutive_days_off
-            )
-            self.solvr.add_start_minimum_consecutive_days_off_constraints(
-                emp_uid, remaing_needet_days_off
-            )
+            config[emp_uid] = (start_needed, end_needed)
 
-        # Zähle die freien Tage nach dem erweiterten Endtag vorwärts
+        return config
+
+    def calulate_minimum_consecutive_days_off_config(
+        self,
+    ) -> dict[employee.EmployeeUid, tuple[int, int]]:
+        """Create config dict for minimum consecutive days-off (start_needed, end_needed).
+
+        start_needed: how many more consecutive days-off are required at the start of the window
+        to satisfy min_number_consecutive_days_off.
+
+        end_needed: same for the end of the window.
+        """
+        config: dict[employee.EmployeeUid, tuple[int, int]] = {}
         for emp_uid, emp in self.window_instance.employees.items():
-            current_consecutive_days_off = self.count_not_assigned_shifts_end(emp_uid)
-            if current_consecutive_days_off == 0:
-                continue
+            start_free = self.count_not_assigned_shifts_start(emp_uid)
+            if start_free == 0:
+                start_needed = 0
+            else:
+                start_needed = max(0, emp.min_number_consecutive_days_off - start_free)
 
-            remaing_needet_days_off = max(
-                0, emp.min_number_consecutive_days_off - current_consecutive_days_off
-            )
-            self.solvr.add_end_minimum_consecutive_days_off_constraints(
-                emp_uid, remaing_needet_days_off
-            )
+            end_free = self.count_not_assigned_shifts_end(emp_uid)
+            if end_free == 0:
+                end_needed = 0
+            else:
+                end_needed = max(0, emp.min_number_consecutive_days_off - end_free)
+
+            config[emp_uid] = (start_needed, end_needed)
+
+        return config
 
     def count_assigned_shifts_start(self, emp_uid: employee.EmployeeUid) -> int:
         current_consecutive_shifts = 0
