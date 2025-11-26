@@ -13,6 +13,10 @@ from src.module import (
     minMaxWorkTime,
     shift_assignment_single_day_validation,
     shift_rotation_constraint,
+    days_off_new,
+    max_Cons_shifts_new,
+    minimum_consecutove_days_off_new,
+    minimum_consecutive_shifts_new,
 )
 
 
@@ -63,7 +67,7 @@ def test_max_cons_shifts():
             emplyees=[lokal_employee],
         )
         vars = shift_vars.Shift_vars(instance, model)
-        max_Cons_Shifts.Max_Cons_Shifts().build(instance, vars)
+        max_Cons_shifts_new.Max_Cons_Shifts_Automaton().build(instance, vars)
         model.Add(vars.vars[(0, lokal_shift_type.uid, lokal_employee.uid)] == 1)
         model.Add(vars.vars[(1, lokal_shift_type.uid, lokal_employee.uid)] == 1)
 
@@ -130,7 +134,7 @@ def test_minimum_consecutive_shifts():
             emplyees=[lokal_employee],
         )
         vars = shift_vars.Shift_vars(instance, model)
-        minimum_consecutive_shifts.Minimum_consecutive_shifts().build(instance, vars)
+        minimum_consecutive_shifts_new.Min_Cons_Shifts_Automaton().build(instance, vars)
         status = cp_model.CpSolver().Solve(vars.model)
         assert status == cp_model.OPTIMAL or status == cp_model.FEASIBLE
         vars.model.add(
@@ -155,7 +159,7 @@ def test_minimum_consecutive_shifts():
             emplyees=[lokal_employee],
         )
         vars = shift_vars.Shift_vars(instance, model)
-        minimum_consecutive_shifts.Minimum_consecutive_shifts().build(instance, vars)
+        minimum_consecutive_shifts_new.Min_Cons_Shifts_Automaton().build(instance, vars)
         status = cp_model.CpSolver().Solve(vars.model)
         assert status == cp_model.OPTIMAL or status == cp_model.FEASIBLE
         vars.model.add(
@@ -188,7 +192,7 @@ def test_minimum_consecutive_days_off():
             emplyees=[lokal_employee],
         )
         vars = shift_vars.Shift_vars(instance, model)
-        minimum_consecutive_days_off.Minimum_consecutive_days_off().build(
+        minimum_consecutove_days_off_new.Minimum_consecutive_days_off_new().build(
             instance, vars
         )
         status = cp_model.CpSolver().Solve(vars.model)
@@ -215,7 +219,7 @@ def test_minimum_consecutive_days_off():
             emplyees=[lokal_employee],
         )
         vars = shift_vars.Shift_vars(instance, model)
-        minimum_consecutive_days_off.Minimum_consecutive_days_off().build(
+        minimum_consecutove_days_off_new.Minimum_consecutive_days_off_new().build(
             instance, vars
         )
         status = cp_model.CpSolver().Solve(vars.model)
@@ -246,7 +250,7 @@ def test_days_off():
             emplyees=[lokal_employee],
         )
         vars = shift_vars.Shift_vars(instance, model)
-        days_off.Days_off().build(instance, vars)
+        days_off_new.Days_off_new().build(instance, vars)
 
         model.Add(vars.vars[(0, lokal_shift_type.uid, lokal_employee.uid)] == 1)
 

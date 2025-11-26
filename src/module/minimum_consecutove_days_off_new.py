@@ -40,3 +40,57 @@ class Minimum_consecutive_days_off_new(ShiftAssignmentModule):
                         > 0
                     )
         return 0
+
+
+class Min_Cons_Days_Off_Automaton(ShiftAssignmentModule):
+    def build(self, instance, vars):
+        for employee_uid in instance.employees:
+            D = instance.employees[employee_uid].min_number_consecutive_days_off
+
+            # Zustände:
+            # 0       = working
+            # 1..D    = off, aber noch nicht lang genug
+            # long    = D+2   = gültiger langer off-block (>=D)
+            # fail    = D+1   = Fehlerzustand: ein off-block war zu kurz
+
+            start = 0
+            fail = D + 1
+            long = D + 2
+
+            # akzeptierende Endzustände:
+            # 0 (endet arbeitend)
+            # D (genau D Tage off und dann wieder arbeit)
+            # long (langer Off-Block >=D)
+            accept = [0, D, long]
+
+            transitions = []
+
+            # working
+            transitions.append((0, 1, 0))  # arbeitet weiter
+            transitions.append((0, 0, 1))  # beginnt off-block
+
+            # states 1..D-1 (Off-Block, noch zu kurz)
+            for s in range(1, D):
+                transitions.append((s, 0, s + 1))  # off-block wächst
+                transitions.append((s, 1, fail))  # Ende zu früh -> Fehler
+
+            # state D (genau D Off-Tage erreicht)
+            transitions.append((D, 0, long))  # längerer off-block
+            transitions.append((D, 1, 0))  # genau D -> off-block endet gültig
+
+            # long off block (>=D)
+            transitions.append((long, 0, long))  # weiter off
+            transitions.append((long, 1, 0))  # gültig beendet
+
+            # fail state (einmal fail -> immer fail)
+            transitions.append((fail, 0, fail))
+            transitions.append((fail, 1, fail))
+
+            sequence = [
+                1 - vars.work_vars[(day, employee_uid)]  # OFF=1, WORK=0
+                for day in range(instance.number_of_days)
+            ]
+
+            vars.model.AddAutomaton(sequence, start, accept, transitions)
+
+        return 0
