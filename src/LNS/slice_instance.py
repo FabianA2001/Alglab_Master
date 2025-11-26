@@ -1,6 +1,7 @@
 from .. import solution, solver
 from ..inputTypes import employee, instace
 from . import solver_for_window
+from .module.lns_max_Cons_Shifts import LNS_Max_Cons_Shifts
 
 
 class Slice_instance:
@@ -19,16 +20,23 @@ class Slice_instance:
         self.extended_end = self.end_day + 1 if self.end_day < self.max_day else -1
 
         self.window_instance = self.create_window_instance()
-
+        maximum_consecutive_shifts_config = (
+            self.calulate_maximum_consecutive_shifts_config()
+        )
         self.solvr = solver_for_window.Solver_for_window(
-            self.window_instance, solver.shift_vars.Shift_vars(self.window_instance)
+            self.window_instance,
+            solver.shift_vars.Shift_vars(self.window_instance),
+            add_module_constraints=[
+                LNS_Max_Cons_Shifts(maximum_consecutive_shifts_config)
+            ],
         )
         self.fix_first_and_last_day(self.solvr)
         # # TODO rework to also use modules
-        self.update_maximum_consecutive_shifts()
+
+        self.update_maximum_consecutive_shifts(maximum_consecutive_shifts_config)
         # HACK wieder rein
         # self.update_minimum_consecutive_shifts()
-        self.update_minimum_consecutive_days_off()
+        # self.update_minimum_consecutive_days_off()
 
     def get_solver(self) -> solver_for_window.Solver_for_window:
         return self.solvr
@@ -216,34 +224,48 @@ class Slice_instance:
         new_emp.blocked_shifts = new_blocked_shifts
         return new_emp
 
-    def update_maximum_consecutive_shifts(self):
-        """Aktualisiert die max_number_consecutive_shifts für alle Mitarbeiter basierend auf den Zuweisungen außerhalb des Fensters."""
+    def calulate_maximum_consecutive_shifts_config(
+        self,
+    ) -> dict[employee.EmployeeUid, tuple[int, int]]:
+        """Erstellt eine Konfigurations-Dictionary für maximale aufeinanderfolgende Schichten pro Mitarbeiter."""
+        config = {}
         for emp_uid, emp in self.window_instance.employees.items():
             current_consecutive_shifts = self.count_assigned_shifts_start(emp_uid)
-            if current_consecutive_shifts == 0:
-                continue
-            remaing_forbidden_days = max(
-                0, emp.max_number_consecutive_shifts - current_consecutive_shifts
+            start_vorbidden_days = (
+                max(0, emp.max_number_consecutive_shifts - current_consecutive_shifts)
+                if current_consecutive_shifts != 0
+                else 0
             )
-            self.solvr.add_start_maximum_consecutive_shifts_constraints(
-                emp_uid, remaing_forbidden_days
-            )
-
-        # Zähle die assigned Tage nach dem erweiterten Endtag vorwärts
-        for emp_uid, emp in self.window_instance.employees.items():
             current_consecutive_shifts = self.count_assigned_shifts_end(emp_uid)
-            if current_consecutive_shifts == 0:
-                continue
 
             assert emp.max_number_consecutive_shifts >= current_consecutive_shifts, (
                 f"Employee {emp_uid} has {current_consecutive_shifts} consecutive shifts "
                 f"after the window, which exceeds their maximum allowed "
                 f"({emp.max_number_consecutive_shifts})."
             )
-            remaing_forbidden_days = (
-                emp.max_number_consecutive_shifts - current_consecutive_shifts
+            end_vorbidden_days = (
+                (emp.max_number_consecutive_shifts - current_consecutive_shifts)
+                if current_consecutive_shifts != 0
+                else 0
             )
-            if remaing_forbidden_days == 0:
+            config[emp_uid] = (start_vorbidden_days, end_vorbidden_days)
+        return config
+
+    def update_maximum_consecutive_shifts(
+        self, config: dict[employee.EmployeeUid, tuple[int, int]]
+    ):
+        """Aktualisiert die max_number_consecutive_shifts für alle Mitarbeiter basierend auf den Zuweisungen außerhalb des Fensters."""
+        for emp_uid, emp in self.window_instance.employees.items():
+            config_emp = config.get(emp_uid)
+            assert config_emp is not None, (
+                f"Employee {emp_uid} not found in maximum consecutive shifts config."
+            )
+            start_vorbidden_days, end_vorbidden_days = config_emp
+
+            self.solvr.add_start_maximum_consecutive_shifts_constraints(
+                emp_uid, start_vorbidden_days
+            )
+            if end_vorbidden_days == 0:
                 # Employee has reached max consecutive shifts after window
                 # We need to block the last modifiable day in the window
                 if self.extended_end != -1:
@@ -253,7 +275,7 @@ class Slice_instance:
             else:
                 # Still have room for more consecutive shifts, add constraint
                 self.solvr.add_end_maximum_consecutive_shifts_constraints(
-                    emp_uid, remaing_forbidden_days
+                    emp_uid, end_vorbidden_days
                 )
 
     def update_minimum_consecutive_shifts(self):
