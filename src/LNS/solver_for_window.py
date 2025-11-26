@@ -36,7 +36,6 @@ class Solver_for_window(solver.Solver):
         stop_after_first_solution: bool = False,
         callback: cp_model.CpSolverSolutionCallback | None = None,
     ) -> Solution:
-        # TODO : add support for disabling constraints in the windowed solver
         return super().solve(
             log_search_progress=log_search_progress,
             max_time_in_seconds=max_time_in_seconds,

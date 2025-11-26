@@ -94,6 +94,15 @@ class LNS:
             0.0, timeout_seconds - create_time_first_solution
         )
 
+        # HACK wieder raus nehmen
+        # Deaktiviere Weekend-Constraints für LNS-Subprobleme, da sie auf Tage außerhalb des Fensters zugreifen
+        from ..module.solverConstraints import SolverConstraints
+
+        self.disabled_for_window = [
+            SolverConstraints.max_weekend_days,
+            SolverConstraints.minimum_consecutive_shifts,
+        ]
+
         # logging info
         self.logger.info(
             f"LNS initialized with search_window_size={self.start_search_window_size}, "
@@ -258,6 +267,7 @@ class LNS:
         # Berechne den neuen objective value der gesamten Lösung
         objective_value = self._calculate_objective_value(updated_solution)
         updated_solution.set_objective_value(objective_value)
+        updated_solution.disabled_constraints = self.disabled_for_window
 
         return updated_solution
 
@@ -332,15 +342,6 @@ class LNS:
                 max_day=self.MAX_DAY,
             ).get_solver()
 
-            # HACK wieder raus nehmen
-            # Deaktiviere Weekend-Constraints für LNS-Subprobleme, da sie auf Tage außerhalb des Fensters zugreifen
-            from ..module.solverConstraints import SolverConstraints
-
-            disabled_for_window = [
-                SolverConstraints.max_weekend_days,
-                SolverConstraints.minimum_consecutive_shifts,
-            ]
-
             sol = solvr.solve_window(
                 log_search_progress=False,
                 max_time_in_seconds=small_max_solve_time,
@@ -359,7 +360,6 @@ class LNS:
             sol = self.merge_solutions(sol)
             print("Merged solution created")
             sol.to_json_file("temp_lns_solution.json")
-            sol.disabled_constraints = disabled_for_window
             if not sol.checkt_constraints[0]:
                 for cst, satisfied in sol.checkt_constraints[1].items():
                     if not satisfied[0]:
