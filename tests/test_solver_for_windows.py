@@ -91,11 +91,11 @@ def test_add_start_minimum_consecutive_shifts_constraints(
         )
         # Erzwinge Schichten gemäß Parametern
         model.Add(
-            solv.vars.get_var(1, lokal_shift_types[0].uid, lokal_employee.uid)
+            solv.vars.get_var(0, lokal_shift_types[0].uid, lokal_employee.uid)
             == day0_value
         )
         model.Add(
-            solv.vars.get_var(2, lokal_shift_types[0].uid, lokal_employee.uid)
+            solv.vars.get_var(1, lokal_shift_types[0].uid, lokal_employee.uid)
             == day1_value
         )
 
@@ -128,11 +128,11 @@ def test_add_end_minimum_consecutive_shifts_constraints(
         )
         # Erzwinge Schichten gemäß Parametern
         model.Add(
-            solv.vars.get_var(2, lokal_shift_types[0].uid, lokal_employee.uid)
+            solv.vars.get_var(3, lokal_shift_types[0].uid, lokal_employee.uid)
             == day3_value
         )
         model.Add(
-            solv.vars.get_var(3, lokal_shift_types[0].uid, lokal_employee.uid)
+            solv.vars.get_var(4, lokal_shift_types[0].uid, lokal_employee.uid)
             == day4_value
         )
 
@@ -202,10 +202,10 @@ def test_add_end_minimum_consecutive_days_off_constraints(
         )
         # Erzwinge Schichten gemäß Parametern
         model.Add(
-            solv.vars.get_var(2, lokal_shift_types[0].uid, lokal_employee.uid)
+            solv.vars.get_var(3, lokal_shift_types[0].uid, lokal_employee.uid)
             == day3_value
         )
         model.Add(
-            solv.vars.get_var(3, lokal_shift_types[0].uid, lokal_employee.uid)
+            solv.vars.get_var(4, lokal_shift_types[0].uid, lokal_employee.uid)
             == day4_value
         )
