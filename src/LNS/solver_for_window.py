@@ -165,15 +165,13 @@ class Solver_for_window(solver.Solver):
         for day in range(min_consecutive_shifts):
             shifts_vars = []
             for shift_type_uid in self.instance.shift_types:
-                shifts_vars.append(
-                    self.vars.get_var(day + 1, shift_type_uid, employee_uid)
-                )
+                shifts_vars.append(self.vars.get_var(day, shift_type_uid, employee_uid))
             self.vars.model.Add(sum(shifts_vars) == 1)
 
     def add_end_minimum_consecutive_shifts_constraints(
         self, employee_uid: employee.EmployeeUid, min_consecutive_shifts: int
     ):
-        last_modifibarbe_day = self.instance.number_of_days - 2
+        last_modifibarbe_day = self.instance.number_of_days - 1
         assert min_consecutive_shifts <= last_modifibarbe_day
         for day in range(min_consecutive_shifts):
             shifts_vars = []
@@ -191,15 +189,13 @@ class Solver_for_window(solver.Solver):
         for day in range(min_consecutive_days_off):
             shifts_vars = []
             for shift_type_uid in self.instance.shift_types:
-                shifts_vars.append(
-                    self.vars.get_var(day + 1, shift_type_uid, employee_uid)
-                )
+                shifts_vars.append(self.vars.get_var(day, shift_type_uid, employee_uid))
             self.vars.model.Add(sum(shifts_vars) == 0)
 
     def add_end_minimum_consecutive_days_off_constraints(
         self, employee_uid: employee.EmployeeUid, min_consecutive_days_off: int
     ):
-        last_modifibarbe_day = self.instance.number_of_days - 2
+        last_modifibarbe_day = self.instance.number_of_days - 1
         assert min_consecutive_days_off <= last_modifibarbe_day
         for day in range(min_consecutive_days_off):
             shifts_vars = []
