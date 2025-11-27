@@ -16,6 +16,37 @@ class Config_for_employee:
     min_consecutive_days_off_end: int
 
 
+class Vars_for_employee:
+    """Stores all constraint variables for one employee in the window"""
+
+    # Start maximum consecutive shifts
+    all_previus_aktive_start: list[cp_model.IntVar]
+    is_assigend_start: list[cp_model.IntVar]
+    next_day_has_shift_start: cp_model.IntVar | None
+
+    # End maximum consecutive shifts
+    suffix_active_end: list[cp_model.IntVar]
+    suffix_true_end: list[cp_model.IntVar]
+    prev_day_has_shift_end: cp_model.IntVar | None
+
+    def __init__(self):
+        self.all_previus_aktive_start = []
+        self.is_assigend_start = []
+        self.next_day_has_shift_start = None
+        self.suffix_active_end = []
+        self.suffix_true_end = []
+        self.prev_day_has_shift_end = None
+
+
+class Vars_for_window:
+    """Stores constraint variables for all employees"""
+
+    vars_per_employee: dict[employee.EmployeeUid, Vars_for_employee]
+
+    def __init__(self):
+        self.vars_per_employee = {}
+
+
 class Solver_for_window(solver.Solver):
     def __init__(
         self,
@@ -40,6 +71,44 @@ class Solver_for_window(solver.Solver):
             add_module_constraints,
         )
 
+        # Create all constraint variables for each employee
+        self.window_vars = Vars_for_window()
+        for employee_uid, emp_config in self.config.items():
+            emp_vars = Vars_for_employee()
+            self.window_vars.vars_per_employee[employee_uid] = emp_vars
+
+            # Create start maximum consecutive shifts variables
+            if emp_config.max_consecutive_shifts_start > 0:
+                max_cons = emp_config.max_consecutive_shifts_start
+                emp_vars.all_previus_aktive_start = [
+                    self.vars.model.NewBoolVar(f"prefix_active_{i}_for_{employee_uid}")
+                    for i in range(max_cons)
+                ]
+                emp_vars.is_assigend_start = [
+                    self.vars.model.NewBoolVar(f"prefix_true_{i}_for_{employee_uid}")
+                    for i in range(max_cons)
+                ]
+                if max_cons < self.instance.number_of_days:
+                    emp_vars.next_day_has_shift_start = self.vars.model.NewBoolVar(
+                        f"next_day_has_shift_after_max_cons_{employee_uid}"
+                    )
+
+            # Create end maximum consecutive shifts variables
+            if emp_config.max_consecutive_shifts_end > 0:
+                max_cons = emp_config.max_consecutive_shifts_end
+                emp_vars.suffix_active_end = [
+                    self.vars.model.NewBoolVar(f"suffix_active_{i}_for_{employee_uid}")
+                    for i in range(max_cons)
+                ]
+                emp_vars.suffix_true_end = [
+                    self.vars.model.NewBoolVar(f"suffix_true_{i}_for_{employee_uid}")
+                    for i in range(max_cons)
+                ]
+                if max_cons < self.instance.number_of_days:
+                    emp_vars.prev_day_has_shift_end = self.vars.model.NewBoolVar(
+                        f"prev_day_has_shift_before_max_cons_{employee_uid}"
+                    )
+
     def solve_window(
         self,
         log_search_progress: bool = True,
@@ -59,16 +128,12 @@ class Solver_for_window(solver.Solver):
     ):
         if max_consecutive_shifts <= 0:
             return
-        # all_previus_aktive[i] = 1, wenn bis i-1 alle TRUE sind
-        all_previus_aktive = [
-            self.vars.model.NewBoolVar(f"prefix_active_{i}_for_{employee_uid}")
-            for i in range(max_consecutive_shifts)
-        ]
-        # is_assigend[i] = 1, wenn an Tag i der Mitarbeiter einen Dienst hat
-        is_assigend = [
-            self.vars.model.NewBoolVar(f"prefix_true_{i}")
-            for i in range(max_consecutive_shifts)
-        ]
+
+        # Get the pre-created variables for this employee
+        emp_vars = self.window_vars.vars_per_employee[employee_uid]
+        all_previus_aktive = emp_vars.all_previus_aktive_start
+        is_assigend = emp_vars.is_assigend_start
+
         for i in range(max_consecutive_shifts):
             shift_vars = [
                 self.vars.vars[(i, shift_type_uid, employee_uid)]
@@ -95,8 +160,9 @@ class Solver_for_window(solver.Solver):
                 self.vars.vars[(max_consecutive_shifts, shift_type_uid, employee_uid)]
                 for shift_type_uid in self.instance.shift_types
             ]
-            next_day_has_shift = self.vars.model.NewBoolVar(
-                f"next_day_has_shift_after_max_cons_{employee_uid}"
+            next_day_has_shift = emp_vars.next_day_has_shift_start
+            assert next_day_has_shift is not None, (
+                "next_day_has_shift_start should be created in __init__"
             )
             self.vars.model.AddMaxEquality(next_day_has_shift, next_day_shift_vars)
 
@@ -116,15 +182,12 @@ class Solver_for_window(solver.Solver):
     ):
         if max_consecutive_shifts <= 0:
             return
-        # suffix_active[i] = 1, wenn von i+1 bis Ende alle TRUE sind
-        suffix_active = [
-            self.vars.model.NewBoolVar(f"suffix_active_{i}_for_{employee_uid}")
-            for i in range(max_consecutive_shifts)
-        ]
-        suffix_true = [
-            self.vars.model.NewBoolVar(f"suffix_true_{i}")
-            for i in range(max_consecutive_shifts)
-        ]
+
+        # Get the pre-created variables for this employee
+        emp_vars = self.window_vars.vars_per_employee[employee_uid]
+        suffix_active = emp_vars.suffix_active_end
+        suffix_true = emp_vars.suffix_true_end
+
         for i in range(max_consecutive_shifts):
             day = self.instance.number_of_days - max_consecutive_shifts + i
             # suffix_true[i] = 1, wenn an Tag day der Mitarbeiter einen Dienst hat
@@ -154,8 +217,9 @@ class Solver_for_window(solver.Solver):
                 self.vars.vars[(prev_day, shift_type_uid, employee_uid)]
                 for shift_type_uid in self.instance.shift_types
             ]
-            prev_day_has_shift = self.vars.model.NewBoolVar(
-                f"prev_day_has_shift_before_max_cons_{employee_uid}"
+            prev_day_has_shift = emp_vars.prev_day_has_shift_end
+            assert prev_day_has_shift is not None, (
+                "prev_day_has_shift_end should be created in __init__"
             )
             self.vars.model.AddMaxEquality(prev_day_has_shift, prev_day_shift_vars)
 
