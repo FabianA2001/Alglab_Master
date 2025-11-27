@@ -229,7 +229,7 @@ class Solver:
                     # If the assignment has changed, add the change weight
 
                     objective_value += changes_weight * changed
-        return objective_value + self.objective_value_new()
+        return objective_value + self.objevtive_value()
 
     def solve_min_changes(
         self,

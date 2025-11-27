@@ -484,7 +484,7 @@
     "13,279203731321771756525863555029043651975": 1
   },
   "instance": {
-    "name": "Instance2eddited_cover_requirementseddited_cover_requirements",
+    "name": "Instance2eddited_cover_requirementseddited_cover_requirementseddited_cover_requirements",
     "employees": {
       "169836834567204038179966570894283554345": {
         "uid": 169836834567204038179966570894283554345,
@@ -1112,7 +1112,7 @@
           "penalty_not_assigned_day_employee": {},
           "penalty_assigned_day_employee": {},
           "preffert_number_employees": 3,
-          "weight_below_preferred": 150,
+          "weight_below_preferred": 300,
           "weight_above_preferred": 1
         },
         "279203731321771756525863555029043651975": {
@@ -1149,11 +1149,11 @@
       }
     }
   },
-  "objective_value": 1085.0,
+  "objective_value": 1235.0,
   "disabled_constraints": [],
-  "solve_time": 1.494424,
+  "solve_time": 1.926345,
   "solve_status": 4,
-  "timestamp": "2025-11-27T09:57:44.856849",
+  "timestamp": "2025-11-27T09:58:10.814931",
   "checkt_constraints": [
     true,
     {
