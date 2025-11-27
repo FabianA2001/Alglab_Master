@@ -3,28 +3,24 @@ from datetime import datetime
 from ortools.sat.python import cp_model
 
 from . import shift_vars
+from .callback_early_stop import Callback_Early_Stop
 from .inputTypes import instace
 from .module import (
+    assign_employee_day_shift,
+    ban_employee_day_shift,
     cover_requirements,
-    days_off,
+    days_off_new,
     limited_shifts_per_type_validation,
-    max_Cons_Shifts,
+    max_Cons_shifts_new,
     max_weekend_days,
-    minimum_consecutive_days_off,
-    minimum_consecutive_shifts,
+    minimum_consecutive_shifts_new,
+    minimum_consecutove_days_off_new,
     minMaxWorkTime,
     shift_assignment_single_day_validation,
     shift_rotation_constraint,
-    days_off_new,
-    max_Cons_shifts_new,
-    minimum_consecutove_days_off_new,
-    minimum_consecutive_shifts_new,
-    assign_employee_day_shift,
-    ban_employee_day_shift,
 )
 from .module.solverConstraints import SolverConstraints
 from .solution import Solution
-from .callback_early_stop import Callback_Early_Stop
 
 
 class Solver:
