@@ -7,15 +7,26 @@ from ..module.solverConstraints import SolverConstraints
 from ..solution import Solution
 
 
+class Config_for_employee:
+    max_consecutive_shifts_start: int
+    max_consecutive_shifts_end: int
+    min_consecutive_shifts_start: int
+    min_consecutive_shifts_end: int
+    min_consecutive_days_off_start: int
+    min_consecutive_days_off_end: int
+
+
 class Solver_for_window(solver.Solver):
     def __init__(
         self,
         instance: instace.Instance,
         vars: shift_vars.Shift_vars,
+        config: dict[employee.EmployeeUid, Config_for_employee],
         disabled_constraints: list[SolverConstraints] = [],
         add_module_constraints: list[ShiftAssignmentModule] = [],
     ):
         # HACK Weekend raus
+        self.config = config
         super().__init__(
             instance,
             vars,

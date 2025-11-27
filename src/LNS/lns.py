@@ -357,6 +357,7 @@ class LNS:
                 )
 
                 continue
+            self.old_solution.to_json_file("temp_lns_old_solution.json")
             sol.to_json_file("temp_lns_bevor_merge.json")
             sol = self.merge_solutions(sol)
             print("Merged solution created")
