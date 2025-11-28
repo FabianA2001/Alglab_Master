@@ -37,9 +37,12 @@ class Solver:
         disabled_constraints: list[SolverConstraints] = [],
         stop_after_first_solution: bool = False,
         callback: cp_model.CpSolverSolutionCallback | None = None,
+        automaton: bool = False,
         **solver_params,
     ) -> Solution:
-        self.set_constraints(disabled_constraints=disabled_constraints)
+        self.set_constraints(
+            disabled_constraints=disabled_constraints, automaton=automaton
+        )
         solver = cp_model.CpSolver()
         solver.parameters.log_search_progress = log_search_progress
         solver.parameters.max_time_in_seconds = max_time_in_seconds
@@ -263,6 +266,7 @@ class Solver:
         log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
         disabled_constraints: list[SolverConstraints] = [],
+        automaton: bool = True,
         **solver_params,
     ):
         if SolverConstraints.days_off not in disabled_constraints:
@@ -277,19 +281,34 @@ class Solver:
                 self.instance, self.vars
             )
         if SolverConstraints.max_Cons_Shifts not in disabled_constraints:
-            max_Cons_shifts_new.Max_Cons_Shifts_Automaton().build(
-                self.instance, self.vars
-            )
+            if automaton:
+                max_Cons_shifts_new.Max_Cons_Shifts_Automaton().build(
+                    self.instance, self.vars
+                )
+            else:
+                max_Cons_shifts_new.Max_Cons_Shifts_new().build(
+                    self.instance, self.vars
+                )
         if SolverConstraints.max_weekend_days not in disabled_constraints:
             max_weekend_days.Max_weekend_days().build(self.instance, self.vars)
         if SolverConstraints.minimum_consecutive_days_off not in disabled_constraints:
-            minimum_consecutove_days_off_new.Min_Cons_Days_Off_Automaton().build(
-                self.instance, self.vars
-            )
+            if automaton:
+                minimum_consecutove_days_off_new.Min_Cons_Days_Off_Automaton().build(
+                    self.instance, self.vars
+                )
+            else:
+                minimum_consecutove_days_off_new.Minimum_consecutive_days_off_new().build(
+                    self.instance, self.vars
+                )
         if SolverConstraints.minimum_consecutive_shifts not in disabled_constraints:
-            minimum_consecutive_shifts_new.Min_Cons_Shifts_Automaton().build(
-                self.instance, self.vars
-            )
+            if automaton:
+                minimum_consecutive_shifts_new.Min_Cons_Shifts_Automaton().build(
+                    self.instance, self.vars
+                )
+            else:
+                minimum_consecutive_shifts_new.Minimum_consecutive_shifts_new().build(
+                    self.instance, self.vars
+                )
         if SolverConstraints.minMaxWorkTime not in disabled_constraints:
             minMaxWorkTime.MinMaxWorkTime().build(self.instance, self.vars)
         if SolverConstraints.shift_rotation_constraint not in disabled_constraints:
