@@ -28,6 +28,7 @@
 
 - benchmark compare solver
 
+- Give a variable to decide on the constraints variant to use (Basic/Automat/...)
 
 ### Bugs:
 - A problem happen when the solver doesn't get an optimal or a solution
