@@ -169,6 +169,7 @@ def render_shift_plan_component(
         ].items():
             for shift_type, employees in shift_type_dict.items():
                 for employee in employees:
+                    #TODO instead of immediately giving it the value of 300 allow some how for changes
                     instance.shifts[int(day)][
                         hash_string(shift_type)
                     ].penalty_not_assigned_day_employee[hash_string(employee)] = 300
