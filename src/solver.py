@@ -206,7 +206,7 @@ class Solver:
     def objective_value_weight_changes(
         self,
         solution: Solution,
-        changes_weight: int = 2,
+        changes_weight: int = 10,
     ):
         """Calculates the objective value weight based on changes from a given solution."""
         objective_value = 0
@@ -230,7 +230,7 @@ class Solver:
                     # If the assignment has changed, add the change weight
 
                     objective_value += changes_weight * changed
-        return objective_value + self.objevtive_value()
+        return objective_value + self.objective_value_new()
 
     def solve_min_changes(
         self,
