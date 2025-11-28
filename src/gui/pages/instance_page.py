@@ -282,11 +282,11 @@ def show_instance_information(instance):
 
                 with col2:
                     st.write("**Zuweisungswünsche (ON):**")
-                    if shift.penalty_assigned_day_employee:
+                    if shift.penalty_not_assigned_day_employee:
                         for (
                             emp_uid,
                             penalty,
-                        ) in shift.penalty_assigned_day_employee.items():
+                        ) in shift.penalty_not_assigned_day_employee.items():
                             emp = instance.employees.get(emp_uid)
                             emp_name = (
                                 emp.name if emp else f"UID ...{str(emp_uid)[-4:]}"
@@ -297,11 +297,11 @@ def show_instance_information(instance):
 
                 with col3:
                     st.write("**Ablehnungswünsche (OFF):**")
-                    if shift.penalty_not_assigned_day_employee:
+                    if shift.penalty_assigned_day_employee:
                         for (
                             emp_uid,
                             penalty,
-                        ) in shift.penalty_not_assigned_day_employee.items():
+                        ) in shift.penalty_assigned_day_employee.items():
                             emp = instance.employees.get(emp_uid)
                             emp_name = (
                                 emp.name if emp else f"UID ...{str(emp_uid)[-4:]}"

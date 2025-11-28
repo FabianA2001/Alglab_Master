@@ -60,10 +60,10 @@ class Instance(BaseModel):
                 new_shift = shift.Shift()
                 if (day in weekend_days) or (day > 0 and day - 1 in weekend_days):
                     new_shift.is_weekend = True
-                new_shift.penalty_assigned_day_employee = shift_on_requests.get(
+                new_shift.penalty_not_assigned_day_employee = shift_on_requests.get(
                     (day, type.uid), {}
                 )
-                new_shift.penalty_not_assigned_day_employee = shift_off_requests.get(
+                new_shift.penalty_assigned_day_employee = shift_off_requests.get(
                     (day, type.uid), {}
                 )
                 if (day, type.uid) in cover_requirements:

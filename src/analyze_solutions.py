@@ -33,7 +33,7 @@ def analyze_solution_quality(solution: Solution) -> dict:
     for day, day_shift_dict in instance.shifts.items():
         for type_uid, shift in day_shift_dict.items():
             # Positive Wünsche: Mitarbeiter möchte an diesem Tag arbeiten
-            for emp_uid, weight_pos in shift.penalty_assigned_day_employee.items():
+            for emp_uid, weight_pos in shift.penalty_not_assigned_day_employee.items():
                 if weight_pos > 0:
                     total_wishes += 1
                     is_assigned = vars_map.get((day, type_uid, emp_uid), 0) == 1
@@ -51,7 +51,7 @@ def analyze_solution_quality(solution: Solution) -> dict:
                     )
 
             # Negative Wünsche: Mitarbeiter möchte NICHT an diesem Tag arbeiten
-            for emp_uid, weight_neg in shift.penalty_not_assigned_day_employee.items():
+            for emp_uid, weight_neg in shift.penalty_assigned_day_employee.items():
                 if weight_neg > 0:
                     total_wishes += 1
                     is_not_assigned = vars_map.get((day, type_uid, emp_uid), 0) == 0
