@@ -484,7 +484,7 @@
     "13,279203731321771756525863555029043651975": 1
   },
   "instance": {
-    "name": "Instance2",
+    "name": "Instance2eddited_cover_requirementseddited_cover_requirementseddited_cover_requirements",
     "employees": {
       "169836834567204038179966570894283554345": {
         "uid": 169836834567204038179966570894283554345,
@@ -730,12 +730,10 @@
     "shifts": {
       "0": {
         "77420392375083351592742626634322842842": {
-          "uid": 9467407154219926995,
+          "uid": 7187269854647173607,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {},
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {
             "188232129152488152603460248363708042922": 2
           },
@@ -744,12 +742,10 @@
           "weight_above_preferred": 1
         },
         "279203731321771756525863555029043651975": {
-          "uid": 9000823983717172530,
+          "uid": 8688721266003691847,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {},
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {},
           "preffert_number_employees": 4,
           "weight_below_preferred": 100,
@@ -758,14 +754,12 @@
       },
       "1": {
         "77420392375083351592742626634322842842": {
-          "uid": 11899623303289195363,
+          "uid": 5871984661017084930,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {
             "339307980536124500681461881549051714437": 1
           },
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {
             "327176509795513342126021012545780561845": 1,
             "188232129152488152603460248363708042922": 2
@@ -775,14 +769,12 @@
           "weight_above_preferred": 1
         },
         "279203731321771756525863555029043651975": {
-          "uid": 3614697497740525600,
+          "uid": 12767179101438626224,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {
             "257672702025194730606776594885502923158": 2
           },
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {},
           "preffert_number_employees": 3,
           "weight_below_preferred": 100,
@@ -791,14 +783,12 @@
       },
       "2": {
         "77420392375083351592742626634322842842": {
-          "uid": 3781467782848728813,
+          "uid": 3574760310363209944,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {
             "339307980536124500681461881549051714437": 1
           },
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {
             "327176509795513342126021012545780561845": 1,
             "188232129152488152603460248363708042922": 2
@@ -808,12 +798,10 @@
           "weight_above_preferred": 1
         },
         "279203731321771756525863555029043651975": {
-          "uid": 9951125876864860991,
+          "uid": 9870480942476773568,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {},
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {
             "294367990660973208198603363580074294655": 3
           },
@@ -824,15 +812,13 @@
       },
       "3": {
         "77420392375083351592742626634322842842": {
-          "uid": 8782706697582496173,
+          "uid": 7770257289381561431,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {
             "297493476321269588944105419091402973887": 2,
             "339307980536124500681461881549051714437": 1
           },
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {
             "327176509795513342126021012545780561845": 1
           },
@@ -841,12 +827,10 @@
           "weight_above_preferred": 1
         },
         "279203731321771756525863555029043651975": {
-          "uid": 15714656678310594258,
+          "uid": 6814314935102948707,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {},
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {
             "77420392375083351592742626634322842842": 1,
             "170172835760119224333519554008280666130": 3,
@@ -861,27 +845,23 @@
       },
       "4": {
         "77420392375083351592742626634322842842": {
-          "uid": 3425996159174002205,
+          "uid": 17999276874343794825,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {
             "297493476321269588944105419091402973887": 2,
             "339307980536124500681461881549051714437": 1
           },
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {},
           "preffert_number_employees": 3,
           "weight_below_preferred": 100,
           "weight_above_preferred": 1
         },
         "279203731321771756525863555029043651975": {
-          "uid": 11343938569768947475,
+          "uid": 16932581457421289290,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {},
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {
             "77420392375083351592742626634322842842": 1,
             "170172835760119224333519554008280666130": 3,
@@ -895,27 +875,23 @@
       },
       "5": {
         "77420392375083351592742626634322842842": {
-          "uid": 17445494604769017877,
+          "uid": 17589429893379868564,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {
             "297493476321269588944105419091402973887": 2,
             "339307980536124500681461881549051714437": 1
           },
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {},
           "preffert_number_employees": 5,
           "weight_below_preferred": 100,
           "weight_above_preferred": 1
         },
         "279203731321771756525863555029043651975": {
-          "uid": 15988639257459183195,
+          "uid": 7121018732479793673,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {},
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {
             "169836834567204038179966570894283554345": 1,
             "77420392375083351592742626634322842842": 1,
@@ -929,26 +905,22 @@
       },
       "6": {
         "77420392375083351592742626634322842842": {
-          "uid": 2397441559027926156,
+          "uid": 3621575980263424277,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {
             "297493476321269588944105419091402973887": 2
           },
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {},
           "preffert_number_employees": 5,
           "weight_below_preferred": 100,
           "weight_above_preferred": 1
         },
         "279203731321771756525863555029043651975": {
-          "uid": 4856991298246232416,
+          "uid": 14327458570289958156,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {},
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {
             "169836834567204038179966570894283554345": 1,
             "77420392375083351592742626634322842842": 1,
@@ -961,14 +933,12 @@
       },
       "7": {
         "77420392375083351592742626634322842842": {
-          "uid": 4553105382145933946,
+          "uid": 9363076154557156268,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {
             "297493476321269588944105419091402973887": 2
           },
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {
             "209181221264684009591229952740346738033": 1
           },
@@ -977,12 +947,10 @@
           "weight_above_preferred": 1
         },
         "279203731321771756525863555029043651975": {
-          "uid": 7758836818721394105,
+          "uid": 1077459046626509193,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {},
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {
             "169836834567204038179966570894283554345": 1,
             "77420392375083351592742626634322842842": 1,
@@ -996,12 +964,10 @@
       },
       "8": {
         "77420392375083351592742626634322842842": {
-          "uid": 8684276577396867074,
+          "uid": 18243337210384566812,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {},
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {
             "209181221264684009591229952740346738033": 1,
             "17788651139535530962259434531561804375": 1,
@@ -1012,12 +978,10 @@
           "weight_above_preferred": 1
         },
         "279203731321771756525863555029043651975": {
-          "uid": 9888961229454264754,
+          "uid": 1151184442623609124,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {},
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {
             "169836834567204038179966570894283554345": 1,
             "220588376122331113544040071209642606984": 1
@@ -1029,12 +993,10 @@
       },
       "9": {
         "77420392375083351592742626634322842842": {
-          "uid": 3476971985677601460,
+          "uid": 4462319696650191856,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {},
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {
             "209181221264684009591229952740346738033": 1,
             "17788651139535530962259434531561804375": 1,
@@ -1045,12 +1007,10 @@
           "weight_above_preferred": 1
         },
         "279203731321771756525863555029043651975": {
-          "uid": 13672292881694281213,
+          "uid": 6345901135794031117,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {},
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {
             "169836834567204038179966570894283554345": 1,
             "220588376122331113544040071209642606984": 1
@@ -1062,12 +1022,10 @@
       },
       "10": {
         "77420392375083351592742626634322842842": {
-          "uid": 3882621611026695493,
+          "uid": 14804328150535522353,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {},
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {
             "209181221264684009591229952740346738033": 1,
             "17788651139535530962259434531561804375": 1,
@@ -1078,12 +1036,10 @@
           "weight_above_preferred": 1
         },
         "279203731321771756525863555029043651975": {
-          "uid": 8431624509977085380,
+          "uid": 15446723519366385579,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {},
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {
             "279203731321771756525863555029043651975": 3
           },
@@ -1094,12 +1050,10 @@
       },
       "11": {
         "77420392375083351592742626634322842842": {
-          "uid": 14078659704102143304,
+          "uid": 8119517959167691243,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {},
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {
             "17788651139535530962259434531561804375": 1
           },
@@ -1108,14 +1062,12 @@
           "weight_above_preferred": 1
         },
         "279203731321771756525863555029043651975": {
-          "uid": 5428103125290863983,
+          "uid": 17740134734102613070,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {
             "140114708448418632577632402066430035116": 1
           },
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {
             "339307980536124500681461881549051714437": 3,
             "279203731321771756525863555029043651975": 3
@@ -1127,12 +1079,10 @@
       },
       "12": {
         "77420392375083351592742626634322842842": {
-          "uid": 3636651327166565657,
+          "uid": 2167155276753095698,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {},
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {
             "294367990660973208198603363580074294655": 2
           },
@@ -1141,12 +1091,10 @@
           "weight_above_preferred": 1
         },
         "279203731321771756525863555029043651975": {
-          "uid": 13937466469677091152,
+          "uid": 15093038257231511891,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {},
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {
             "77420392375083351592742626634322842842": 2,
             "279203731321771756525863555029043651975": 3
@@ -1158,24 +1106,20 @@
       },
       "13": {
         "77420392375083351592742626634322842842": {
-          "uid": 7169203040838173990,
+          "uid": 2969498159655830166,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {},
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {},
           "preffert_number_employees": 3,
-          "weight_below_preferred": 100,
+          "weight_below_preferred": 300,
           "weight_above_preferred": 1
         },
         "279203731321771756525863555029043651975": {
-          "uid": 715526728090798945,
+          "uid": 11496121660858122432,
           "name": "",
           "is_weekend": false,
           "penalty_not_assigned_day_employee": {},
-          "assign_employee_day_shift": [],
-          "ban_employee_day_shift": [],
           "penalty_assigned_day_employee": {
             "77420392375083351592742626634322842842": 2,
             "279203731321771756525863555029043651975": 3
@@ -1205,11 +1149,11 @@
       }
     }
   },
-  "objective_value": 1035.0,
+  "objective_value": 1235.0,
   "disabled_constraints": [],
-  "solve_time": 1.031627,
+  "solve_time": 1.926345,
   "solve_status": 4,
-  "timestamp": "2025-11-28T11:02:01.201104",
+  "timestamp": "2025-11-27T09:58:10.814931",
   "checkt_constraints": [
     true,
     {

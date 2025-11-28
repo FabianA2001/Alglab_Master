@@ -28,4 +28,12 @@ class Cover_requirements(ShiftAssignmentModule):
                     )
                     == instance.shifts[day][type_uid].preffert_number_employees
                 )
+                vars.model.Add(
+                    3
+                    * (
+                        sum(assigned_shifts)
+                        + vars.below_threshold_vars[(day, type_uid)]
+                    )
+                    >= 2 * instance.shifts[day][type_uid].preffert_number_employees
+                )
         return 0

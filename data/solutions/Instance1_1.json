@@ -164,7 +164,7 @@
     "13,327176509795513342126021012545780561845": 0
   },
   "instance": {
-    "name": "Instance1",
+    "name": "Instance1_1",
     "employees": {
       "169836834567204038179966570894283554345": {
         "uid": 169836834567204038179966570894283554345,
@@ -330,7 +330,7 @@
             "170172835760119224333519554008280666130": 2
           },
           "preffert_number_employees": 7,
-          "weight_below_preferred": 100,
+          "weight_below_preferred": 120,
           "weight_above_preferred": 1
         }
       },
@@ -547,11 +547,11 @@
       }
     }
   },
-  "objective_value": 807.0,
+  "objective_value": 848.0,
   "disabled_constraints": [],
-  "solve_time": 0.586388,
+  "solve_time": 0.59203,
   "solve_status": 2,
-  "timestamp": "2025-11-28T10:49:40.457446",
+  "timestamp": "2025-11-28T10:49:54.602325",
   "checkt_constraints": [
     true,
     {
