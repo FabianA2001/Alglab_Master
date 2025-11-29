@@ -115,8 +115,9 @@ class Solver_for_window(solver.Solver):
         )
 
     def add_start_maximum_consecutive_shifts_constraints(
-        self, employee_uid: employee.EmployeeUid, max_consecutive_shifts: int
+        self, employee_uid: employee.EmployeeUid
     ):
+        max_consecutive_shifts = self.config[employee_uid].max_consecutive_shifts_start
         if max_consecutive_shifts <= 0:
             return
 
@@ -169,8 +170,9 @@ class Solver_for_window(solver.Solver):
             )
 
     def add_end_maximum_consecutive_shifts_constraints(
-        self, employee_uid: employee.EmployeeUid, max_consecutive_shifts: int
+        self, employee_uid: employee.EmployeeUid
     ):
+        max_consecutive_shifts = self.config[employee_uid].max_consecutive_shifts_end
         if max_consecutive_shifts <= 0:
             return
 
@@ -226,8 +228,9 @@ class Solver_for_window(solver.Solver):
             )
 
     def add_start_minimum_consecutive_shifts_constraints(
-        self, employee_uid: employee.EmployeeUid, min_consecutive_shifts: int
+        self, employee_uid: employee.EmployeeUid
     ):
+        min_consecutive_shifts = self.config[employee_uid].min_consecutive_shifts_start
         for day in range(min_consecutive_shifts):
             shifts_vars = []
             for shift_type_uid in self.instance.shift_types:
@@ -235,8 +238,9 @@ class Solver_for_window(solver.Solver):
             self.vars.model.Add(sum(shifts_vars) == 1)
 
     def add_end_minimum_consecutive_shifts_constraints(
-        self, employee_uid: employee.EmployeeUid, min_consecutive_shifts: int
+        self, employee_uid: employee.EmployeeUid
     ):
+        min_consecutive_shifts = self.config[employee_uid].min_consecutive_shifts_end
         last_modifibarbe_day = self.instance.number_of_days - 1
         assert min_consecutive_shifts <= last_modifibarbe_day
         for day in range(min_consecutive_shifts):
@@ -250,8 +254,11 @@ class Solver_for_window(solver.Solver):
             self.vars.model.Add(sum(shifts_vars) == 1)
 
     def add_start_minimum_consecutive_days_off_constraints(
-        self, employee_uid: employee.EmployeeUid, min_consecutive_days_off: int
+        self, employee_uid: employee.EmployeeUid
     ):
+        min_consecutive_days_off = self.config[
+            employee_uid
+        ].min_consecutive_days_off_start
         for day in range(min_consecutive_days_off):
             shifts_vars = []
             for shift_type_uid in self.instance.shift_types:
@@ -259,8 +266,11 @@ class Solver_for_window(solver.Solver):
             self.vars.model.Add(sum(shifts_vars) == 0)
 
     def add_end_minimum_consecutive_days_off_constraints(
-        self, employee_uid: employee.EmployeeUid, min_consecutive_days_off: int
+        self, employee_uid: employee.EmployeeUid
     ):
+        min_consecutive_days_off = self.config[
+            employee_uid
+        ].min_consecutive_days_off_end
         last_modifibarbe_day = self.instance.number_of_days - 1
         assert min_consecutive_days_off <= last_modifibarbe_day
         for day in range(min_consecutive_days_off):
