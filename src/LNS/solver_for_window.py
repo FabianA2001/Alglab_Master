@@ -38,15 +38,6 @@ class Vars_for_employee:
         self.prev_day_has_shift_end = None
 
 
-class Vars_for_window:
-    """Stores constraint variables for all employees"""
-
-    vars_per_employee: dict[employee.EmployeeUid, Vars_for_employee]
-
-    def __init__(self):
-        self.vars_per_employee = {}
-
-
 class Solver_for_window(solver.Solver):
     def __init__(
         self,
@@ -72,10 +63,10 @@ class Solver_for_window(solver.Solver):
 
         self.config = config
         # Create all constraint variables for each employee
-        self.window_vars = Vars_for_window()
+        self.vars_per_employee: dict[employee.EmployeeUid, Vars_for_employee] = {}
         for employee_uid, emp_config in self.config.items():
             emp_vars = Vars_for_employee()
-            self.window_vars.vars_per_employee[employee_uid] = emp_vars
+            self.vars_per_employee[employee_uid] = emp_vars
 
             # Create start maximum consecutive shifts variables
             if emp_config.max_consecutive_shifts_start > 0:
@@ -130,7 +121,7 @@ class Solver_for_window(solver.Solver):
             return
 
         # Get the pre-created variables for this employee
-        emp_vars = self.window_vars.vars_per_employee[employee_uid]
+        emp_vars = self.vars_per_employee[employee_uid]
         all_previus_aktive = emp_vars.all_previus_aktive_start
         is_assigend = emp_vars.is_assigend_start
 
@@ -184,7 +175,7 @@ class Solver_for_window(solver.Solver):
             return
 
         # Get the pre-created variables for this employee
-        emp_vars = self.window_vars.vars_per_employee[employee_uid]
+        emp_vars = self.vars_per_employee[employee_uid]
         suffix_active = emp_vars.suffix_active_end
         suffix_true = emp_vars.suffix_true_end
 
