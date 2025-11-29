@@ -23,7 +23,7 @@ def test_add_start_maximum_consecutive_shifts_constraints():
             Shift_vars(instance, model=model),
             config=config,
         )
-        solv.add_start_maximum_consecutive_shifts_constraints(lokal_employee.uid, 2)
+        solv.add_start_maximum_consecutive_shifts_constraints(lokal_employee.uid)
         for day in range(3):
             model.Add(
                 solv.vars.get_var(day, lokal_shift_types[0].uid, lokal_employee.uid)
@@ -48,7 +48,7 @@ def test_add_end_maximum_consecutive_shifts_constraints():
             Shift_vars(instance, model=model),
             config=config,
         )
-        solv.add_end_maximum_consecutive_shifts_constraints(lokal_employee.uid, 2)
+        solv.add_end_maximum_consecutive_shifts_constraints(lokal_employee.uid)
         # Erzwinge Schichten an den letzten 3 Tagen (Tage 1, 2, 3)
         for day in range(1, 4):
             model.Add(
@@ -83,9 +83,7 @@ def test_add_start_minimum_consecutive_shifts_constraints(
             Shift_vars(instance, model=model),
             config=config,
         )
-        solv.add_start_minimum_consecutive_shifts_constraints(
-            lokal_employee.uid, min_consecutive
-        )
+        solv.add_start_minimum_consecutive_shifts_constraints(lokal_employee.uid)
         # Erzwinge Schichten gemäß Parametern
         model.Add(
             solv.vars.get_var(0, lokal_shift_types[0].uid, lokal_employee.uid)
@@ -123,9 +121,7 @@ def test_add_end_minimum_consecutive_shifts_constraints(
             Shift_vars(instance, model=model),
             config=config,
         )
-        solv.add_end_minimum_consecutive_shifts_constraints(
-            lokal_employee.uid, min_consecutive
-        )
+        solv.add_end_minimum_consecutive_shifts_constraints(lokal_employee.uid)
         # Erzwinge Schichten gemäß Parametern
         model.Add(
             solv.vars.get_var(3, lokal_shift_types[0].uid, lokal_employee.uid)
@@ -163,9 +159,7 @@ def test_add_start_minimum_consecutive_days_off_constraints(
             Shift_vars(instance, model=model),
             config=config,
         )
-        solv.add_start_minimum_consecutive_days_off_constraints(
-            lokal_employee.uid, min_consecutive
-        )
+        solv.add_start_minimum_consecutive_days_off_constraints(lokal_employee.uid)
         # Erzwinge Schichten gemäß Parametern
         model.Add(
             solv.vars.get_var(1, lokal_shift_types[0].uid, lokal_employee.uid)
@@ -203,9 +197,7 @@ def test_add_end_minimum_consecutive_days_off_constraints(
             Shift_vars(instance, model=model),
             config=config,
         )
-        solv.add_end_minimum_consecutive_days_off_constraints(
-            lokal_employee.uid, min_consecutive
-        )
+        solv.add_end_minimum_consecutive_days_off_constraints(lokal_employee.uid)
         # Erzwinge Schichten gemäß Parametern
         model.Add(
             solv.vars.get_var(3, lokal_shift_types[0].uid, lokal_employee.uid)
