@@ -270,12 +270,9 @@ class Slice_instance:
     def update_maximum_consecutive_shifts(self):
         """Aktualisiert die max_number_consecutive_shifts für alle Mitarbeiter basierend auf den Zuweisungen außerhalb des Fensters."""
         for emp_uid, emp in self.window_instance.employees.items():
-            start_vorbidden_days = self.config[emp_uid].max_consecutive_shifts_start
             end_vorbidden_days = self.config[emp_uid].max_consecutive_shifts_end
 
-            self.solvr.add_start_maximum_consecutive_shifts_constraints(
-                emp_uid, start_vorbidden_days
-            )
+            self.solvr.add_start_maximum_consecutive_shifts_constraints(emp_uid)
             if end_vorbidden_days == 0:
                 # Employee has reached max consecutive shifts after window
                 # We need to block the last modifiable day in the window
@@ -285,9 +282,7 @@ class Slice_instance:
                     self.solvr.block_employee_on_day(emp_uid, last_modifiable_day)
             else:
                 # Still have room for more consecutive shifts, add constraint
-                self.solvr.add_end_maximum_consecutive_shifts_constraints(
-                    emp_uid, end_vorbidden_days
-                )
+                self.solvr.add_end_maximum_consecutive_shifts_constraints(emp_uid)
 
     def update_minimum_consecutive_shifts(self):
         """Aktualisiert die minimum consecutive shifts Constraints basierend auf self.config."""
@@ -296,14 +291,10 @@ class Slice_instance:
             end_needed = self.config[emp_uid].min_consecutive_shifts_end
 
             if start_needed > 0:
-                self.solvr.add_start_minimum_consecutive_shifts_constraints(
-                    emp_uid, start_needed
-                )
+                self.solvr.add_start_minimum_consecutive_shifts_constraints(emp_uid)
 
             if end_needed > 0:
-                self.solvr.add_end_minimum_consecutive_shifts_constraints(
-                    emp_uid, end_needed
-                )
+                self.solvr.add_end_minimum_consecutive_shifts_constraints(emp_uid)
 
     def update_minimum_consecutive_days_off(self):
         """Aktualisiert die minimum consecutive days-off Constraints basierend auf self.config."""
@@ -312,14 +303,10 @@ class Slice_instance:
             end_needed = self.config[emp_uid].min_consecutive_days_off_end
 
             if start_needed > 0:
-                self.solvr.add_start_minimum_consecutive_days_off_constraints(
-                    emp_uid, start_needed
-                )
+                self.solvr.add_start_minimum_consecutive_days_off_constraints(emp_uid)
 
             if end_needed > 0:
-                self.solvr.add_end_minimum_consecutive_days_off_constraints(
-                    emp_uid, end_needed
-                )
+                self.solvr.add_end_minimum_consecutive_days_off_constraints(emp_uid)
 
     def calulate_minimum_consecutive_shifts_config(
         self,
