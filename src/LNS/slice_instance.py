@@ -283,6 +283,7 @@ class Slice_instance:
             else:
                 # Still have room for more consecutive shifts, add constraint
                 self.solvr.add_end_maximum_consecutive_shifts_constraints(emp_uid)
+            self.solvr.add_custom_maximum_consecutive_shifts_constraints(emp_uid)
 
     def update_minimum_consecutive_shifts(self):
         """Aktualisiert die minimum consecutive shifts Constraints basierend auf self.config."""

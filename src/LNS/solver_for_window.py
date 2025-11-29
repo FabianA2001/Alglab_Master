@@ -20,21 +20,21 @@ class Vars_for_employee:
     """Stores all constraint variables for one employee in the window"""
 
     # Start maximum consecutive shifts
-    all_previus_aktive_start: list[cp_model.IntVar]
-    is_assigend_start: list[cp_model.IntVar]
-    next_day_has_shift_start: cp_model.IntVar | None
+    all_previus_aktive_start: list[cp_model.BoolVarT]
+    is_assigend_start: list[cp_model.BoolVarT]
+    next_day_has_shift_start: cp_model.BoolVarT | None
 
     # End maximum consecutive shifts
-    suffix_active_end: list[cp_model.IntVar]
-    suffix_true_end: list[cp_model.IntVar]
-    prev_day_has_shift_end: cp_model.IntVar | None
+    all_next_aktive_end: list[cp_model.BoolVarT]
+    is_assigend_end: list[cp_model.BoolVarT]
+    prev_day_has_shift_end: cp_model.BoolVarT | None
 
     def __init__(self):
         self.all_previus_aktive_start = []
         self.is_assigend_start = []
         self.next_day_has_shift_start = None
-        self.suffix_active_end = []
-        self.suffix_true_end = []
+        self.all_next_aktive_end = []
+        self.is_assigend_end = []
         self.prev_day_has_shift_end = None
 
 
@@ -87,11 +87,11 @@ class Solver_for_window(solver.Solver):
             # Create end maximum consecutive shifts variables
             if emp_config.max_consecutive_shifts_end > 0:
                 max_cons = emp_config.max_consecutive_shifts_end
-                emp_vars.suffix_active_end = [
+                emp_vars.all_next_aktive_end = [
                     self.vars.model.NewBoolVar(f"suffix_active_{i}_for_{employee_uid}")
                     for i in range(max_cons)
                 ]
-                emp_vars.suffix_true_end = [
+                emp_vars.is_assigend_end = [
                     self.vars.model.NewBoolVar(f"suffix_true_{i}_for_{employee_uid}")
                     for i in range(max_cons)
                 ]
@@ -178,8 +178,8 @@ class Solver_for_window(solver.Solver):
 
         # Get the pre-created variables for this employee
         emp_vars = self.vars_per_employee[employee_uid]
-        suffix_active = emp_vars.suffix_active_end
-        suffix_true = emp_vars.suffix_true_end
+        suffix_active = emp_vars.all_next_aktive_end
+        suffix_true = emp_vars.is_assigend_end
 
         for i in range(max_consecutive_shifts):
             day = self.instance.number_of_days - max_consecutive_shifts + i
@@ -226,6 +226,88 @@ class Solver_for_window(solver.Solver):
                     prev_day_has_shift.Not(),
                 ]
             )
+
+    def add_custom_maximum_consecutive_shifts_constraints(
+        self, employee_uid: employee.EmployeeUid
+    ):
+        emp_config = self.config.get(employee_uid)
+        if emp_config is None:
+            return
+        emp_max_start = emp_config.max_consecutive_shifts_start
+        emp_max_end = emp_config.max_consecutive_shifts_end
+
+        window_size = (
+            self.instance.employees[employee_uid].max_number_consecutive_shifts + 1
+        )
+
+        emp_vars = self.vars_per_employee.get(employee_uid)
+
+        # iterate over possible window starts (as before)
+        for day in range(
+            self.instance.number_of_days
+            - self.instance.employees[employee_uid].max_number_consecutive_shifts
+        ):
+            window_start = day
+            window_end = day + window_size - 1
+
+            assigned_shifts = []
+            for type_uid in self.instance.shifts[day]:
+                for i in range(window_size):
+                    assigned_shifts.append(
+                        self.vars.vars[(day + i, type_uid, employee_uid)]
+                    )
+
+            # Check if we need to conditionally apply this constraint based on
+            # all_previus_aktive_start or all_next_aktive_end
+            apply_constraint_conditions = []
+
+            # Skip if window_start is in the start range AND all_previus_aktive_start is active for that day
+            if window_start < emp_max_start and emp_vars is not None:
+                if len(emp_vars.all_previus_aktive_start) > window_start:
+                    # Only apply constraint if all_previus_aktive_start[window_start] is NOT active
+                    apply_constraint_conditions.append(
+                        emp_vars.all_previus_aktive_start[window_start].Not()
+                    )
+
+            # Skip if window_end is in the end range AND all_next_aktive_end is active for that day
+            if (
+                window_end >= self.instance.number_of_days - emp_max_end
+                and emp_vars is not None
+            ):
+                # Map window_end to the index in all_next_aktive_end
+                # all_next_aktive_end[i] corresponds to day (number_of_days - emp_max_end + i)
+                end_index = window_end - (self.instance.number_of_days - emp_max_end)
+                if 0 <= end_index < len(emp_vars.all_next_aktive_end):
+                    # Only apply constraint if all_next_aktive_end is NOT active for that day
+                    apply_constraint_conditions.append(
+                        emp_vars.all_next_aktive_end[end_index].Not()
+                    )
+
+            # Apply the constraint conditionally
+            if apply_constraint_conditions:
+                # Create a helper variable for the constraint
+                constraint_var = self.vars.model.NewBoolVar(
+                    f"constraint_active_day_{day}_emp_{employee_uid}"
+                )
+                # constraint is active if ALL apply_constraint_conditions are true
+                self.vars.model.AddBoolAnd(apply_constraint_conditions).OnlyEnforceIf(
+                    constraint_var
+                )
+                # Apply the max consecutive shifts constraint only when constraint_var is true
+                self.vars.model.Add(
+                    sum(assigned_shifts)
+                    <= self.instance.employees[
+                        employee_uid
+                    ].max_number_consecutive_shifts
+                ).OnlyEnforceIf(constraint_var)
+            else:
+                # No conditions, apply constraint unconditionally
+                self.vars.model.Add(
+                    sum(assigned_shifts)
+                    <= self.instance.employees[
+                        employee_uid
+                    ].max_number_consecutive_shifts
+                )
 
     def add_start_minimum_consecutive_shifts_constraints(
         self, employee_uid: employee.EmployeeUid
