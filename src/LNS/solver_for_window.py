@@ -8,12 +8,12 @@ from ..solution import Solution
 
 
 class Config_for_employee:
-    max_consecutive_shifts_start: int
-    max_consecutive_shifts_end: int
-    min_consecutive_shifts_start: int
-    min_consecutive_shifts_end: int
-    min_consecutive_days_off_start: int
-    min_consecutive_days_off_end: int
+    max_consecutive_shifts_start: int = -1
+    max_consecutive_shifts_end: int = -1
+    min_consecutive_shifts_start: int = -1
+    min_consecutive_shifts_end: int = -1
+    min_consecutive_days_off_start: int = -1
+    min_consecutive_days_off_end: int = -1
 
 
 class Vars_for_employee:
@@ -57,7 +57,6 @@ class Solver_for_window(solver.Solver):
         add_module_constraints: list[ShiftAssignmentModule] = [],
     ):
         # HACK Weekend raus
-        self.config = config
         super().__init__(
             instance,
             vars,
@@ -71,6 +70,7 @@ class Solver_for_window(solver.Solver):
             add_module_constraints,
         )
 
+        self.config = config
         # Create all constraint variables for each employee
         self.window_vars = Vars_for_window()
         for employee_uid, emp_config in self.config.items():

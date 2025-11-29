@@ -2,20 +2,8 @@ import pytest
 from cpsat_utils.testing import AssertModelInfeasible
 
 from src.inputTypes import employee, instace, shiftType
-from src.LNS.solver_for_window import Solver_for_window
+from src.LNS.solver_for_window import Config_for_employee, Solver_for_window
 from src.shift_vars import Shift_vars
-
-# @pytest.fixture
-# def mock_instance():
-#     lokal_shift_types = [shiftType.ShiftType() for _ in range(1)]
-#     lokal_employee = employee.Employee()
-#     instance = instace.Instance.create(
-#         number_of_days=4,
-#         shift_typs=lokal_shift_types,
-#         emplyees=[lokal_employee],
-#     )
-
-#     return instance
 
 
 def test_add_start_maximum_consecutive_shifts_constraints():
@@ -26,11 +14,14 @@ def test_add_start_maximum_consecutive_shifts_constraints():
         shift_typs=lokal_shift_types,
         emplyees=[lokal_employee],
     )
+    config = {lokal_employee.uid: Config_for_employee()}
+    config[lokal_employee.uid].max_consecutive_shifts_start = 2
 
     with AssertModelInfeasible() as model:
         solv = Solver_for_window(
             instance,
             Shift_vars(instance, model=model),
+            config=config,
         )
         solv.add_start_maximum_consecutive_shifts_constraints(lokal_employee.uid, 2)
         for day in range(3):
@@ -48,11 +39,14 @@ def test_add_end_maximum_consecutive_shifts_constraints():
         shift_typs=lokal_shift_types,
         emplyees=[lokal_employee],
     )
+    config = {lokal_employee.uid: Config_for_employee()}
+    config[lokal_employee.uid].max_consecutive_shifts_end = 2
 
     with AssertModelInfeasible() as model:
         solv = Solver_for_window(
             instance,
             Shift_vars(instance, model=model),
+            config=config,
         )
         solv.add_end_maximum_consecutive_shifts_constraints(lokal_employee.uid, 2)
         # Erzwinge Schichten an den letzten 3 Tagen (Tage 1, 2, 3)
@@ -80,11 +74,14 @@ def test_add_start_minimum_consecutive_shifts_constraints(
         shift_typs=lokal_shift_types,
         emplyees=[lokal_employee],
     )
+    config = {lokal_employee.uid: Config_for_employee()}
+    config[lokal_employee.uid].min_consecutive_shifts_start = min_consecutive
 
     with AssertModelInfeasible() as model:
         solv = Solver_for_window(
             instance,
             Shift_vars(instance, model=model),
+            config=config,
         )
         solv.add_start_minimum_consecutive_shifts_constraints(
             lokal_employee.uid, min_consecutive
@@ -117,11 +114,14 @@ def test_add_end_minimum_consecutive_shifts_constraints(
         shift_typs=lokal_shift_types,
         emplyees=[lokal_employee],
     )
+    config = {lokal_employee.uid: Config_for_employee()}
+    config[lokal_employee.uid].min_consecutive_shifts_end = min_consecutive
 
     with AssertModelInfeasible() as model:
         solv = Solver_for_window(
             instance,
             Shift_vars(instance, model=model),
+            config=config,
         )
         solv.add_end_minimum_consecutive_shifts_constraints(
             lokal_employee.uid, min_consecutive
@@ -154,11 +154,14 @@ def test_add_start_minimum_consecutive_days_off_constraints(
         shift_typs=lokal_shift_types,
         emplyees=[lokal_employee],
     )
+    config = {lokal_employee.uid: Config_for_employee()}
+    config[lokal_employee.uid].min_consecutive_days_off_start = min_consecutive
 
     with AssertModelInfeasible() as model:
         solv = Solver_for_window(
             instance,
             Shift_vars(instance, model=model),
+            config=config,
         )
         solv.add_start_minimum_consecutive_days_off_constraints(
             lokal_employee.uid, min_consecutive
@@ -191,11 +194,14 @@ def test_add_end_minimum_consecutive_days_off_constraints(
         shift_typs=lokal_shift_types,
         emplyees=[lokal_employee],
     )
+    config = {lokal_employee.uid: Config_for_employee()}
+    config[lokal_employee.uid].min_consecutive_days_off_end = min_consecutive
 
     with AssertModelInfeasible() as model:
         solv = Solver_for_window(
             instance,
             Shift_vars(instance, model=model),
+            config=config,
         )
         solv.add_end_minimum_consecutive_days_off_constraints(
             lokal_employee.uid, min_consecutive
