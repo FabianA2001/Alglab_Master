@@ -5,15 +5,8 @@ from ..inputTypes import employee, instace
 from ..module.shift_assignment_module import ShiftAssignmentModule
 from ..module.solverConstraints import SolverConstraints
 from ..solution import Solution
-
-
-class Config_for_employee:
-    max_consecutive_shifts_start: int = -1
-    max_consecutive_shifts_end: int = -1
-    min_consecutive_shifts_start: int = -1
-    min_consecutive_shifts_end: int = -1
-    min_consecutive_days_off_start: int = -1
-    min_consecutive_days_off_end: int = -1
+from .config_for_employee import Config_for_employee
+from .module.minimum_consecutive_shifts import Minimum_consecutive_shifts
 
 
 class Vars_for_employee:
@@ -47,7 +40,7 @@ class Solver_for_window(solver.Solver):
         disabled_constraints: list[SolverConstraints] = [],
         add_module_constraints: list[ShiftAssignmentModule] = [],
     ):
-        # HACK Weekend raus
+        add_module_constraints += [Minimum_consecutive_shifts(config)]
         super().__init__(
             instance,
             vars,
@@ -323,15 +316,13 @@ class Solver_for_window(solver.Solver):
         self, employee_uid: employee.EmployeeUid
     ):
         min_consecutive_shifts = self.config[employee_uid].min_consecutive_shifts_end
-        last_modifibarbe_day = self.instance.number_of_days - 1
-        assert min_consecutive_shifts <= last_modifibarbe_day
+        last_day = self.instance.number_of_days - 1
+        assert min_consecutive_shifts <= last_day
         for day in range(min_consecutive_shifts):
             shifts_vars = []
             for shift_type_uid in self.instance.shift_types:
                 shifts_vars.append(
-                    self.vars.get_var(
-                        last_modifibarbe_day - day, shift_type_uid, employee_uid
-                    )
+                    self.vars.get_var(last_day - day, shift_type_uid, employee_uid)
                 )
             self.vars.model.Add(sum(shifts_vars) == 1)
 

@@ -44,9 +44,6 @@ class Slice_instance:
             self.window_instance,
             solver.shift_vars.Shift_vars(self.window_instance),
             config,
-            # add_module_constraints=[
-            #     LNS_Max_Cons_Shifts(maximum_consecutive_shifts_config)
-            # ],
         )
         self.fix_first_and_last_day(self.solvr)
 

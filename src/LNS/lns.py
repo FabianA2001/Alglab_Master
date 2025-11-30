@@ -100,7 +100,6 @@ class LNS:
 
         self.disabled_for_window = [
             SolverConstraints.max_weekend_days,
-            SolverConstraints.minimum_consecutive_shifts,
             SolverConstraints.minimum_consecutive_days_off,
         ]
 
