@@ -21,7 +21,7 @@ from .module import (
 )
 from .module.solverConstraints import SolverConstraints
 from .solution import Solution
-from src.greedy_scheduler import SequentialGreedyScheduler
+from src.greedy_scheduler import SequentialGreedyScheduler, SequentialGreedyScheduler2
 
 
 class Solver:
@@ -375,6 +375,31 @@ class Solver:
         log_search_progress: bool = False,
     ) -> Solution:
         scheduler = SequentialGreedyScheduler(instance)
+        binary_matrix = scheduler.get_assignment_matrix()  # für direkte Verwendung
+        """Warm starts the solver with a given greedy solution."""
+        self.instance = instance
+        for day in range(instance.number_of_days):
+            for type_uid in instance.shifts[day]:
+                for employee_uid in instance.employees:
+                    var_value = binary_matrix[(day, type_uid, employee_uid)] == 1
+                    self.vars.model.AddHint(
+                        self.vars.get_var(day, type_uid, employee_uid), var_value
+                    )
+        return self.solve(
+            disabled_constraints=disabled_constraints,
+            max_time_in_seconds=max_time_in_seconds,
+            log_search_progress=log_search_progress,
+        )
+
+    def warm_start_greedy2(
+        self,
+        # greedy_solution: dict[tuple[int, int], list[int]],
+        instance: instace.Instance,
+        disabled_constraints: list[SolverConstraints] = [],
+        max_time_in_seconds: float = 60.0,
+        log_search_progress: bool = False,
+    ) -> Solution:
+        scheduler = SequentialGreedyScheduler2(instance)
         binary_matrix = scheduler.get_assignment_matrix()  # für direkte Verwendung
         """Warm starts the solver with a given greedy solution."""
         self.instance = instance

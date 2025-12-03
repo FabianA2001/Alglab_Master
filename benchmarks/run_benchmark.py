@@ -94,6 +94,10 @@ def run_benchmark(
             sol = solver.warm_start_greedy(
                 max_time_in_seconds=timeout, instance=instance
             )
+            # HIER
+            # sol = solver.warm_start_greedy2(
+            #     max_time_in_seconds=timeout, instance=instance
+            # )
         except Exception as e:
             elapsed = time.time() - start
             print(f"Solver error on {inst_file.name}: {e}")
