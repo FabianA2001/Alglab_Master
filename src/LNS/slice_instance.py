@@ -3,6 +3,7 @@ from collections import defaultdict
 from .. import solution, solver
 from ..inputTypes import employee, instace
 from . import solver_for_window
+from .module.minimum_consecutive_shifts import Minimum_consecutive_shifts
 
 
 class Slice_instance:
@@ -35,7 +36,7 @@ class Slice_instance:
             self.window_instance,
             solver.shift_vars.Shift_vars(self.window_instance),
             self.config,
-            # add_module_constraints=[Minimum_consecutive_shifts(self.config)],
+            add_module_constraints=[Minimum_consecutive_shifts(self.config)],
         )
 
         for emp_uid, entry in self.config.items():
@@ -298,6 +299,9 @@ class Slice_instance:
         end_needed: same for the end of the window.
         """
         start_consecutive = self.count_assigned_shifts_start(emp_uid)
+        print(
+            f"Employee {emp.name} has {start_consecutive} consecutive shifts before the window. Und benötigt {emp.min_number_consecutive_shifts}."
+        )
         if start_consecutive == 0:
             start_needed = 0
         else:
@@ -339,7 +343,7 @@ class Slice_instance:
 
     def count_assigned_shifts_start(self, emp_uid: employee.EmployeeUid) -> int:
         current_consecutive_shifts = 0
-        if self.start_day < 2:
+        if self.start_day < 1:
             return current_consecutive_shifts
         for day in range(self.start_day - 1, -1, -1):
             assigneds = []
@@ -372,7 +376,7 @@ class Slice_instance:
 
     def count_assigned_shifts_end(self, emp_uid: employee.EmployeeUid) -> int:
         current_consecutive_shifts = 0
-        if self.inst.number_of_days - 3 < self.end_day:
+        if self.inst.number_of_days - 2 < self.end_day:
             return current_consecutive_shifts
         for day in range(self.end_day + 1, self.sol.instance.number_of_days):
             assigneds = []
@@ -388,9 +392,9 @@ class Slice_instance:
 
     def count_not_assigned_shifts_end(self, emp_uid: employee.EmployeeUid) -> int:
         current_free_consecutive_shifts = 0
-        if self.inst.number_of_days - 3 < self.end_day:
+        if self.inst.number_of_days - 2 < self.end_day:
             return current_free_consecutive_shifts
-        for day in range(self.end_day + 2, self.sol.instance.number_of_days):
+        for day in range(self.end_day + 1, self.sol.instance.number_of_days):
             assigneds = []
             for shift_type_uid in self.inst.shift_types:
                 assigneds.append(

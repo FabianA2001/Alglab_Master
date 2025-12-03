@@ -23,14 +23,17 @@ class Minimum_consecutive_shifts(ShiftAssignmentModule):
             for day_s in range(
                 instance.employees[employee_uid].min_number_consecutive_shifts - 1
             ):
+                # TODO ich glaube das muss noch angepasst werden aber ich weiß nicht wie und grade wirft es so keinene Fehler. Aber es kann sein das wir gültige Lösungen ausschließen
+                ##HACK
                 # for day_d in range(
                 #     self.config[employee_uid].min_consecutive_shifts_start,
-                #     min(
-                #         self.config[employee_uid].min_consecutive_shifts_end,
-                #         instance.number_of_days - (day_s + 1) - 1,
-                #     ),
+                #     instance.number_of_days
+                #     - self.config[employee_uid].min_consecutive_shifts_end
+                #     - (day_s + 1)
+                #     - 1,
                 # ):
                 for day_d in range(instance.number_of_days - (day_s + 1) - 1):
+                    ###########################
                     assigned_shifts = []
                     assigned_shifts_inner_interval = []
                     assigned_shifts_interval_end = []
