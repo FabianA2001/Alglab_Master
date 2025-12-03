@@ -6,97 +6,86 @@ from . import solver_for_window
 
 
 class Slice_instance:
-    def __init__(
-        self, sol: solution.Solution, start: int, min_day: int, end: int, max_day: int
-    ):
+    def __init__(self, sol: solution.Solution, start: int, end: int):
         self.sol = sol
         self.inst: instace.Instance = sol.instance
         self.start_day = start
-        self.min_day = min_day
         self.end_day = end
-        self.max_day = max_day
-        self.extended_start = (
-            self.start_day - 1 if self.start_day > self.min_day else -1
-        )
-        self.extended_end = self.end_day + 1 if self.end_day < self.max_day else -1
 
         self.window_instance = self.create_window_instance()
 
-        config = defaultdict(solver_for_window.Config_for_employee)
+        self.config = defaultdict(solver_for_window.Config_for_employee)
         for emp_uid, emp in self.window_instance.employees.items():
             (
-                config[emp_uid].max_consecutive_shifts_start,
-                config[emp_uid].max_consecutive_shifts_end,
+                self.config[emp_uid].max_consecutive_shifts_start,
+                self.config[emp_uid].max_consecutive_shifts_end,
             ) = self.calulate_maximum_consecutive_shifts_config(emp_uid, emp)
 
             (
-                config[emp_uid].min_consecutive_shifts_start,
-                config[emp_uid].min_consecutive_shifts_end,
+                self.config[emp_uid].min_consecutive_shifts_start,
+                self.config[emp_uid].min_consecutive_shifts_end,
             ) = self.calulate_minimum_consecutive_shifts_config(emp_uid, emp)
 
             (
-                config[emp_uid].min_consecutive_days_off_start,
-                config[emp_uid].min_consecutive_days_off_end,
+                self.config[emp_uid].min_consecutive_days_off_start,
+                self.config[emp_uid].min_consecutive_days_off_end,
             ) = self.calulate_minimum_consecutive_days_off_config(emp_uid, emp)
-        self.config = config
 
         self.solvr = solver_for_window.Solver_for_window(
             self.window_instance,
             solver.shift_vars.Shift_vars(self.window_instance),
-            config,
+            self.config,
+            # add_module_constraints=[Minimum_consecutive_shifts(self.config)],
         )
-        self.fix_first_and_last_day(self.solvr)
+
+        for emp_uid, entry in self.config.items():
+            if str(entry):
+                print(self.inst.employees[emp_uid].name)
+                print(entry)
+
+        self.fix_first_and_last_day()
 
         # TODO rework to also use modules
-        self.update_maximum_consecutive_shifts()
+        # self.update_maximum_consecutive_shifts()
         self.update_minimum_consecutive_shifts()
-        self.update_minimum_consecutive_days_off()
+        # self.update_minimum_consecutive_days_off()
 
     def get_solver(self) -> solver_for_window.Solver_for_window:
         return self.solvr
 
-    def fix_first_and_last_day(self, solver_instance: solver.Solver):
+    def fix_first_and_last_day(self):
         """Fixiert die Zuweisungen des ersten und letzten Tages des erweiterten Fensters mit den Werten der gegebenen Lösung."""
 
-        if self.extended_start != -1:
-            # Fixiere den ersten Tag (extended_start)
-            for shift_type_uid in solver_instance.instance.shift_types:
-                for emp_id in solver_instance.instance.employees:
-                    assigned = self.sol.is_employee_assigned(
-                        self.extended_start, shift_type_uid, emp_id
-                    )
-                    # Tag 0 in der window_instance entspricht extended_start in der alten Instanz
-                    var = solver_instance.vars.vars[(0, shift_type_uid, emp_id)]
-                    if assigned:
-                        solver_instance.vars.model.Add(var == 1)
-                    else:
-                        solver_instance.vars.model.Add(var == 0)
+        # Fixiere den ersten Tag
+        for shift_type_uid in self.solvr.instance.shift_types:
+            for emp_id in self.solvr.instance.employees:
+                assigned = self.sol.is_employee_assigned(
+                    self.start_day, shift_type_uid, emp_id
+                )
+                # Tag 0 in der window_instance entspricht extended_start in der alten Instanz
+                var = self.solvr.vars.vars[(0, shift_type_uid, emp_id)]
+                if assigned:
+                    self.solvr.vars.model.Add(var == 1)
+                else:
+                    self.solvr.vars.model.Add(var == 0)
 
-        if self.extended_end != -1:
-            # Calculate the actual window boundaries independent of extended_start
-            window_start = max(self.min_day, self.start_day - 1)
-            last_day_in_window = self.extended_end - window_start
-            for shift_type_uid in solver_instance.instance.shift_types:
-                for emp_id in solver_instance.instance.employees:
-                    assigned = self.sol.is_employee_assigned(
-                        self.extended_end, shift_type_uid, emp_id
-                    )
-                    var = solver_instance.vars.vars[
-                        (last_day_in_window, shift_type_uid, emp_id)
-                    ]
-                    if assigned:
-                        solver_instance.vars.model.Add(var == 1)
-                    else:
-                        solver_instance.vars.model.Add(var == 0)
+        last_day_in_window = self.solvr.instance.number_of_days - 1
+        for shift_type_uid in self.solvr.instance.shift_types:
+            for emp_id in self.solvr.instance.employees:
+                assigned = self.sol.is_employee_assigned(
+                    self.end_day, shift_type_uid, emp_id
+                )
+                var = self.solvr.vars.vars[(last_day_in_window, shift_type_uid, emp_id)]
+                if assigned:
+                    self.solvr.vars.model.Add(var == 1)
+                else:
+                    self.solvr.vars.model.Add(var == 0)
 
     def create_window_instance(self) -> instace.Instance:
         """Erstellt eine Instanz, die das aktuelle Suchfenster plus einen Tag davor und danach umfasst."""
         old_instance = self.sol.instance
 
-        # Erweitere Fenster um einen Tag vor und nach (falls möglich)
-        window_start = max(self.min_day, self.start_day - 1)
-        window_end = min(self.max_day, self.end_day + 1)
-        days_in_window = window_end - window_start + 1
+        days_in_window = self.end_day - self.start_day + 1
 
         # edit employees
         employees = {}
@@ -104,7 +93,7 @@ class Slice_instance:
             emp_with_shifts = self.edit_max_numbers_of_shifts_for_emploeey(uid, emp)
             emp_with_work_time = self.edit_work_time_for_emploeey(uid, emp_with_shifts)
             employees[uid] = self.edit_blocked_shifts_for_employee(
-                uid, emp_with_work_time, window_start, window_end
+                uid, emp_with_work_time, self.start_day, self.end_day
             )
 
         # Kopiere shift_types (Referenz auf dieselben ShiftType-Objekte)
@@ -115,7 +104,7 @@ class Slice_instance:
 
         shifts = defaultdict(dict)
         for day_offset in range(days_in_window):
-            old_day = window_start + day_offset
+            old_day = self.start_day + day_offset
             for shift_type_uid in old_instance.shift_types:
                 # Kopiere den Shift vom alten Tag
                 shifts[day_offset][shift_type_uid] = old_instance.get_shift(
@@ -125,13 +114,13 @@ class Slice_instance:
         # Berechne neue weekend_days (angepasst an neuen day-Index)
         weekend_days = set()
         for old_weekend_day in old_instance.weekend_days:
-            if window_start <= old_weekend_day <= window_end:
-                new_day = old_weekend_day - window_start
+            if self.start_day <= old_weekend_day <= self.end_day:
+                new_day = old_weekend_day - self.start_day
                 weekend_days.add(new_day)
 
         # Erstelle neue Instanz mit __init__
         window_instance = instace.Instance(
-            name=f"{old_instance.name}_window_{window_start}_{window_end}",
+            name=f"{old_instance.name}_window_{self.start_day}_{self.end_day}",
             employees=employees,
             number_of_days=days_in_window,
             weekend_days=weekend_days,
@@ -151,13 +140,9 @@ class Slice_instance:
             shift_type_uid: 0 for shift_type_uid in self.inst.shift_types
         }
 
-        # Berechne die tatsächlichen Fenstergrenzen (wie in create_window_instance)
-        window_start = max(self.min_day, self.start_day - 1)
-        window_end = min(self.max_day, self.end_day + 1)
-
         # Iteriere durch alle Tage außerhalb des erweiterten Windows
         for day in range(self.inst.number_of_days):
-            if day < window_start or day > window_end:
+            if day < self.start_day or day > self.end_day:
                 # Tag liegt außerhalb des Windows
                 for shift_type_uid in self.inst.shift_types:
                     if self.sol.is_employee_assigned(day, shift_type_uid, uid):
@@ -186,13 +171,9 @@ class Slice_instance:
         # Zähle Arbeitszeit (in Minuten) außerhalb des Windows
         minutes_outside_window = 0
 
-        # Berechne die tatsächlichen Fenstergrenzen (wie in create_window_instance)
-        window_start = max(self.min_day, self.start_day - 1)
-        window_end = min(self.max_day, self.end_day + 1)
-
         # Iteriere durch alle Tage außerhalb des erweiterten Windows
         for day in range(self.inst.number_of_days):
-            if day < window_start or day > window_end:
+            if day < self.start_day or day > self.end_day:
                 # Tag liegt außerhalb des Windows
                 for shift_type_uid in self.inst.shift_types:
                     if self.sol.is_employee_assigned(day, shift_type_uid, uid):
@@ -273,10 +254,8 @@ class Slice_instance:
             if end_vorbidden_days == 0:
                 # Employee has reached max consecutive shifts after window
                 # We need to block the last modifiable day in the window
-                if self.extended_end != -1:
-                    # Last modifiable day is before the fixed extended_end day
-                    last_modifiable_day = self.solvr.instance.number_of_days - 2
-                    self.solvr.block_employee_on_day(emp_uid, last_modifiable_day)
+                last_day = self.solvr.instance.number_of_days - 1
+                self.solvr.block_employee_on_day(emp_uid, last_day)
             else:
                 # Still have room for more consecutive shifts, add constraint
                 self.solvr.add_end_maximum_consecutive_shifts_constraints(emp_uid)
@@ -360,7 +339,9 @@ class Slice_instance:
 
     def count_assigned_shifts_start(self, emp_uid: employee.EmployeeUid) -> int:
         current_consecutive_shifts = 0
-        for day in range(self.start_day - 1, self.min_day - 1, -1):
+        if self.start_day < 2:
+            return current_consecutive_shifts
+        for day in range(self.start_day - 1, -1, -1):
             assigneds = []
             for shift_type_uid in self.inst.shift_types:
                 assigneds.append(
@@ -374,7 +355,9 @@ class Slice_instance:
 
     def count_not_assigned_shifts_start(self, emp_uid: employee.EmployeeUid) -> int:
         current_free_consecutive_shifts = 0
-        for day in range(self.start_day - 1, self.min_day - 1, -1):
+        if self.start_day < 2:
+            return current_free_consecutive_shifts
+        for day in range(self.start_day - 1, -1, -1):
             not_assigneds = []
             for shift_type_uid in self.inst.shift_types:
                 not_assigneds.append(
@@ -389,7 +372,9 @@ class Slice_instance:
 
     def count_assigned_shifts_end(self, emp_uid: employee.EmployeeUid) -> int:
         current_consecutive_shifts = 0
-        for day in range(self.end_day + 1, self.max_day + 1):
+        if self.inst.number_of_days - 3 < self.end_day:
+            return current_consecutive_shifts
+        for day in range(self.end_day + 1, self.sol.instance.number_of_days):
             assigneds = []
             for shift_type_uid in self.inst.shift_types:
                 assigneds.append(
@@ -403,7 +388,9 @@ class Slice_instance:
 
     def count_not_assigned_shifts_end(self, emp_uid: employee.EmployeeUid) -> int:
         current_free_consecutive_shifts = 0
-        for day in range(self.end_day + 1, self.max_day + 1):
+        if self.inst.number_of_days - 3 < self.end_day:
+            return current_free_consecutive_shifts
+        for day in range(self.end_day + 2, self.sol.instance.number_of_days):
             assigneds = []
             for shift_type_uid in self.inst.shift_types:
                 assigneds.append(

@@ -337,9 +337,7 @@ class LNS:
             solvr = slice_instance.Slice_instance(
                 sol=self.old_solution,
                 start=self.start_day,
-                min_day=self.MIN_DAY,
                 end=self.end_day,
-                max_day=self.MAX_DAY,
             ).get_solver()
 
             sol = solvr.solve_window(

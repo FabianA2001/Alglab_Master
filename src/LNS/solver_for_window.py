@@ -6,7 +6,8 @@ from ..module.shift_assignment_module import ShiftAssignmentModule
 from ..module.solverConstraints import SolverConstraints
 from ..solution import Solution
 from .config_for_employee import Config_for_employee
-from .module.minimum_consecutive_shifts import Minimum_consecutive_shifts
+
+# from .module.minimum_consecutive_shifts import Minimum_consecutive_shifts
 
 
 class Vars_for_employee:
@@ -40,7 +41,7 @@ class Solver_for_window(solver.Solver):
         disabled_constraints: list[SolverConstraints] = [],
         add_module_constraints: list[ShiftAssignmentModule] = [],
     ):
-        add_module_constraints += [Minimum_consecutive_shifts(config)]
+        # add_module_constraints += [Minimum_consecutive_shifts(config)]
         super().__init__(
             instance,
             vars,
