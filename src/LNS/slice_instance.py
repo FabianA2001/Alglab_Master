@@ -3,7 +3,8 @@ from collections import defaultdict
 from .. import solution, solver
 from ..inputTypes import employee, instace
 from . import solver_for_window
-from .module.minimum_consecutive_shifts import Minimum_consecutive_shifts
+
+# from .module.minimum_consecutive_shifts import Minimum_consecutive_shifts
 
 
 class Slice_instance:
@@ -36,13 +37,15 @@ class Slice_instance:
             self.window_instance,
             solver.shift_vars.Shift_vars(self.window_instance),
             self.config,
-            add_module_constraints=[Minimum_consecutive_shifts(self.config)],
+            # add_module_constraints=[Minimum_consecutive_shifts(self.config)],
         )
 
+        # TODO Remove
         for emp_uid, entry in self.config.items():
             if str(entry):
                 print(self.inst.employees[emp_uid].name)
                 print(entry)
+        ######
 
         self.fix_first_and_last_day()
 
