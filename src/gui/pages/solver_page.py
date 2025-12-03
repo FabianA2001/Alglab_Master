@@ -33,8 +33,13 @@ def solve(**kwargs) -> solution.Solution:
     instance = kwargs["instance"]
     disabled_constraints = kwargs["disabled_constraints"]
     sol = solver.Solver(instance, shift_vars.Shift_vars(instance))
-    sol = sol.solve_with_early_stop(
-        log_search_progress=False,
+    # sol = sol.solve_with_early_stop(
+    #     log_search_progress=False,
+    #     disabled_constraints=disabled_constraints,
+    #     max_time_in_seconds=kwargs["timeout_seconds"],
+    # )
+    sol = sol.warm_start_greedy(
+        instance,
         disabled_constraints=disabled_constraints,
         max_time_in_seconds=kwargs["timeout_seconds"],
     )
@@ -228,8 +233,8 @@ def show():
                     solution = future.result()
                     st.session_state[SSN.solver_future.name] = None
                     elapsed_time = (
-                            time.time() - st.session_state[SSN.solver_start_time.name]
-                        )
+                        time.time() - st.session_state[SSN.solver_start_time.name]
+                    )
                     st.session_state[SSN.solver_running.name] = False
                     st.session_state[SSN.solver_executor.name].shutdown(wait=False)
                     if solution.solve_status == 2:

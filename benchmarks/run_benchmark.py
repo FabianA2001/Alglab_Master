@@ -88,8 +88,11 @@ def run_benchmark(
 
         start = time.time()
         try:
-            sol = solver.solve(
-                max_time_in_seconds=timeout, log_search_progress=False, automaton=False
+            # sol = solver.solve(
+            #     max_time_in_seconds=timeout, log_search_progress=False, automaton=False
+            # )
+            sol = solver.warm_start_greedy(
+                max_time_in_seconds=timeout, instance=instance
             )
         except Exception as e:
             elapsed = time.time() - start

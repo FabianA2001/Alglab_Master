@@ -115,7 +115,8 @@ def calculate_all_instancen():
     for instance in get_all_instancen():
         vars = Shift_vars(instance)
         solv = Solver(instance, vars)
-        sol = solv.solve(max_time_in_seconds=180)
+        # sol = solv.solve(max_time_in_seconds=180)
+        sol = solv.warm_start_greedy(max_time_in_seconds=180, instance=instance)
         print(sol.solve_status)
         if (
             sol.solve_status == cp_model.OPTIMAL
