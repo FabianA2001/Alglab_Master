@@ -259,8 +259,11 @@ def show_instance_information(instance):
         selected_day = st.selectbox(
             "Tag auswählen", day_options, format_func=lambda x: f"Tag {x}"
         )
-        if SSN.editor_instance.name in st.session_state:
+        if SSN.editor_instance.name not in st.session_state:
             st.session_state[SSN.editor_instance.name] = st.session_state[SSN.instance.name].model_copy(deep=True)
+        elif st.session_state[SSN.editor_instance.name].name != st.session_state[SSN.instance.name].name:
+            st.session_state[SSN.editor_instance.name] = st.session_state[SSN.instance.name].model_copy(deep=True)
+
         # TODO make the employee remove and add a selction dialog
         if selected_day in instance.shifts:
             for shift_type_uid, shift in instance.shifts[selected_day].items():
