@@ -1,6 +1,7 @@
 from datetime import time
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
 
 from ... import solution
@@ -8,8 +9,6 @@ from ...help_functions import compare_solutions, hash_string
 from .component_solution import my_component
 from .session_state_names import Session_state_Names as SSN
 from .show_constraints import show_active_constraints, show_constraint_violations
-
-import pandas as pd
 
 SOLUTION_DIR = (
     Path(__file__).resolve().parent.parent.parent.parent / "data" / "solutions"
@@ -256,7 +255,7 @@ def show_solution_employee_changes():
                     all_columns.append(f"added_to_{day}_{shift_uid}")
                     all_columns.append(f"removed_from_{day}_{shift_uid}")
                     all_columns.append(f"employ_count_{day}_{shift_uid}")
-        solution_row[f"shifts_count_difference"] = shifts_count_difference
+        solution_row["shifts_count_difference"] = shifts_count_difference
         all_rows.append(solution_row)
 
     return (pd.DataFrame(all_rows), all_columns)

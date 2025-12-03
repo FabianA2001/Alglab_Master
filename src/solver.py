@@ -3,6 +3,7 @@ from datetime import datetime
 from ortools.sat.python import cp_model
 
 from . import shift_vars
+from .callback_early_stop import Callback_Early_Stop
 from .inputTypes import instace
 from .module import (
     cover_requirements,
@@ -18,37 +19,41 @@ from .module import (
     assign_employee_day_shift,
     ban_employee_day_shift,
 )
+from .module.shift_assignment_module import ShiftAssignmentModule
 from .module.solverConstraints import SolverConstraints
 from .solution import Solution
-from .callback_early_stop import Callback_Early_Stop
 
 
 class Solver:
-    def __init__(self, instance: instace.Instance, vars: shift_vars.Shift_vars):
+    def __init__(
+        self,
+        instance: instace.Instance,
+        vars: shift_vars.Shift_vars,
+        disabled_constraints: list[SolverConstraints] = [],
+        add_module_constraints: list[ShiftAssignmentModule] = [],
+    ):
         self.instance = instance
         self.vars = vars
         self.solve_time = 0
         self.start_solve_time: datetime = datetime(2005, 1, 1, 0, 0)
+        self.disabled_constraints: list[SolverConstraints] = disabled_constraints
+        for module in add_module_constraints:
+            module.build(self.instance, self.vars)
 
     def solve(
         self,
         log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
-        disabled_constraints: list[SolverConstraints] = [],
         stop_after_first_solution: bool = False,
         callback: cp_model.CpSolverSolutionCallback | None = None,
-        **solver_params,
     ) -> Solution:
-        self.set_constraints(disabled_constraints=disabled_constraints)
+        self.set_constraints()
         solver = cp_model.CpSolver()
         solver.parameters.log_search_progress = log_search_progress
         solver.parameters.max_time_in_seconds = max_time_in_seconds
 
         if stop_after_first_solution:
             solver.parameters.stop_after_first_solution = True
-
-        for key, value in solver_params.items():
-            setattr(solver.parameters, key, value)
 
         self.vars.model.Minimize(self.objevtive_value())
         self.start_solve_time = datetime.now()
@@ -57,20 +62,17 @@ class Solver:
         else:
             status = solver.Solve(self.vars.model)
         self.solve_time = (datetime.now() - self.start_solve_time).total_seconds()
-        return self.handle_results(status, solver, disabled_constraints)
+        return self.handle_results(status, solver)
 
     def solve_with_early_stop(
         self,
         log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
-        disabled_constraints: list[SolverConstraints] = [],
-        **solver_params,
     ):
         callback = Callback_Early_Stop(self.instance, self.vars)
         return self.solve(
             log_search_progress,
             max_time_in_seconds,
-            disabled_constraints,
             callback=callback,
         )
 
@@ -106,7 +108,6 @@ class Solver:
         self,
         status,
         solver: cp_model.CpSolver,
-        disabled_constraints: list[SolverConstraints] = [],
     ) -> Solution:
         """Handles the different results returned by the solver and returns a solution."""
         solution = Solution(self.instance)  # Create a new Solution instance
@@ -121,7 +122,7 @@ class Solver:
             #     print("Feasible solution found but not optimal.")
             solution.objective_value = solver.ObjectiveValue()
             solution.instance = self.instance
-            solution.disabled_constraints = disabled_constraints
+            solution.disabled_constraints = self.disabled_constraints
             solution.solve_time = self.solve_time
             solution.timestamp = datetime.now()
             return solution  # Return the populated solution
@@ -185,7 +186,6 @@ class Solver:
         self,
         solution: Solution,
         instance: instace.Instance,
-        disabled_constraints: list[SolverConstraints] = [],
         max_time_in_seconds: float = 60.0,
     ) -> Solution:
         """Warm starts the solver with a given solution."""
@@ -199,7 +199,6 @@ class Solver:
                     )
         return self.solve_min_changes(
             solution=solution,
-            disabled_constraints=disabled_constraints,
             max_time_in_seconds=max_time_in_seconds,
         )
 
@@ -237,16 +236,11 @@ class Solver:
         solution: Solution,
         log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
-        disabled_constraints: list[SolverConstraints] = [],
-        **solver_params,
     ) -> Solution:
-        self.set_constraints(disabled_constraints=disabled_constraints)
+        self.set_constraints()
         solver = cp_model.CpSolver()
         solver.parameters.log_search_progress = log_search_progress
         solver.parameters.max_time_in_seconds = max_time_in_seconds
-
-        for key, value in solver_params.items():
-            setattr(solver.parameters, key, value)
 
         self.vars.model.Minimize(self.objective_value_weight_changes(solution=solution))
         self.start_solve_time = datetime.now()
@@ -256,15 +250,12 @@ class Solver:
         status = solver.SolveWithSolutionCallback(self.vars.model, callback)
         ###
         self.solve_time = (datetime.now() - self.start_solve_time).total_seconds()
-        return self.handle_results(status, solver, disabled_constraints)
+        return self.handle_results(status, solver)
 
     def set_constraints(
         self,
-        log_search_progress: bool = True,
-        max_time_in_seconds: float = 60.0,
-        disabled_constraints: list[SolverConstraints] = [],
-        **solver_params,
     ):
+        disabled_constraints = self.disabled_constraints
         if SolverConstraints.days_off not in disabled_constraints:
             days_off.Days_off().build(self.instance, self.vars)
         if SolverConstraints.cover_requirements not in disabled_constraints:
@@ -277,6 +268,7 @@ class Solver:
                 self.instance, self.vars
             )
         if SolverConstraints.max_Cons_Shifts not in disabled_constraints:
+            print("füge max cons shifts constraint hinzu")
             max_Cons_Shifts.Max_Cons_Shifts().build(self.instance, self.vars)
         if SolverConstraints.max_weekend_days not in disabled_constraints:
             max_weekend_days.Max_weekend_days().build(self.instance, self.vars)
