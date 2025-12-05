@@ -319,13 +319,13 @@ class Solver:
                 for type_uid in self.instance.shifts[day]:
                     objective_value += self.instance.get_shift(
                         day=day, type_uid=type_uid
-                    ).penalty_not_assigned_day_employee.get(employee_uid, 0) * (
+                    ).penalty_assigned_day_employee.get(employee_uid, 0) * (
                         1 - self.vars.vars[(day, type_uid, employee_uid)]
                     )
                     objective_value += (
                         self.instance.shifts[day][
                             type_uid
-                        ].penalty_assigned_day_employee.get(employee_uid, 0)
+                        ].penalty_not_assigned_day_employee.get(employee_uid, 0)
                         * self.vars.vars[(day, type_uid, employee_uid)]
                     )
         for day in range(self.instance.number_of_days):
