@@ -172,7 +172,7 @@ def render_shift_plan_component(
                     #TODO instead of immediately giving it the value of 300 allow some how for changes
                     instance.shifts[int(day)][
                         hash_string(shift_type)
-                    ].penalty_not_assigned_day_employee[hash_string(employee)] = 300
+                    ].penalty_assigned_day_employee[hash_string(employee)] = 300
 
     if len(solution_changes_response["removed_employees"]) > 0 and submit_type_hard:
         for day, shift_type_dict in solution_changes_response[
@@ -192,7 +192,7 @@ def render_shift_plan_component(
                 for employee in employees:
                     instance.shifts[int(day)][
                         hash_string(shift_type)
-                    ].penalty_assigned_day_employee[hash_string(employee)] = 300
+                    ].penalty_not_assigned_day_employee[hash_string(employee)] = 300
 
     st.session_state[SSN.instance.name] = instance
     st.success("Instance updated with the removed employees.")

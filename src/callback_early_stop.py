@@ -46,8 +46,8 @@ class Callback_Early_Stop(cp_model.CpSolverSolutionCallback):
 
                 # Wünsche
                 for emp in self.instance.employees:
-                    weight_pos = shift.penalty_not_assigned_day_employee.get(emp, 0)
-                    weight_neg = shift.penalty_assigned_day_employee.get(emp, 0)
+                    weight_pos = shift.penalty_assigned_day_employee.get(emp, 0)
+                    weight_neg = shift.penalty_not_assigned_day_employee.get(emp, 0)
 
                     if weight_pos > 0:
                         total_weights += 1
