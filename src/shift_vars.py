@@ -18,6 +18,10 @@ class Shift_vars:
         self.__init_above_prefferd_vars(instance)
         self.__init_work_vars(instance)
         self.__init_below_threshold_vars(instance)
+        # self.__init_free_days_in_interval(instance)
+        # self.__init_free_days_on_sides(instance)
+        # self.__init_work_days_in_interval(instance)
+        # self.__init_work_days_on_sides(instance)
 
     def __init_vars(self, instance: instace.Instance):
         self.vars = {}
@@ -106,3 +110,94 @@ class Shift_vars:
 
     def get_below_prefferd_var(self, day: int, type_uid: int) -> cp_model.IntVar:
         return self.below_prefferd_vars[(day, type_uid)]
+    
+    def get_work_vars(self, day: int, employee_uid: int) -> cp_model.BoolVarT:
+        return self.work_vars[(day, employee_uid)]
+    
+
+
+
+
+    # def __init_free_days_on_sides(self, instance: instace.Instance):
+    #     """
+    #     Define variables that need to be used in consecutive shifts to decide if the constraint
+    #     should be considered or not. The constraint should be considered if this variable is 
+    #     true. This variable is true if the two days - the day before the consecutive shift interval
+    #     and the day after the consecutive shift interval - are free days.
+        
+    #     :param self: Description
+    #     :param instance: Description
+    #     :type instance: instace.Instance
+    #     """
+    #     self.free_days_on_sides = {}
+    #     for day in range(instance.number_of_days):
+    #             for employee_uid in instance.employees:
+    #                 self.free_days_on_sides[(day, employee_uid)] = self.model.new_bool_var(
+    #                     f"free_days_on_sides_{day}_{employee_uid}"
+    #                 )
+
+
+    # def __init_work_days_in_interval(self, instance: instace.Instance):
+    #     """
+    #     Define variables that need to be used in consecutive shifts to decide if the constraint
+    #     should be considered or not. The constraint should be considered if this variable is 
+    #     true. This variable is true if their is a working day in a consecutive shift interval.
+        
+    #     :param self: Description
+    #     :param instance: Description
+    #     :type instance: instace.Instance
+    #     """
+    #     self.work_days_in_interval = {}
+    #     for day in range(instance.number_of_days):
+    #             for employee_uid in instance.employees:
+    #                 self.work_days_in_interval[(day, employee_uid)] = self.model.new_bool_var(
+    #                     f"work_days_in_interval_{day}_{employee_uid}"
+    #                 )
+
+    # def __init_work_days_on_sides(self, instance: instace.Instance):
+    #     """
+    #     Define variables that need to be used in consecutive free shifts to decide if the constraint
+    #     should be considered or not. The constraint should be considered if this variable is 
+    #     true. This variable is true if the two days - the day before the consecutive free shift interval
+    #     and the day after the consecutive free shift interval - are work days.
+        
+    #     :param self: Description
+    #     :param instance: Description
+    #     :type instance: instace.Instance
+    #     """
+    #     self.work_days_on_sides = {}
+    #     for day in range(instance.number_of_days):
+    #             for employee_uid in instance.employees:
+    #                 self.work_days_on_sides[(day, employee_uid)] = self.model.new_bool_var(
+    #                     f"work_days_on_sides_{day}_{employee_uid}"
+    #                 )
+
+    # def __init_free_days_in_interval(self, instance: instace.Instance):
+    #     """
+    #     Define variables that need to be used in consecutive free shifts to decide if the constraint
+    #     should be considered or not. The constraint should be considered if this variable is 
+    #     true. This variable is true if their is a free day in a consecutive free shift interval.
+        
+    #     :param self: Description
+    #     :param instance: Description
+    #     :type instance: instace.Instance
+    #     """
+    #     self.free_days_in_interval = {}
+    #     for day in range(instance.number_of_days):
+    #             for employee_uid in instance.employees:
+    #                 self.free_days_in_interval[(day, employee_uid)] = self.model.new_bool_var(
+    #                     f"free_days_in_interval_{day}_{employee_uid}"
+    #                 )
+
+ 
+    # def get_free_days_on_sides(self, day: int, employee_uid: int) -> cp_model.BoolVarT:
+    #     return self.free_days_on_sides[(day, employee_uid)]
+    
+    # def get_work_days_in_interval(self, day: int, employee_uid: int) -> cp_model.BoolVarT:
+    #     return self.work_days_in_interval[(day, employee_uid)]
+    
+    # def get_work_days_on_sides(self, day: int, employee_uid: int) -> cp_model.BoolVarT:
+    #     return self.work_days_on_sides[(day, employee_uid)]
+    
+    # def get_free_days_in_interval(self, day: int, employee_uid: int) -> cp_model.BoolVarT:
+    #     return self.free_days_in_interval[(day, employee_uid)]
