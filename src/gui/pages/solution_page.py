@@ -388,3 +388,49 @@ def show():
         use_container_width=True,
         hide_index=True,
     )
+
+    if SSN.solutions.name in st.session_state and st.session_state[SSN.solutions.name]:
+        sol = st.session_state[SSN.solutions.name][-1]
+        
+        # Calculate fulfillment metrics
+        min_positive = sol.minimal_employee_positive_wishes_met()
+        max_positive = sol.maximum_employee_positive_wishes_met()
+        avg_positive = sol.average_employee_positive_wishes_met()
+        
+        min_negative = sol.minimal_employee_negative_wishes_met()
+        max_negative = sol.maximum_employee_negative_wishes_met()
+        avg_negative = sol.average_employee_negative_wishes_met()
+        
+        min_shift = sol.minimal_shift_fulfillment()
+        max_shift = sol.maximum_shift_fulfillment()
+        avg_shift = sol.average_shift_fulfillment()
+
+        # Display the results in Streamlit
+        st.title("Solution Fulfillment Metrics")
+        
+        st.header("Employee Positive Wishes Fulfillment")
+        st.write(f"Minimal Fulfillment: {min_positive:.2%}")
+        st.write(f"Maximum Fulfillment: {max_positive:.2%}")
+        st.write(f"Average Fulfillment: {avg_positive:.2%}")
+
+        st.header("Employee Negative Wishes Fulfillment")
+        st.write(f"Minimal Fulfillment: {min_negative:.2%}")
+        st.write(f"Maximum Fulfillment: {max_negative:.2%}")
+        st.write(f"Average Fulfillment: {avg_negative:.2%}")
+
+        st.header("Shift Fulfillment")
+        st.write(f"Minimal Fulfillment: {min_shift:.2%}")
+        st.write(f"Maximum Fulfillment: {max_shift:.2%}")
+        st.write(f"Average Fulfillment: {avg_shift:.2%}")
+
+        # Inside your main Streamlit app function
+        median_positive = sol.median_employee_positive_wishes_met()
+        median_negative = sol.median_employee_negative_wishes_met()
+
+        st.header("Employee Positive Wishes Median")
+        st.write(f"Median Fulfillment: {median_positive:.2%}")
+
+        st.header("Employee Negative Wishes Median")
+        st.write(f"Median Fulfillment: {median_negative:.2%}")
+    else:
+        st.warning("No solutions available in session state.")

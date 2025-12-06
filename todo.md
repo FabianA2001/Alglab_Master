@@ -47,6 +47,11 @@
 * In Callback_Early_Stop or another callback, create a ratio for each employee instead of wishes fulfillment over the all employees at the same time. (To avoid bias or prevent that the ratio is met through only the fulfillment of wishes of one employee) Maybe also another ratio of how many of employees have their ratio fulfilled. A problem that could occur with one employee wishes is that he/she have minimal consecutive days of 5 but all their wishes alternate one 5 days, this would cause the wishes to be hard to achieve, so one possibility is to have 40 percent of fulfillment. Or to check for these and not consider them in the ratio.
 In the callback save the "best" solution until now. Maybe use the callback to save that instead of stopping (so use only time for stopping)
 
+
+### Refactor ideas:
+* Move store solution functions from both Callback_Top_Solutions and solver to the class solutions somehow.
+
+
 ### Bugs:
 - A problem happen when the solver doesn't get an optimal or a solution
 
