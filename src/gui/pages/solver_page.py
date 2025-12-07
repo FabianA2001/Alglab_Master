@@ -38,7 +38,7 @@ def solve(**kwargs) -> solution.Solution:
     #     disabled_constraints=disabled_constraints,
     #     max_time_in_seconds=kwargs["timeout_seconds"],
     # )
-    sol = sol.warm_start_greedy(
+    sol = sol.solve_with_early_stop(
         instance,
         disabled_constraints=disabled_constraints,
         max_time_in_seconds=kwargs["timeout_seconds"],

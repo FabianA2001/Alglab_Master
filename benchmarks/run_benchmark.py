@@ -88,7 +88,7 @@ def run_benchmark(
 
         start = time.time()
         try:
-            # sol = solver.solve(
+            # sol = solver.solve_with_early_stop(
             #     max_time_in_seconds=timeout, log_search_progress=False, automaton=False
             # )
             sol = solver.warm_start_greedy(

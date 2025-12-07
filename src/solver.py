@@ -385,7 +385,7 @@ class Solver:
                     self.vars.model.AddHint(
                         self.vars.get_var(day, type_uid, employee_uid), var_value
                     )
-        return self.solve(
+        return self.solve_with_early_stop(
             disabled_constraints=disabled_constraints,
             max_time_in_seconds=max_time_in_seconds,
             log_search_progress=log_search_progress,
@@ -410,7 +410,7 @@ class Solver:
                     self.vars.model.AddHint(
                         self.vars.get_var(day, type_uid, employee_uid), var_value
                     )
-        return self.solve(
+        return self.solve_with_early_stop(
             disabled_constraints=disabled_constraints,
             max_time_in_seconds=max_time_in_seconds,
             log_search_progress=log_search_progress,
