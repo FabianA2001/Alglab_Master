@@ -25,7 +25,6 @@ from .module import (
     shift_rotation_constraint,
 )
 from .module.solverConstraints import SolverConstraints
-from .module.solverConstraints import SolverConstraintsAlternatives
 from .solution import Solution
 
 
@@ -360,103 +359,6 @@ class Solver:
                 self.instance, self.vars
             )
 
-
-    def set_constraints_alternative(
-        self,
-        log_search_progress: bool = True,
-        max_time_in_seconds: float = 60.0,
-        enabled_constraints: list[SolverConstraints] = [],
-        **solver_params,
-    ):
-        if SolverConstraintsAlternatives.days_off not in enabled_constraints:
-            days_off_new.Days_off_new().build(self.instance, self.vars)
-        if SolverConstraintsAlternatives.cover_requirements not in enabled_constraints:
-            cover_requirements.Cover_requirements().build(self.instance, self.vars)
-        if (
-            SolverConstraintsAlternatives.limited_shifts_per_type_validation
-            not in enabled_constraints
-        ):
-            limited_shifts_per_type_validation.Limited_shifts_per_type_validation().build(
-                self.instance, self.vars
-            )
-        if SolverConstraintsAlternatives.max_Cons_Shifts not in enabled_constraints:
-            max_Cons_shifts_new.Max_Cons_Shifts_Automaton().build(
-                self.instance, self.vars
-            )
-        if SolverConstraintsAlternatives.max_weekend_days not in enabled_constraints:
-            max_weekend_days.Max_weekend_days().build(self.instance, self.vars)
-        if SolverConstraintsAlternatives.minimum_consecutive_days_off not in enabled_constraints:
-            minimum_consecutive_days_off.Minimum_consecutive_days_off().build(
-                self.instance, self.vars
-            )
-        if SolverConstraintsAlternatives.minimum_consecutive_days_off_alternative not in enabled_constraints:
-            minimum_consecutove_days_off_new.Min_Cons_Days_Off_Alternative().build(
-                self.instance, self.vars
-            )
-        if SolverConstraintsAlternatives.minimum_consecutive_days_off_alternative_exact not in enabled_constraints:
-            minimum_consecutove_days_off_new.Min_Cons_Days_Off_Alternative_exact().build(
-                self.instance, self.vars
-            )
-        if SolverConstraintsAlternatives.minimum_consecutive_days_off_alternative_if not in enabled_constraints:
-            minimum_consecutove_days_off_new.Min_Cons_Days_Off_Alternative_Enforce_If().build(
-                self.instance, self.vars
-            )
-        if SolverConstraintsAlternatives.minimum_consecutive_days_off_alternative_if_exact not in enabled_constraints:
-            minimum_consecutove_days_off_new.Min_Cons_Days_Off_Alternative_exact_Enforce_If().build(
-                self.instance, self.vars
-            )
-        if SolverConstraintsAlternatives.minimum_consecutive_days_off_new not in enabled_constraints:
-            minimum_consecutove_days_off_new.Minimum_consecutive_days_off_new().build(
-                self.instance, self.vars
-            )
-        if SolverConstraintsAlternatives.minimum_consecutive_shifts not in enabled_constraints:
-            minimum_consecutive_shifts.Minimum_consecutive_shifts().build(
-                self.instance, self.vars
-            )
-        
-        if SolverConstraintsAlternatives.minimum_consecutive_shifts_alternative not in enabled_constraints:
-            minimum_consecutive_shifts_new.Min_Cons_Shifts_Alternative().build(
-                self.instance, self.vars
-            )
-        if SolverConstraintsAlternatives.minimum_consecutive_shifts_alternative_exact not in enabled_constraints:
-            minimum_consecutive_shifts_new.Min_Cons_Shifts_Alternative_exact().build(
-                self.instance, self.vars
-            )
-        if SolverConstraintsAlternatives.minimum_consecutive_shifts_alternative_if not in enabled_constraints:
-            minimum_consecutive_shifts_new.Min_Cons_Shifts_Alternative_Enforce_If().build(
-                self.instance, self.vars
-            )
-        if SolverConstraintsAlternatives.minimum_consecutive_shifts_alternative_if_exact not in enabled_constraints:
-            minimum_consecutive_shifts_new.Min_Cons_Shifts_Alternative_exact_Enforce_If().build(
-                self.instance, self.vars
-            )
-        if SolverConstraintsAlternatives.minimum_consecutive_shifts_new not in enabled_constraints:
-            minimum_consecutive_shifts_new.Minimum_consecutive_shifts_new().build(
-                self.instance, self.vars
-            )
-        
-
-        if SolverConstraintsAlternatives.minMaxWorkTime not in enabled_constraints:
-            minMaxWorkTime.MinMaxWorkTime().build(self.instance, self.vars)
-        if SolverConstraintsAlternatives.shift_rotation_constraint not in enabled_constraints:
-            shift_rotation_constraint.Shift_rotation_constraint().build(
-                self.instance, self.vars
-            )
-        if (
-            SolverConstraintsAlternatives.shift_assignment_single_day_validation
-            not in enabled_constraints
-        ):
-            shift_assignment_single_day_validation.Single_day_validation().build(
-                self.instance, self.vars
-            )
-        if SolverConstraintsAlternatives.assign_employee_day_shift not in enabled_constraints:
-            assign_employee_day_shift.Assign_employee_day_shift().build(
-                self.instance, self.vars
-            )
-        if SolverConstraintsAlternatives.ban_employee_day_shift not in enabled_constraints:
-            ban_employee_day_shift.Ban_employee_day_shift().build(
-                self.instance, self.vars
-            )
 
     def objective_value_new(self):
         objective_value = 0
