@@ -13,10 +13,10 @@ class Minimum_consecutive_days_off_new(ShiftAssignmentModule):
     ) -> cp_model.LinearExprT:
         for employee_uid in instance.employees:
             # TODO is a constraint with 1 consecutive working day meaningful?
-            for day_s in range(
-                instance.employees[employee_uid].min_number_consecutive_days_off - 1
+            for day_s in range(1,
+                instance.employees[employee_uid].min_number_consecutive_days_off
             ):
-                for day_d in range(instance.number_of_days - (day_s + 1) - 1):
+                for day_d in range(instance.number_of_days - day_s - 1):
                     assigned_shifts = []
                     assigned_shifts_inner_interval = []
                     assigned_shifts_interval_end = []
@@ -24,12 +24,12 @@ class Minimum_consecutive_days_off_new(ShiftAssignmentModule):
                     assigned_shifts.append(vars.work_vars[(day_d, employee_uid)])
                     # Because range end range is exclusive, the end range should have + 1
                     # Because day_s start with 0, another +1 should be added
-                    for day_j in range(day_d + 1, day_d + day_s + 1 + 1):
+                    for day_j in range(day_d + 1, day_d + day_s + 1):
                         assigned_shifts_inner_interval.append(
                             vars.work_vars[(day_j, employee_uid)]
                         )
                     assigned_shifts_interval_end.append(
-                        vars.work_vars[(day_d + day_s + 1 + 1, employee_uid)]
+                        vars.work_vars[(day_d + day_s + 1, employee_uid)]
                     )
                     vars.model.add(
                         1
@@ -100,4 +100,93 @@ class Min_Cons_Days_Off_Automaton(ShiftAssignmentModule):
 
             vars.model.AddAutomaton(sequence, start, accept, transitions)
 
+        return 0
+
+
+
+
+class Min_Cons_Days_Off_Alternative_Enforce_If(ShiftAssignmentModule):
+    def build(
+        self,
+        instance: instace.Instance,
+        vars: shift_vars.Shift_vars,
+    ) -> cp_model.LinearExprT:
+        for employee_uid in instance.employees:
+            minimal_consecutive = instance.employees[employee_uid].min_number_consecutive_days_off
+            for day in range(instance.number_of_days - minimal_consecutive):
+                for day_j in range(day + 1, day + minimal_consecutive):
+                    vars.model.add(vars.get_work_vars(day_j, employee_uid)
+                               >= vars.get_work_vars(day_j + 1, employee_uid)
+                               ).OnlyEnforceIf(vars.get_work_vars(day, employee_uid))
+        return 0
+    
+class Min_Cons_Days_Off_Alternative(ShiftAssignmentModule):
+    def build(
+        self,
+        instance: instace.Instance,
+        vars: shift_vars.Shift_vars,
+    ) -> cp_model.LinearExprT:
+        for employee_uid in instance.employees:
+            minimal_consecutive = instance.employees[employee_uid].min_number_consecutive_days_off
+            for day in range(instance.number_of_days - minimal_consecutive):
+                for day_j in range(day + 1, day + minimal_consecutive):
+                    vars.model.add(vars.get_work_vars(day_j, employee_uid) 
+                                   + ( 1 - vars.get_work_vars(day, employee_uid))
+                                   >= vars.get_work_vars(day_j + 1, employee_uid)
+                                   )
+        return 0
+    
+
+class Min_Cons_Days_Off_Alternative_exact_Enforce_If(ShiftAssignmentModule):
+    def build(
+        self,
+        instance: instace.Instance,
+        vars: shift_vars.Shift_vars,
+    ) -> cp_model.LinearExprT:
+        for employee_uid in instance.employees:
+            minimal_consecutive = instance.employees[employee_uid].min_number_consecutive_days_off
+            for day in range(instance.number_of_days - minimal_consecutive):
+                for day_j in range(day + 1, day + minimal_consecutive):
+                    vars.model.add(vars.get_work_vars(day_j, employee_uid)
+                               >= vars.get_work_vars(day_j + 1, employee_uid)
+                               ).OnlyEnforceIf(vars.get_work_vars(day, employee_uid)
+                                               , vars.get_work_vars(day + 1, employee_uid).Not())
+            
+            # Constraint for days that do not have less than minimal_consecutive days after them
+            day_s = 1
+            for day in range(instance.number_of_days - minimal_consecutive, instance.number_of_days):
+                for day_j in range(day + 1, day + minimal_consecutive - day_s):
+                    vars.model.add(vars.get_work_vars(day_j, employee_uid)
+                               >= vars.get_work_vars(day_j + 1, employee_uid)
+                               ).OnlyEnforceIf(vars.get_work_vars(day, employee_uid)
+                                               , vars.get_work_vars(day + 1, employee_uid).Not())
+                day_s = day_s + 1
+        return 0
+    
+class Min_Cons_Days_Off_Alternative_exact(ShiftAssignmentModule):
+    def build(
+        self,
+        instance: instace.Instance,
+        vars: shift_vars.Shift_vars,
+    ) -> cp_model.LinearExprT:
+        for employee_uid in instance.employees:
+            minimal_consecutive = instance.employees[employee_uid].min_number_consecutive_days_off
+            for day in range(instance.number_of_days - minimal_consecutive):
+                for day_j in range(day + 1, day + minimal_consecutive):
+                    vars.model.add(vars.get_work_vars(day_j, employee_uid) 
+                                   + ( 1 - vars.get_work_vars(day, employee_uid))
+                                   + vars.get_work_vars(day + 1, employee_uid)
+                                   >= vars.get_work_vars(day_j + 1, employee_uid)
+                                   )
+                    
+            # Constraint for days that do not have less than minimal_consecutive days after them
+            day_s = 1
+            for day in range(instance.number_of_days - minimal_consecutive, instance.number_of_days):
+                for day_j in range(day + 1, day + minimal_consecutive - day_s):
+                    vars.model.add(vars.get_work_vars(day_j, employee_uid) 
+                                   + ( 1 - vars.get_work_vars(day, employee_uid))
+                                   + vars.get_work_vars(day + 1, employee_uid)
+                                   >= vars.get_work_vars(day_j + 1, employee_uid)
+                                   )
+                day_s = day_s + 1
         return 0

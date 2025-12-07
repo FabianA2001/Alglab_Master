@@ -17,7 +17,7 @@ const CONFIG = {
     },
 };
 
-export var dataDict = {"cover_weights": {}, "added_employees": {}, "removed_employees": {}};
+export var dataDict = {"cover_weights": {}, "added_employees": {}, "removed_employees": {}, "submit_type": "soft"};
 
 /**
  * create an element that contains the name and the starting/ending time of it.
@@ -382,37 +382,51 @@ function handleSearch(event) {
 
 function createBasicTable(read_only) {
     if (!document.getElementById("shift-plan-app")) {
-        const shiftPlanAppHTML = `
-        <div id="shift-plan-app">
-            <div class="filter-container">
+    const shiftPlanAppHTML = `
+    <div id="shift-plan-app">
+        <div class="filter-container">
             <input 
                 type="text" 
                 id="searchInput" 
                 class="filter-input" 
                 placeholder="Search for multiple employees (Space separated)"
             >
-            </div>
-            <div class="shift-plan-container">
+        </div>
+        <div class="shift-plan-container">
             <table class="shift-plan-table" id="shiftPlanTable">
                 <thead>
-                <tr id="headerRow"></tr>
+                    <tr id="headerRow"></tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
             </table>
-            </div>
-            <div class="table-info" id="tableInfo"></div>
         </div>
-        `;
-        // Insert the HTML into the body or a specific container
-        document.body.insertAdjacentHTML('beforeend', shiftPlanAppHTML);
-    }
-    
-    if (!read_only && !document.getElementById("submit_cover_change") && document.getElementById("tableInfo")) {
-        tableInfo.insertAdjacentHTML('afterend', `<button id="submit_cover_change">Submit Changes</button>`);
-        document.getElementById("submit_cover_change").onclick = function () {
-                Streamlit.setComponentValue(dataDict);
-            }
-    }
+        <div class="table-info" id="tableInfo"></div>
+    </div>
+    `;
+    // Insert the HTML into the body or a specific container
+    document.body.insertAdjacentHTML('beforeend', shiftPlanAppHTML);
+}
+
+if (!read_only && !document.getElementById("submit_soft_change") && document.getElementById("tableInfo")) {
+    // Create the buttons
+    const tableInfo = document.getElementById("tableInfo");
+    tableInfo.insertAdjacentHTML('afterend', `
+        <button id="submit_soft_change" class="submit_changed_button">Submit Soft Changes</button>
+        <button id="submit_hard_change" class="submit_changed_button">Submit Hard Changes</button>
+    `);
+
+    // Button to submit soft changes
+    document.getElementById("submit_soft_change").onclick = function () {
+        dataDict["submit_type"] = "soft"; // Add submit type
+        Streamlit.setComponentValue(dataDict);
+    };
+
+    // Button to submit hard changes
+    document.getElementById("submit_hard_change").onclick = function () {
+        dataDict["submit_type"] = "hard"; // Add submit type
+        Streamlit.setComponentValue(dataDict);
+    };
+}
 }
 
 // Export initialization function
@@ -422,7 +436,7 @@ function createBasicTable(read_only) {
  */
 export function initShiftPlanTable(shiftPlanData, read_only) {
     // We redefine dataDict because the streamlit onRender get called multiple times at the start.
-    dataDict = {"cover_weights": {}, "added_employees": {}, "removed_employees": {}};
+    dataDict = {"cover_weights": {}, "added_employees": {}, "removed_employees": {}, "submit_type": "soft"};
 
     createBasicTable(read_only);
 
