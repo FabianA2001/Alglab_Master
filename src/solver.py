@@ -5,7 +5,7 @@ from ortools.sat.python import cp_model
 from typing import Callable
 
 from . import shift_vars
-from .callback_early_stop import Callback_Early_Stop
+from .callback_early_stop import Callback_Early_Stop, Callback_Early_Stop_immediate
 from .solverCallback.callback_three_best_solutions import Callback_Top_Solutions
 from .inputTypes import instace
 from .module import (
@@ -42,9 +42,10 @@ class Solver:
         disabled_constraints: list[SolverConstraints] = [],
         stop_after_first_solution: bool = False,
         callback: cp_model.CpSolverSolutionCallback | None = None,
+        constraint_set = 0,
         **solver_params,
     ) -> Solution:
-        self.set_constraints(disabled_constraints=disabled_constraints)
+        self.set_constraints(disabled_constraints=disabled_constraints, constraint_set = constraint_set)
         solver = cp_model.CpSolver()
         solver.parameters.log_search_progress = log_search_progress
         solver.parameters.max_time_in_seconds = max_time_in_seconds
@@ -69,6 +70,7 @@ class Solver:
         log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
         disabled_constraints: list[SolverConstraints] = [],
+        constraint_set = 0,
         **solver_params,
     ):
         callback = Callback_Early_Stop(self.instance, self.vars)
@@ -77,6 +79,24 @@ class Solver:
             max_time_in_seconds,
             disabled_constraints,
             callback=callback,
+            constraint_set=constraint_set
+        )
+    
+    def solve_with_early_stop_immediate(
+        self,
+        log_search_progress: bool = True,
+        max_time_in_seconds: float = 60.0,
+        disabled_constraints: list[SolverConstraints] = [],
+        constraint_set = 0,
+        **solver_params,
+    ):
+        callback = Callback_Early_Stop_immediate(self.instance, self.vars)
+        return self.solve(
+            log_search_progress,
+            max_time_in_seconds,
+            disabled_constraints,
+            callback=callback,
+            constraint_set=constraint_set
         )
 
     def objevtive_value(self):
@@ -310,6 +330,7 @@ class Solver:
         log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
         disabled_constraints: list[SolverConstraints] = [],
+        constraint_set = 0,
         **solver_params,
     ):
         if SolverConstraints.days_off not in disabled_constraints:
@@ -329,14 +350,96 @@ class Solver:
             )
         if SolverConstraints.max_weekend_days not in disabled_constraints:
             max_weekend_days.Max_weekend_days().build(self.instance, self.vars)
-        if SolverConstraints.minimum_consecutive_days_off not in disabled_constraints:
+        if SolverConstraints.minimum_consecutive_days_off not in disabled_constraints and constraint_set == 0:
+            minimum_consecutive_days_off.Minimum_consecutive_days_off().build(
+                self.instance, self.vars
+            )
+            #print("Minimum_consecutive_days_off")
+        if SolverConstraints.minimum_consecutive_shifts not in disabled_constraints and constraint_set == 0:
+            minimum_consecutive_shifts.Minimum_consecutive_shifts().build(
+                self.instance, self.vars
+            )
+            #print("Minimum_consecutive_shifts")
+        if SolverConstraints.minimum_consecutive_days_off not in disabled_constraints and constraint_set == 1:
+            minimum_consecutove_days_off_new.Minimum_consecutive_days_off_new().build(
+                self.instance, self.vars
+            ) 
+            #print("Minimum_consecutive_days_off_new")
+        if SolverConstraints.minimum_consecutive_shifts not in disabled_constraints and constraint_set == 1:
+            minimum_consecutive_shifts_new.Minimum_consecutive_shifts_new().build(
+                self.instance, self.vars
+            )
+            #print("Minimum_consecutive_shifts_new")
+        if SolverConstraints.minimum_consecutive_days_off not in disabled_constraints and constraint_set == 2:
+            minimum_consecutove_days_off_new.Min_Cons_Days_Off_Alternative().build(
+                self.instance, self.vars
+            )
+            #print("Min_Cons_Days_Off_Alternative")
+        if SolverConstraints.minimum_consecutive_shifts not in disabled_constraints and constraint_set == 2:
+            minimum_consecutive_shifts_new.Min_Cons_Shifts_Alternative().build(
+                self.instance, self.vars
+            )
+            #print("Min_Cons_Shifts_Alternative")
+        if SolverConstraints.minimum_consecutive_days_off not in disabled_constraints and constraint_set == 3:
+            minimum_consecutove_days_off_new.Min_Cons_Days_Off_Alternative_Enforce_If().build(
+                self.instance, self.vars
+            )
+            #print("Min_Cons_Days_Off_Alternative_Enforce_If")
+        if SolverConstraints.minimum_consecutive_shifts not in disabled_constraints and constraint_set == 3:
+            minimum_consecutive_shifts_new.Min_Cons_Shifts_Alternative_Enforce_If().build(
+                self.instance, self.vars
+            )
+            #print("Min_Cons_Shifts_Alternative_Enforce_If")
+        if SolverConstraints.minimum_consecutive_days_off not in disabled_constraints and constraint_set == 4:
+            minimum_consecutove_days_off_new.Min_Cons_Days_Off_Alternative_exact().build(
+                self.instance, self.vars
+            )
+            #print("Min_Cons_Days_Off_Alternative_exact")
+        if SolverConstraints.minimum_consecutive_shifts not in disabled_constraints and constraint_set == 4:
+            minimum_consecutive_shifts_new.Min_Cons_Shifts_Alternative_exact().build(
+                self.instance, self.vars
+            )
+            #print("Min_Cons_Shifts_Alternative_exact")
+        if SolverConstraints.minimum_consecutive_days_off not in disabled_constraints and constraint_set == 5:
+            minimum_consecutove_days_off_new.Min_Cons_Days_Off_Alternative_exact_Enforce_If().build(
+                self.instance, self.vars
+            )
+            #print("Min_Cons_Days_Off_Alternative_exact_Enforce_If")
+        if SolverConstraints.minimum_consecutive_shifts not in disabled_constraints and constraint_set == 5:
+            minimum_consecutive_shifts_new.Min_Cons_Shifts_Alternative_exact_Enforce_If().build(
+                self.instance, self.vars
+            )
+            #print("Min_Cons_Shifts_Alternative_exact_Enforce_If")
+        if SolverConstraints.minimum_consecutive_days_off not in disabled_constraints and constraint_set == 6:
             minimum_consecutove_days_off_new.Min_Cons_Days_Off_Automaton().build(
                 self.instance, self.vars
             )
-        if SolverConstraints.minimum_consecutive_shifts not in disabled_constraints:
+            #print("Min_Cons_Days_Off_Automaton")
+        if SolverConstraints.minimum_consecutive_shifts not in disabled_constraints and constraint_set == 6:
             minimum_consecutive_shifts_new.Min_Cons_Shifts_Automaton().build(
                 self.instance, self.vars
             )
+            #print("Min_Cons_Shifts_Automaton")
+        if SolverConstraints.minimum_consecutive_days_off not in disabled_constraints and constraint_set == 7:
+            minimum_consecutove_days_off_new.Min_Cons_Days_Off_Alternative_exact_original().build(
+                self.instance, self.vars
+            )
+            #print("Min_Cons_Days_Off_Alternative_exact_original")
+        if SolverConstraints.minimum_consecutive_shifts not in disabled_constraints and constraint_set == 7:
+            minimum_consecutive_shifts_new.Min_Cons_Shifts_Alternative_exact_original().build(
+                self.instance, self.vars
+            )
+            #print("Min_Cons_Shifts_Alternative_exact_original")
+        if SolverConstraints.minimum_consecutive_days_off not in disabled_constraints and constraint_set == 8:
+            minimum_consecutove_days_off_new.Min_Cons_Days_Off_Alternative_Enforce_If_original().build(
+                self.instance, self.vars
+            )
+            #print("Min_Cons_Days_Off_Alternative_Enforce_If_original")
+        if SolverConstraints.minimum_consecutive_shifts not in disabled_constraints and constraint_set == 8:
+            minimum_consecutive_shifts_new.Min_Cons_Shifts_Alternative_Enforce_If_original().build(
+                self.instance, self.vars
+            )
+            #print("Min_Cons_Shifts_Alternative_Enforce_If_original")
         if SolverConstraints.minMaxWorkTime not in disabled_constraints:
             minMaxWorkTime.MinMaxWorkTime().build(self.instance, self.vars)
         if SolverConstraints.shift_rotation_constraint not in disabled_constraints:
