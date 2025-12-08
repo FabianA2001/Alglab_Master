@@ -47,7 +47,12 @@ class Solver_for_window(solver.Solver):
                 SolverConstraints.max_Cons_Shifts,
                 SolverConstraints.max_weekend_days,
                 SolverConstraints.minimum_consecutive_days_off,
-                # SolverConstraints.minimum_consecutive_shifts,
+                SolverConstraints.minimum_consecutive_shifts,
+                # SolverConstraints.cover_requirements,
+                # SolverConstraints.days_off,
+                # SolverConstraints.cover_requirements,
+                # SolverConstraints.limited_shifts_per_type_validation,
+                # SolverConstraints.minMaxWorkTime,
             ],
             add_module_constraints,
         )
@@ -304,11 +309,40 @@ class Solver_for_window(solver.Solver):
         self, employee_uid: employee.EmployeeUid
     ):
         min_consecutive_shifts = self.config[employee_uid].min_consecutive_shifts_start
-        for day in range(min_consecutive_shifts):
-            shifts_vars = []
-            for shift_type_uid in self.instance.shift_types:
-                shifts_vars.append(self.vars.get_var(day, shift_type_uid, employee_uid))
-            self.vars.model.Add(sum(shifts_vars) == 1)
+        if min_consecutive_shifts > 0:
+            for day in range(min_consecutive_shifts):
+                shifts_vars = []
+                for shift_type_uid in self.instance.shift_types:
+                    shifts_vars.append(
+                        self.vars.get_var(day, shift_type_uid, employee_uid)
+                    )
+                self.vars.model.Add(sum(shifts_vars) == 1)
+        else:
+            # HACK broken
+            return
+            nedded_min_consecutive_shifts = self.instance.employees[
+                employee_uid
+            ].min_number_consecutive_shifts
+            shifts_vars_previus_and_current_day = []
+            for day in range(nedded_min_consecutive_shifts - 1):
+                shifts_vars_next_day = []
+                for shift_type_uid in self.instance.shift_types:
+                    shifts_vars_previus_and_current_day.append(
+                        self.vars.get_var(day, shift_type_uid, employee_uid)
+                    )
+                    shifts_vars_next_day.append(
+                        self.vars.get_var(day + 1, shift_type_uid, employee_uid)
+                    )
+
+                next_day_has_shift = self.vars.model.NewBoolVar(
+                    f"next_day_{day + 1}_has_shift_{employee_uid}"
+                )
+
+                self.vars.model.AddMaxEquality(next_day_has_shift, shifts_vars_next_day)
+
+                self.vars.model.Add(
+                    sum(shifts_vars_previus_and_current_day) == 0
+                ).OnlyEnforceIf(next_day_has_shift.Not())
 
     def add_end_minimum_consecutive_shifts_constraints(
         self, employee_uid: employee.EmployeeUid
