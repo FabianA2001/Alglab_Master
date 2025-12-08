@@ -3,8 +3,7 @@ from collections import defaultdict
 from .. import solution, solver
 from ..inputTypes import employee, instace
 from . import solver_for_window
-
-# from .module.minimum_consecutive_shifts import Minimum_consecutive_shifts
+from .module.minimum_consecutive_shifts import Minimum_consecutive_shifts
 
 
 class Slice_instance:
@@ -37,14 +36,14 @@ class Slice_instance:
             self.window_instance,
             solver.shift_vars.Shift_vars(self.window_instance),
             self.config,
-            # add_module_constraints=[Minimum_consecutive_shifts(self.config)],
+            add_module_constraints=[Minimum_consecutive_shifts(self.config)],
         )
 
         # TODO Remove
-        for emp_uid, entry in self.config.items():
-            if str(entry):
-                print(self.inst.employees[emp_uid].name)
-                print(entry)
+        # for emp_uid, entry in self.config.items():
+        #     if str(entry):
+        #         print(self.inst.employees[emp_uid].name)
+        #         print(entry)
         ######
 
         self.fix_first_and_last_day()
@@ -86,7 +85,7 @@ class Slice_instance:
                     self.solvr.vars.model.Add(var == 0)
 
     def create_window_instance(self) -> instace.Instance:
-        """Erstellt eine Instanz, die das aktuelle Suchfenster plus einen Tag davor und danach umfasst."""
+        """Erstellt eine Instanz, die das aktuelle Suchfenster umfasst."""
         old_instance = self.sol.instance
 
         days_in_window = self.end_day - self.start_day + 1
@@ -103,7 +102,7 @@ class Slice_instance:
         # Kopiere shift_types (Referenz auf dieselben ShiftType-Objekte)
         shift_types = old_instance.shift_types.copy()
 
-        # Erstelle neue shifts für das erweiterte Fenster
+        # Erstelle neue shifts für das Fenster
         from collections import defaultdict
 
         shifts = defaultdict(dict)
@@ -144,7 +143,7 @@ class Slice_instance:
             shift_type_uid: 0 for shift_type_uid in self.inst.shift_types
         }
 
-        # Iteriere durch alle Tage außerhalb des erweiterten Windows
+        # Iteriere durch alle Tage außerhalb des Windows
         for day in range(self.inst.number_of_days):
             if day < self.start_day or day > self.end_day:
                 # Tag liegt außerhalb des Windows
@@ -172,10 +171,10 @@ class Slice_instance:
     ) -> employee.Employee:
         new_emp = old_emp.model_copy()
 
-        # Zähle Arbeitszeit (in Minuten) außerhalb des Windows
-        minutes_outside_window = 0
+        # Zähle Arbeitszeit (in Minuten) außerhalb des Windows UND an fixierten Tagen
+        minutes_outside = 0
 
-        # Iteriere durch alle Tage außerhalb des erweiterten Windows
+        # Iteriere durch alle Tage außerhalb des Windows
         for day in range(self.inst.number_of_days):
             if day < self.start_day or day > self.end_day:
                 # Tag liegt außerhalb des Windows
@@ -183,20 +182,20 @@ class Slice_instance:
                     if self.sol.is_employee_assigned(day, shift_type_uid, uid):
                         # Hole die Länge des Shift-Typs
                         shift_type = self.inst.shift_types[shift_type_uid]
-                        minutes_outside_window += shift_type.length
+                        minutes_outside += shift_type.length
 
         # Passe max_minutes_assigned an
-        assert old_emp.max_minutes_assigned >= minutes_outside_window, (
-            f"Employee {uid} has more minutes assigned outside the window ({minutes_outside_window}) "
+        assert old_emp.max_minutes_assigned >= minutes_outside, (
+            f"Employee {uid} has more minutes assigned outside+fixed ({minutes_outside}) "
             f"than their maximum allowed ({old_emp.max_minutes_assigned})."
         )
         new_emp.max_minutes_assigned = max(
-            0, old_emp.max_minutes_assigned - minutes_outside_window
+            0, old_emp.max_minutes_assigned - minutes_outside
         )
 
         # Passe auch min_minutes_assigned an
         new_emp.min_minutes_assigned = max(
-            0, old_emp.min_minutes_assigned - minutes_outside_window
+            0, old_emp.min_minutes_assigned - minutes_outside
         )
 
         return new_emp
@@ -205,8 +204,8 @@ class Slice_instance:
         self,
         uid: employee.EmployeeUid,
         old_emp: employee.Employee,
-        extended_start: int,
-        extended_end: int,
+        start: int,
+        end: int,
     ) -> employee.Employee:
         """Adjust blocked_shifts days to the window's coordinate system."""
         new_emp = old_emp.model_copy()
@@ -215,9 +214,10 @@ class Slice_instance:
         new_blocked_shifts = set()
         for old_day in old_emp.blocked_shifts:
             # Only include blocked days that fall within the extended window
-            if extended_start <= old_day <= extended_end:
+            if start <= old_day <= end:
                 # Convert to window coordinate system (0-based)
-                new_day = old_day - extended_start
+                new_day = old_day - start
+
                 new_blocked_shifts.add(new_day)
 
         new_emp.blocked_shifts = new_blocked_shifts
@@ -268,14 +268,8 @@ class Slice_instance:
     def update_minimum_consecutive_shifts(self):
         """Aktualisiert die minimum consecutive shifts Constraints basierend auf self.config."""
         for emp_uid, emp in self.window_instance.employees.items():
-            start_needed = self.config[emp_uid].min_consecutive_shifts_start
-            end_needed = self.config[emp_uid].min_consecutive_shifts_end
-
-            if start_needed > 0:
-                self.solvr.add_start_minimum_consecutive_shifts_constraints(emp_uid)
-
-            if end_needed > 0:
-                self.solvr.add_end_minimum_consecutive_shifts_constraints(emp_uid)
+            self.solvr.add_start_minimum_consecutive_shifts_constraints(emp_uid)
+            self.solvr.add_end_minimum_consecutive_shifts_constraints(emp_uid)
 
     def update_minimum_consecutive_days_off(self):
         """Aktualisiert die minimum consecutive days-off Constraints basierend auf self.config."""
@@ -302,9 +296,9 @@ class Slice_instance:
         end_needed: same for the end of the window.
         """
         start_consecutive = self.count_assigned_shifts_start(emp_uid)
-        print(
-            f"Employee {emp.name} has {start_consecutive} consecutive shifts before the window. Und benötigt {emp.min_number_consecutive_shifts}."
-        )
+        # print(
+        #     f"Employee {emp.name} has {start_consecutive} consecutive shifts before the window. Und benötigt {emp.min_number_consecutive_shifts}."
+        # )
         if start_consecutive == 0:
             start_needed = 0
         else:
