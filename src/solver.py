@@ -2,8 +2,11 @@ from datetime import datetime
 
 from ortools.sat.python import cp_model
 
+from typing import Callable
+
 from . import shift_vars
 from .callback_early_stop import Callback_Early_Stop
+from .solverCallback.callback_three_best_solutions import Callback_Top_Solutions
 from .inputTypes import instace
 from .module import (
     assign_employee_day_shift,
@@ -106,35 +109,77 @@ class Solver:
                 )
         return objective_value
 
+    def solve_callback_with_solution(
+        self,
+        log_search_progress: bool = True,
+        max_time_in_seconds: float = 60.0,
+        disabled_constraints: list[SolverConstraints] = [],
+        stop_after_first_solution: bool = False,
+        callback: cp_model.CpSolverSolutionCallback | None = None,
+        objective_function: Callable[[], cp_model.ObjLinearExprT] | None = None,  # Accept a callable
+        **solver_params,
+    ) -> Solution:
+
+        self.set_constraints(disabled_constraints=disabled_constraints)
+        solver = cp_model.CpSolver()
+        solver.parameters.log_search_progress = log_search_progress
+        solver.parameters.max_time_in_seconds = max_time_in_seconds
+
+        if stop_after_first_solution:
+            solver.parameters.stop_after_first_solution = True
+
+        for key, value in solver_params.items():
+            setattr(solver.parameters, key, value)
+
+        # Set the objective function; use objective_value_new as the default if none is provided
+        if objective_function is None:
+            objective_function = self.objective_value_new  # Default to objective_value_new
+
+        self.vars.model.Minimize(objective_function())  # Call the objective function
+        
+        self.start_solve_time = datetime.now()
+        if callback is not None:
+            status = solver.SolveWithSolutionCallback(self.vars.model, callback)
+        else:
+            status = solver.Solve(self.vars.model)
+
+        self.solve_time = (datetime.now() - self.start_solve_time).total_seconds()
+        return self.handle_results(status, solver, disabled_constraints, callback)
+    
     def handle_results(
         self,
         status,
         solver: cp_model.CpSolver,
         disabled_constraints: list[SolverConstraints] = [],
+        callback: cp_model.CpSolverSolutionCallback | None = None,
     ) -> Solution:
         """Handles the different results returned by the solver and returns a solution."""
+        
+        # Check for the best solution stored in the callback
+        if isinstance(callback, Callback_Top_Solutions):
+            if callback.best_solution is not None:
+                return callback.best_solution  # Return the best solution if it exists
+        
         solution = Solution(self.instance)  # Create a new Solution instance
         solution.solve_status = status
+        
         if status in [cp_model.OPTIMAL, cp_model.FEASIBLE]:
-            self.store_solution(
-                solver, solution
-            )  # Pass the solution instance to store values
-            # if status == cp_model.OPTIMAL:
-            #     print("Optimal solution found.")
-            # else:
-            #     print("Feasible solution found but not optimal.")
+            self.store_solution(solver, solution)  # Store the current solution values
             solution.objective_value = solver.ObjectiveValue()
             solution.instance = self.instance
             solution.disabled_constraints = disabled_constraints
             solution.solve_time = self.solve_time
             solution.timestamp = datetime.now()
             return solution  # Return the populated solution
+
         elif status == cp_model.INFEASIBLE:
             self.process_infeasible_solution()
             return solution
+
         elif status == cp_model.UNKNOWN:
             self.process_unknown_status()
             return solution
+
         elif status == cp_model.MODEL_INVALID:
             self.process_invalid_model()
             return solution
