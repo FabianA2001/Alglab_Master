@@ -293,23 +293,37 @@ class Solution(BaseModel):
         """Lädt eine Solution aus einer JSON-Datei mit Pydantic's model_validate_json().
 
         Args:
-            filepath: Pfad zur JSON-Datei
+            name: namde der JSON-Datei
 
         Returns:
             Solution: Die geladene Solution
         """
         path = DATA_DIR / f"{name}.json"
 
-        if not path.exists():
+        return Solution.from_json_path(path=str(path))
+
+    @classmethod
+    def from_json_path(cls, path: str) -> "Solution":
+        """Lädt eine Solution aus einer JSON-Datei mit Pydantic's model_validate_json().
+
+        Args:
+            filepath: Pfad zur JSON-Datei
+
+        Returns:
+            Solution: Die geladene Solution
+        """
+        path_obj = Path(path)
+
+        if not path_obj.exists():
             raise FileNotFoundError(f"Datei nicht gefunden: {path}")
 
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path_obj, "r", encoding="utf-8") as f:
             json_str = f.read()
 
         # Nutze Pydantic's eingebaute JSON-Deserialisierung
         solution = cls.model_validate_json(json_str)
 
-        print(f"Solution geladen aus: {path}")
+        print(f"Solution geladen aus: {path_obj}")
 
         return solution
 
