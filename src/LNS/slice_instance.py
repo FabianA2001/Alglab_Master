@@ -233,7 +233,7 @@ class Slice_instance:
         start_vorbidden_days = (
             max(0, emp.max_number_consecutive_shifts - current_consecutive_shifts)
             if current_consecutive_shifts != 0
-            else 0
+            else -1
         )
         current_consecutive_shifts = self.count_assigned_shifts_end(emp_uid)
 
@@ -245,7 +245,7 @@ class Slice_instance:
         end_vorbidden_days = (
             (emp.max_number_consecutive_shifts - current_consecutive_shifts)
             if current_consecutive_shifts != 0
-            else 0
+            else -1
         )
         return (start_vorbidden_days, end_vorbidden_days)
 
@@ -300,13 +300,13 @@ class Slice_instance:
         #     f"Employee {emp.name} has {start_consecutive} consecutive shifts before the window. Und benötigt {emp.min_number_consecutive_shifts}."
         # )
         if start_consecutive == 0:
-            start_needed = 0
+            start_needed = -1
         else:
             start_needed = max(0, emp.min_number_consecutive_shifts - start_consecutive)
 
         end_consecutive = self.count_assigned_shifts_end(emp_uid)
         if end_consecutive == 0:
-            end_needed = 0
+            end_needed = -1
         else:
             end_needed = max(0, emp.min_number_consecutive_shifts - end_consecutive)
 
@@ -326,13 +326,13 @@ class Slice_instance:
         """
         start_free = self.count_not_assigned_shifts_start(emp_uid)
         if start_free == 0:
-            start_needed = 0
+            start_needed = -1
         else:
             start_needed = max(0, emp.min_number_consecutive_days_off - start_free)
 
         end_free = self.count_not_assigned_shifts_end(emp_uid)
         if end_free == 0:
-            end_needed = 0
+            end_needed = -1
         else:
             end_needed = max(0, emp.min_number_consecutive_days_off - end_free)
 
