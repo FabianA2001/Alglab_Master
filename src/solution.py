@@ -303,7 +303,7 @@ class Solution(BaseModel):
         return Solution.from_json_path(path=str(path))
 
     @classmethod
-    def from_json_path(cls, path: str) -> "Solution":
+    def from_json_path(cls, path: str | Path) -> "Solution":
         """Lädt eine Solution aus einer JSON-Datei mit Pydantic's model_validate_json().
 
         Args:
@@ -312,7 +312,12 @@ class Solution(BaseModel):
         Returns:
             Solution: Die geladene Solution
         """
-        path_obj = Path(path)
+        if isinstance(path, Path):
+            path_obj = path
+        elif isinstance(path, str):
+            path_obj = Path(path)
+        else:
+            raise TypeError(f"path muss ein str oder Path sein, ist {type(path)}")
 
         if not path_obj.exists():
             raise FileNotFoundError(f"Datei nicht gefunden: {path}")
