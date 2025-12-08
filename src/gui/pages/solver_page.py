@@ -16,11 +16,14 @@ def solve_warm_start(**kwargs) -> solution.Solution:
 
     # TODO warm start implement
     old_solution = kwargs["old_solution"]
-    sol = solver.Solver(instance, shift_vars.Shift_vars(instance))
+    sol = solver.Solver(
+        instance,
+        shift_vars.Shift_vars(instance),
+        disabled_constraints=disabled_constraints,
+    )
     sol = sol.warm_start(
         old_solution,
         instance,
-        disabled_constraints=disabled_constraints,
         max_time_in_seconds=kwargs["timeout_seconds"],
     )
 
@@ -32,10 +35,13 @@ def solve(**kwargs) -> solution.Solution:
     """Führt den Solver in einem separaten Thread aus"""
     instance = kwargs["instance"]
     disabled_constraints = kwargs["disabled_constraints"]
-    sol = solver.Solver(instance, shift_vars.Shift_vars(instance))
+    sol = solver.Solver(
+        instance,
+        shift_vars.Shift_vars(instance),
+        disabled_constraints=disabled_constraints,
+    )
     sol = sol.solve_with_early_stop(
         log_search_progress=False,
-        disabled_constraints=disabled_constraints,
         max_time_in_seconds=kwargs["timeout_seconds"],
     )
     sol.to_json_file(instance.name)
@@ -46,9 +52,11 @@ def solve_with_lns(**kwargs) -> solution.Solution:
     """Führt den Solver in einem separaten Thread aus"""
     inst_sol = kwargs["instance_solution"]
     disabled_constraints = kwargs["disabled_constraints"]
+    if disabled_constraints != []:
+        st.error("⚠️ LNS unterstützt derzeit keine Deaktivierung von Constraints.")
+        assert False
     lns_solver = lns.LNS(
         inst_sol,
-        disabled_constraints=disabled_constraints,
         timeout_seconds=kwargs["timeout_seconds"],
         log_level=logging.ERROR,
     )
