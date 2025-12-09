@@ -430,16 +430,6 @@ class Solver:
                 self.instance, self.vars
             )
             #print("Min_Cons_Shifts_Alternative_exact_original")
-        if SolverConstraints.minimum_consecutive_days_off not in disabled_constraints and constraint_set == 8:
-            minimum_consecutove_days_off_new.Min_Cons_Days_Off_Alternative_Enforce_If_original().build(
-                self.instance, self.vars
-            )
-            #print("Min_Cons_Days_Off_Alternative_Enforce_If_original")
-        if SolverConstraints.minimum_consecutive_shifts not in disabled_constraints and constraint_set == 8:
-            minimum_consecutive_shifts_new.Min_Cons_Shifts_Alternative_Enforce_If_original().build(
-                self.instance, self.vars
-            )
-            #print("Min_Cons_Shifts_Alternative_Enforce_If_original")
         if SolverConstraints.minMaxWorkTime not in disabled_constraints:
             minMaxWorkTime.MinMaxWorkTime().build(self.instance, self.vars)
         if SolverConstraints.shift_rotation_constraint not in disabled_constraints:
