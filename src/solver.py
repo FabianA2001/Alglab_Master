@@ -116,10 +116,10 @@ class Solver:
         disabled_constraints: list[SolverConstraints] = [],
         stop_after_first_solution: bool = False,
         callback: cp_model.CpSolverSolutionCallback | None = None,
-        objective_function: Callable[[], cp_model.ObjLinearExprT] | None = None,  # Accept a callable
+        objective_function: Callable[[], cp_model.ObjLinearExprT]
+        | None = None,  # Accept a callable
         **solver_params,
     ) -> Solution:
-
         self.set_constraints(disabled_constraints=disabled_constraints)
         solver = cp_model.CpSolver()
         solver.parameters.log_search_progress = log_search_progress
@@ -133,10 +133,12 @@ class Solver:
 
         # Set the objective function; use objective_value_new as the default if none is provided
         if objective_function is None:
-            objective_function = self.objective_value_new  # Default to objective_value_new
+            objective_function = (
+                self.objective_value_new
+            )  # Default to objective_value_new
 
         self.vars.model.Minimize(objective_function())  # Call the objective function
-        
+
         self.start_solve_time = datetime.now()
         if callback is not None:
             status = solver.SolveWithSolutionCallback(self.vars.model, callback)
@@ -145,7 +147,7 @@ class Solver:
 
         self.solve_time = (datetime.now() - self.start_solve_time).total_seconds()
         return self.handle_results(status, solver, disabled_constraints, callback)
-    
+
     def handle_results(
         self,
         status,
@@ -154,15 +156,15 @@ class Solver:
         callback: cp_model.CpSolverSolutionCallback | None = None,
     ) -> Solution:
         """Handles the different results returned by the solver and returns a solution."""
-        
+
         # Check for the best solution stored in the callback
         if isinstance(callback, Callback_Top_Solutions):
             if callback.best_solution is not None:
                 return callback.best_solution  # Return the best solution if it exists
-        
+
         solution = Solution(self.instance)  # Create a new Solution instance
         solution.solve_status = status
-        
+
         if status in [cp_model.OPTIMAL, cp_model.FEASIBLE]:
             self.store_solution(solver, solution)  # Store the current solution values
             solution.objective_value = solver.ObjectiveValue()
