@@ -49,7 +49,7 @@ class Slice_instance:
         self.fix_first_and_last_day()
 
         # TODO rework to also use modules
-        # self.update_maximum_consecutive_shifts()
+        self.update_maximum_consecutive_shifts()
         self.update_minimum_consecutive_shifts()
         # self.update_minimum_consecutive_days_off()
 

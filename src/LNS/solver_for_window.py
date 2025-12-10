@@ -309,7 +309,11 @@ class Solver_for_window(solver.Solver):
         self, employee_uid: employee.EmployeeUid
     ):
         min_consecutive_shifts = self.config[employee_uid].min_consecutive_shifts_start
-        if min_consecutive_shifts > 0:
+        # HACK weil ich die Orginbal DAtei grade nicht fixen kann
+        if (
+            min_consecutive_shifts > 0
+            and self.instance.employees[employee_uid].name not in "PFO"
+        ):
             for day in range(min_consecutive_shifts):
                 shifts_vars = []
                 for shift_type_uid in self.instance.shift_types:
@@ -317,7 +321,7 @@ class Solver_for_window(solver.Solver):
                         self.vars.get_var(day, shift_type_uid, employee_uid)
                     )
                 self.vars.model.Add(sum(shifts_vars) == 1)
-        elif min_consecutive_shifts == -1:
+        if min_consecutive_shifts == -1:
             nedded_min_consecutive_shifts = self.instance.employees[
                 employee_uid
             ].min_number_consecutive_shifts

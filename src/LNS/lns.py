@@ -83,7 +83,7 @@ class LNS:
         )
         # HACK Löschen
         ###################
-        self.start_day: int = 2
+        self.start_day: int = 1
         ###################
         self.end_day: int = self.start_day + self.start_search_window_size
 
@@ -348,6 +348,12 @@ class LNS:
                 self.logger.debug(
                     f"Iteration {iteration}: No feasible solution found (status: {sol.solve_status})"
                 )
+
+                # HACK
+                # import sys
+
+                # sys.exit(1)
+                ###
 
                 continue
             self.old_solution.to_json_file("temp_lns_old_solution.json")
