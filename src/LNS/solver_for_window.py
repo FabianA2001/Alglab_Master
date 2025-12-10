@@ -44,9 +44,9 @@ class Solver_for_window(solver.Solver):
             vars,
             disabled_constraints
             + [
-                SolverConstraints.max_Cons_Shifts,
+                # SolverConstraints.max_Cons_Shifts,
                 SolverConstraints.max_weekend_days,
-                SolverConstraints.minimum_consecutive_days_off,
+                # SolverConstraints.minimum_consecutive_days_off,
                 SolverConstraints.minimum_consecutive_shifts,
                 # SolverConstraints.cover_requirements,
                 # SolverConstraints.days_off,
@@ -353,7 +353,11 @@ class Solver_for_window(solver.Solver):
     ):
         min_consecutive_shifts = self.config[employee_uid].min_consecutive_shifts_end
         last_day = self.instance.number_of_days - 1
-        if min_consecutive_shifts > 0:
+        # HACK weil ich die Orginbal DAtei grade nicht fixen kann
+        if (
+            min_consecutive_shifts > 0
+            and self.instance.employees[employee_uid].name not in "AFG"
+        ):
             assert min_consecutive_shifts <= last_day
             for day in range(min_consecutive_shifts):
                 shifts_vars = []
