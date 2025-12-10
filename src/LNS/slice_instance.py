@@ -329,13 +329,13 @@ class Slice_instance:
         end_needed: same for the end of the window.
         """
         start_free = self.count_not_assigned_shifts_start(emp_uid)
-        if start_free == 0:
+        if start_free == 0 or start_free == -1:
             start_needed = -1
         else:
             start_needed = max(0, emp.min_number_consecutive_days_off - start_free)
 
         end_free = self.count_not_assigned_shifts_end(emp_uid)
-        if end_free == 0:
+        if end_free == 0 or end_free == -1:
             end_needed = -1
         else:
             end_needed = max(0, emp.min_number_consecutive_days_off - end_free)
@@ -369,11 +369,11 @@ class Slice_instance:
                     self.sol.is_employee_assigned(day, shift_type_uid, emp_uid)
                 )  # None bedeutet beliebiger Shift-Typ
             if max(not_assigneds):
-                break
+                return current_free_consecutive_shifts
             else:
                 current_free_consecutive_shifts += 1
 
-        return current_free_consecutive_shifts
+        return -1
 
     def count_assigned_shifts_end(self, emp_uid: employee.EmployeeUid) -> int:
         current_consecutive_shifts = 0
@@ -402,7 +402,7 @@ class Slice_instance:
                     self.sol.is_employee_assigned(day, shift_type_uid, emp_uid)
                 )  # None bedeutet beliebiger Shift-Typ
             if max(assigneds):
-                break
+                return current_free_consecutive_shifts
             else:
                 current_free_consecutive_shifts += 1
-        return current_free_consecutive_shifts
+        return -1
