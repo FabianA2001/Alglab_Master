@@ -5,7 +5,7 @@ from pathlib import Path
 from cpsat_utils.testing import AssertModelFeasible
 from ortools.sat.python import cp_model
 
-from src.help_functions import compare_solutions
+from src.help_functions import compare_solutions, compare_multiple_solutions
 from src.solution import Solution
 
 from .inputTypes import employee, instace, shiftType
@@ -148,6 +148,24 @@ def print_some_infos():
         print()
 
 
+def try_compare_multiple_solutions():
+    test_file = Path.joinpath(
+        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance3.txt"
+    )
+    instance = parseTXT.parse_txt(test_file)
+    vars = Shift_vars(instance)
+    solv = Solver(instance, vars)
+    sol1 = solv.solve(max_time_in_seconds=180)
+    sol2 = solv.solve(max_time_in_seconds=180)
+    sol3 = solv.solve(max_time_in_seconds=180)
+
+    print(
+        compare_multiple_solutions(
+            [sol1, sol2, sol3], threshold=2.0, include_details=True
+        )
+    )
+
+
 def main() -> None:
     # inst = get_tes_data()
     # x = inst
@@ -158,7 +176,8 @@ def main() -> None:
     # get_test_solution_from_model()
     # try_compare_solutions()
     # run_lns_example()
-    calculate_all_instancen()
+    try_compare_multiple_solutions()
+    # calculate_all_instancen()
     # print_some_infos()
 
 
