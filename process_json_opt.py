@@ -20,7 +20,7 @@ def process_file(json_file, x, constraint_number, key):
 
     filename = f"{instance.name}_{key}_opt_{x}"  # Include x in the filename
     print("\n" + filename)
-    solution = solver.solve(log_search_progress=False, max_time_in_seconds=20*60, constraint_set = constraint_number).model_copy(deep=True)
+    solution = solver.solve(log_search_progress=False, max_time_in_seconds=30*60, constraint_set = constraint_number).model_copy(deep=True)
 
     if solution.solve_status in [cp_model.OPTIMAL]:
         solution.instance.name = filename

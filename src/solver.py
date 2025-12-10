@@ -47,7 +47,8 @@ class Solver:
     ) -> Solution:
         self.set_constraints(disabled_constraints=disabled_constraints, constraint_set = constraint_set)
         solver = cp_model.CpSolver()
-        solver.parameters.log_search_progress = log_search_progress
+        solver.parameters.random_seed = random.randint(0, 99999)
+	solver.parameters.log_search_progress = log_search_progress
         solver.parameters.max_time_in_seconds = max_time_in_seconds
 
         if stop_after_first_solution:

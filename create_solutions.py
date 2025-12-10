@@ -31,7 +31,7 @@ def main():
         ,3:"Alternative_enforce"
         ,4:"Alternative_exact"
         ,5:"Alternative_exact_Enforce"
-        ,7:"Alternative_exact_original"
+        #,7:"Alternative_exact_original"
         }
     for json_file in json_files_opt:
         for x in range(0, 4):
@@ -39,7 +39,7 @@ def main():
                 print(constraint_number, key)
                 print(f"Processing {json_file.name} with iteration {x} key {key}...")
                 # Call the secondary script with the current JSON file and iteration x
-                subprocess.run(["python", "process_json_opt.py", str(json_file), str(x), str(constraint_number), key])
+                subprocess.run(["python3", "process_json_opt.py", str(json_file), str(x), str(constraint_number), key])
 
     for json_file in json_files_immediate:
         for x in range(0, 4):
@@ -47,7 +47,7 @@ def main():
                 print(constraint_number, key)
                 print(f"Processing {json_file.name} with iteration {x} key {key}...")
                 # Call the secondary script with the current JSON file and iteration x
-                subprocess.run(["python", "process_json_immediate.py", str(json_file), str(x), str(constraint_number), key])
+                subprocess.run(["python3", "process_json_immediate.py", str(json_file), str(x), str(constraint_number), key])
 
     for json_file in json_files_best_till_time:
         for x in range(0, 3):
@@ -55,7 +55,7 @@ def main():
                 print(constraint_number, key)
                 print(f"Processing {json_file.name} with iteration {x} key {key}...")
                 # Call the secondary script with the current JSON file and iteration x
-                subprocess.run(["python", "process_json_till_x_time.py", str(json_file), str(x), str(constraint_number), key])
+                subprocess.run(["python3", "process_json_till_x_time.py", str(json_file), str(x), str(constraint_number), key])
 
 
 if __name__ == "__main__":
