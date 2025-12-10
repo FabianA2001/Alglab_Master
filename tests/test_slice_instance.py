@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 
 from src.inputTypes import employee, instace, shiftType
@@ -26,7 +28,16 @@ class Test_slice_instance_assigned:
                     day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
                 )
 
-        self.slice_instance = Slice_instance(solution, start=3, end=5)
+        # Mock the solver and window instance creation to speed up tests
+        with patch.object(
+            Slice_instance, "__init__", lambda self, sol, start, end: None
+        ):
+            self.slice_instance = Slice_instance(solution, start=3, end=5)
+            # Manually set only the attributes needed for counting methods
+            self.slice_instance.sol = solution
+            self.slice_instance.inst = instance
+            self.slice_instance.start_day = 3
+            self.slice_instance.end_day = 5
 
     def test_count_assigned_shifts_start(self):
         assert (
@@ -61,7 +72,16 @@ class Test_slice_instance_not_assigned:
                     day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
                 )
 
-        self.slice_instance = Slice_instance(solution, start=3, end=5)
+        # Mock the solver and window instance creation to speed up tests
+        with patch.object(
+            Slice_instance, "__init__", lambda self, sol, start, end: None
+        ):
+            self.slice_instance = Slice_instance(solution, start=3, end=5)
+            # Manually set only the attributes needed for counting methods
+            self.slice_instance.sol = solution
+            self.slice_instance.inst = instance
+            self.slice_instance.start_day = 3
+            self.slice_instance.end_day = 5
 
     def test_count_not_assigned_shifts_start(self):
         assert (
