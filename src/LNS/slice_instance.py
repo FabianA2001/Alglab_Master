@@ -256,9 +256,15 @@ class Slice_instance:
     def update_maximum_consecutive_shifts(self):
         """Aktualisiert die max_number_consecutive_shifts für alle Mitarbeiter basierend auf den Zuweisungen außerhalb des Fensters."""
         for emp_uid, emp in self.window_instance.employees.items():
-            end_vorbidden_days = self.config[emp_uid].max_consecutive_shifts_end
+            start_vorbidden_days = self.config[emp_uid].max_consecutive_shifts_start
+            if start_vorbidden_days == 0:
+                # Employee has reached max consecutive shifts before window
+                # We need to block the first modifiable day in the window
+                self.solvr.block_employee_on_day(emp_uid, 0)
+            else:
+                self.solvr.add_start_maximum_consecutive_shifts_constraints(emp_uid)
 
-            self.solvr.add_start_maximum_consecutive_shifts_constraints(emp_uid)
+            end_vorbidden_days = self.config[emp_uid].max_consecutive_shifts_end
             if end_vorbidden_days == 0:
                 # Employee has reached max consecutive shifts after window
                 # We need to block the last modifiable day in the window
@@ -267,6 +273,7 @@ class Slice_instance:
             else:
                 # Still have room for more consecutive shifts, add constraint
                 self.solvr.add_end_maximum_consecutive_shifts_constraints(emp_uid)
+
             self.solvr.add_custom_maximum_consecutive_shifts_constraints(emp_uid)
 
     def update_minimum_consecutive_shifts(self):
@@ -329,13 +336,13 @@ class Slice_instance:
         end_needed: same for the end of the window.
         """
         start_free = self.count_not_assigned_shifts_start(emp_uid)
-        if start_free == 0 or start_free == -1:
+        if start_free == -1:
             start_needed = -1
         else:
             start_needed = max(0, emp.min_number_consecutive_days_off - start_free)
 
         end_free = self.count_not_assigned_shifts_end(emp_uid)
-        if end_free == 0 or end_free == -1:
+        if end_free == -1:
             end_needed = -1
         else:
             end_needed = max(0, emp.min_number_consecutive_days_off - end_free)
