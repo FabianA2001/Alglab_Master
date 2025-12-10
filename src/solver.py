@@ -263,7 +263,6 @@ class Solver:
                 self.instance, self.vars
             )
         if SolverConstraints.max_Cons_Shifts not in disabled_constraints:
-            print("füge max cons shifts constraint hinzu")
             max_Cons_Shifts.Max_Cons_Shifts().build(self.instance, self.vars)
         if SolverConstraints.max_weekend_days not in disabled_constraints:
             max_weekend_days.Max_weekend_days().build(self.instance, self.vars)

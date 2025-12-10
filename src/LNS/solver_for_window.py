@@ -309,11 +309,7 @@ class Solver_for_window(solver.Solver):
         self, employee_uid: employee.EmployeeUid
     ):
         min_consecutive_shifts = self.config[employee_uid].min_consecutive_shifts_start
-        # HACK weil ich die Orginbal DAtei grade nicht fixen kann
-        if (
-            min_consecutive_shifts > 0
-            and self.instance.employees[employee_uid].name not in "PFO"
-        ):
+        if min_consecutive_shifts > 0:
             for day in range(min_consecutive_shifts):
                 shifts_vars = []
                 for shift_type_uid in self.instance.shift_types:
@@ -353,11 +349,7 @@ class Solver_for_window(solver.Solver):
     ):
         min_consecutive_shifts = self.config[employee_uid].min_consecutive_shifts_end
         last_day = self.instance.number_of_days - 1
-        # HACK weil ich die Orginbal DAtei grade nicht fixen kann
-        if (
-            min_consecutive_shifts > 0
-            and self.instance.employees[employee_uid].name not in "AFG"
-        ):
+        if min_consecutive_shifts > 0:
             assert min_consecutive_shifts <= last_day
             for day in range(min_consecutive_shifts):
                 shifts_vars = []

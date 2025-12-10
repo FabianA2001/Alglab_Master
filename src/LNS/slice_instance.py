@@ -51,7 +51,7 @@ class Slice_instance:
         # TODO rework to also use modules
         self.update_maximum_consecutive_shifts()
         self.update_minimum_consecutive_shifts()
-        # self.update_minimum_consecutive_days_off()
+        self.update_minimum_consecutive_days_off()
 
     def get_solver(self) -> solver_for_window.Solver_for_window:
         return self.solvr

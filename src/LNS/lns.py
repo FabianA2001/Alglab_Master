@@ -83,7 +83,8 @@ class LNS:
         )
         # HACK Löschen
         ###################
-        self.start_day: int = 1
+        # self.start_day: int = 2
+        # self.start_search_window_size = 24
         ###################
         self.end_day: int = self.start_day + self.start_search_window_size
 
@@ -204,6 +205,14 @@ class LNS:
         assert self.end_day - self.start_day >= self.search_window_size_min
         assert self.start_day >= self.MIN_DAY
         assert self.end_day <= self.MAX_DAY
+
+        # HACK weil min consecutive shifts constraints fehlerhaft ist
+        if self.start_day <= 2:
+            self.start_day = 3
+        if self.end_day >= self.MAX_DAY - 2:
+            self.end_day = self.MAX_DAY - 3
+
+        ###############
 
     def merge_solutions(self, new_solution: solution.Solution) -> solution.Solution:
         """
@@ -350,9 +359,9 @@ class LNS:
                 )
 
                 # HACK
-                # import sys
+                import sys
 
-                # sys.exit(1)
+                sys.exit(1)
                 ###
 
                 continue
