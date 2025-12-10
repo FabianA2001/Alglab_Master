@@ -59,30 +59,34 @@ class Slice_instance:
     def fix_first_and_last_day(self):
         """Fixiert die Zuweisungen des ersten und letzten Tages des erweiterten Fensters mit den Werten der gegebenen Lösung."""
 
-        # Fixiere den ersten Tag
-        for shift_type_uid in self.solvr.instance.shift_types:
-            for emp_id in self.solvr.instance.employees:
-                assigned = self.sol.is_employee_assigned(
-                    self.start_day, shift_type_uid, emp_id
-                )
-                # Tag 0 in der window_instance entspricht extended_start in der alten Instanz
-                var = self.solvr.vars.vars[(0, shift_type_uid, emp_id)]
-                if assigned:
-                    self.solvr.vars.model.Add(var == 1)
-                else:
-                    self.solvr.vars.model.Add(var == 0)
+        if self.start_day != 0:
+            # Fixiere den ersten Tag
+            for shift_type_uid in self.solvr.instance.shift_types:
+                for emp_id in self.solvr.instance.employees:
+                    assigned = self.sol.is_employee_assigned(
+                        self.start_day, shift_type_uid, emp_id
+                    )
+                    # Tag 0 in der window_instance entspricht extended_start in der alten Instanz
+                    var = self.solvr.vars.vars[(0, shift_type_uid, emp_id)]
+                    if assigned:
+                        self.solvr.vars.model.Add(var == 1)
+                    else:
+                        self.solvr.vars.model.Add(var == 0)
 
-        last_day_in_window = self.solvr.instance.number_of_days - 1
-        for shift_type_uid in self.solvr.instance.shift_types:
-            for emp_id in self.solvr.instance.employees:
-                assigned = self.sol.is_employee_assigned(
-                    self.end_day, shift_type_uid, emp_id
-                )
-                var = self.solvr.vars.vars[(last_day_in_window, shift_type_uid, emp_id)]
-                if assigned:
-                    self.solvr.vars.model.Add(var == 1)
-                else:
-                    self.solvr.vars.model.Add(var == 0)
+        if self.end_day != self.inst.number_of_days - 1:
+            last_day_in_window = self.solvr.instance.number_of_days - 1
+            for shift_type_uid in self.solvr.instance.shift_types:
+                for emp_id in self.solvr.instance.employees:
+                    assigned = self.sol.is_employee_assigned(
+                        self.end_day, shift_type_uid, emp_id
+                    )
+                    var = self.solvr.vars.vars[
+                        (last_day_in_window, shift_type_uid, emp_id)
+                    ]
+                    if assigned:
+                        self.solvr.vars.model.Add(var == 1)
+                    else:
+                        self.solvr.vars.model.Add(var == 0)
 
     def create_window_instance(self) -> instace.Instance:
         """Erstellt eine Instanz, die das aktuelle Suchfenster umfasst."""
