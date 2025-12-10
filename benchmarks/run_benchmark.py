@@ -42,7 +42,7 @@ STATUS_MAP: dict[int, str] = {
 }
 
 
-def find_txt_instances(data_folder: Path) -> list[Path]:
+def find_txt_instances(data_folder: Path, start_number: int = 10) -> list[Path]:
     def natural_sort_key(path: Path):
         import re
 
@@ -50,7 +50,20 @@ def find_txt_instances(data_folder: Path) -> list[Path]:
         return [int(part) if part.isdigit() else part for part in parts]
 
     files = sorted(data_folder.iterdir(), key=natural_sort_key)
-    return [f for f in files if f.suffix == ".txt"]
+    txt_files = [f for f in files if f.suffix == ".txt"]
+
+    # Filtere Instances die kleiner als start_number sind
+    filtered_files = []
+    for f in txt_files:
+        import re
+
+        match = re.search(r"\d+", f.stem)
+        if match:
+            num = int(match.group())
+            if num >= start_number:
+                filtered_files.append(f)
+
+    return filtered_files
 
 
 def run_benchmark(
@@ -61,11 +74,12 @@ def run_benchmark(
     limit: int | None = None,
     out_name: str | None = None,
     single_instance: Path | None = None,
+    start_number: int = 10,
 ):
     output_dir.mkdir(parents=True, exist_ok=True)
     results = []
 
-    instance_files = find_txt_instances(instance_dir)
+    instance_files = find_txt_instances(instance_dir, start_number=start_number)
     if single_instance is not None:
         instance_files = [single_instance]
     if limit is not None:
@@ -224,6 +238,12 @@ def main():
         "--limit", type=int, default=None, help="Limit to first N instances"
     )
     parser.add_argument(
+        "--start-instance",
+        type=int,
+        default=10,
+        help="Start from instance number (default: 10)",
+    )
+    parser.add_argument(
         "--csv", action="store_true", help="Also write CSV (disabled by default)"
     )
     parser.add_argument(
@@ -244,7 +264,7 @@ def main():
 
     # If isolate mode requested, spawn a fresh Python process for each instance.
     if args.isolate and args.single_instance is None:
-        instances = find_txt_instances(args.data_dir)
+        instances = find_txt_instances(args.data_dir, start_number=args.start_instance)
         if args.limit is not None:
             instances = instances[: args.limit]
         for inst in instances:
@@ -282,6 +302,7 @@ def main():
             limit=args.limit,
             out_name=args.out_name,
             single_instance=args.single_instance,
+            start_number=args.start_instance,
         )
         return
 
@@ -293,6 +314,7 @@ def main():
         save_solutions=args.save_solutions,
         limit=args.limit,
         out_name=args.out_name,
+        start_number=args.start_instance,
     )
 
 

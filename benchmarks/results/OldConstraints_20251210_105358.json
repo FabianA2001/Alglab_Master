@@ -1,0 +1,102 @@
+[
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance1.txt",
+    "name": "Instance1",
+    "status": "FEASIBLE",
+    "is_success": true,
+    "solve_time": 0.046171,
+    "objective_value": 1210.0,
+    "timestamp": "2025-12-10T10:50:53.793102",
+    "solution_file": "benchmarks/results/solutions/Instance1.json"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance1ExtraLong.txt",
+    "name": "Instance1ExtraLong",
+    "status": "FEASIBLE",
+    "is_success": true,
+    "solve_time": 0.043824,
+    "objective_value": 1507.0,
+    "timestamp": "2025-12-10T10:50:53.885944",
+    "solution_file": "benchmarks/results/solutions/Instance1ExtraLong.json"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance2.txt",
+    "name": "Instance2",
+    "status": "OPTIMAL",
+    "is_success": true,
+    "solve_time": 5.863449,
+    "objective_value": 838.0,
+    "timestamp": "2025-12-10T10:50:59.798899",
+    "solution_file": "benchmarks/results/solutions/Instance2.json"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance3.txt",
+    "name": "Instance3",
+    "status": "FEASIBLE",
+    "is_success": true,
+    "solve_time": 1.321623,
+    "objective_value": 1103.0,
+    "timestamp": "2025-12-10T10:51:01.226865",
+    "solution_file": "benchmarks/results/solutions/Instance3.json"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance4.txt",
+    "name": "Instance4",
+    "status": "FEASIBLE",
+    "is_success": true,
+    "solve_time": 0.531986,
+    "objective_value": 3528.0,
+    "timestamp": "2025-12-10T10:51:01.844606",
+    "solution_file": "benchmarks/results/solutions/Instance4.json"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance5.txt",
+    "name": "Instance5",
+    "status": "FEASIBLE",
+    "is_success": true,
+    "solve_time": 9.928644,
+    "objective_value": 1240.0,
+    "timestamp": "2025-12-10T10:51:11.899076",
+    "solution_file": "benchmarks/results/solutions/Instance5.json"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance6.txt",
+    "name": "Instance6",
+    "status": "FEASIBLE",
+    "is_success": true,
+    "solve_time": 39.083442,
+    "objective_value": 2142.0,
+    "timestamp": "2025-12-10T10:51:51.203069",
+    "solution_file": "benchmarks/results/solutions/Instance6.json"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance7.txt",
+    "name": "Instance7",
+    "status": "FEASIBLE",
+    "is_success": true,
+    "solve_time": 60.299422,
+    "objective_value": 1071.0,
+    "timestamp": "2025-12-10T10:52:51.741874",
+    "solution_file": "benchmarks/results/solutions/Instance7.json"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance8.txt",
+    "name": "Instance8",
+    "status": "FEASIBLE",
+    "is_success": true,
+    "solve_time": 60.404605,
+    "objective_value": 2156.0,
+    "timestamp": "2025-12-10T10:53:52.583105",
+    "solution_file": "benchmarks/results/solutions/Instance8.json"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance9.txt",
+    "name": "Instance9",
+    "status": "FEASIBLE",
+    "is_success": true,
+    "solve_time": 5.337826,
+    "objective_value": 1151.0,
+    "timestamp": "2025-12-10T10:53:58.425484",
+    "solution_file": "benchmarks/results/solutions/Instance9.json"
+  }
+]
