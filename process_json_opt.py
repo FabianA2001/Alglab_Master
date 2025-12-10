@@ -20,13 +20,17 @@ def process_file(json_file, x, constraint_number, key):
 
     filename = f"{instance.name}_{key}_opt_{x}"  # Include x in the filename
     print("\n" + filename)
-    solution = solver.solve(log_search_progress=False, max_time_in_seconds=30*60, constraint_set = constraint_number).model_copy(deep=True)
+    solution = solver.solve(log_search_progress=False, max_time_in_seconds=20*60, constraint_set = constraint_number).model_copy(deep=True)
 
-    if solution.solve_status in [cp_model.OPTIMAL, cp_model.FEASIBLE]:
+    if solution.solve_status in [cp_model.OPTIMAL]:
+        solution.instance.name = filename
+        solution.to_json_file(filename)
+    elif solution.solve_status in [cp_model.FEASIBLE]:
+        filename = f"{instance.name}_{key}_timeout_{x}"
         solution.instance.name = filename
         solution.to_json_file(filename)
     else:
-        with open("no_solution_found_new.txt", 'a') as file:
+        with open("no_opt_solution_found.txt", 'a') as file:
             file.write(filename + "\n")
 
 if __name__ == "__main__":
