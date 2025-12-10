@@ -5,7 +5,11 @@ from pathlib import Path
 from cpsat_utils.testing import AssertModelFeasible
 from ortools.sat.python import cp_model
 
-from src.help_functions import compare_solutions, compare_multiple_solutions
+from src.help_functions import (
+    compare_solutions,
+    compare_multiple_solutions,
+    find_best_solution_for_modified_instance,
+)
 from src.solution import Solution
 
 from .inputTypes import employee, instace, shiftType
@@ -159,11 +163,12 @@ def try_compare_multiple_solutions():
     sol2 = solv.solve(max_time_in_seconds=180)
     sol3 = solv.solve(max_time_in_seconds=180)
 
-    print(
-        compare_multiple_solutions(
-            [sol1, sol2, sol3], threshold=2.0, include_details=True
-        )
-    )
+    # print(
+    #     compare_multiple_solutions(
+    #         [sol1, sol2, sol3], threshold=2.0, include_details=True
+    #     )
+    # )
+    print(find_best_solution_for_modified_instance([sol1, sol2, sol3], instance))
 
 
 def main() -> None:

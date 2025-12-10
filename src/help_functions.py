@@ -1,6 +1,64 @@
 import hashlib
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional, TYPE_CHECKING
+
+
 from src.solution import Solution
+from src.inputTypes import instace
+
+
+def find_best_solution_for_modified_instance(
+    solutions: List[Solution],
+    new_instance: instace.Instance,
+    constraint_names: Optional[List[str]] = None,
+    return_all: bool = False,
+) -> dict:
+    """
+    Vergleicht mehrere Solutions einer ursprünglichen Instanz mit einer abgeänderten Instanz
+    und gibt die Solution zurück, die die wenigsten Constraint-Verletzungen auf der neuen Instanz hat.
+
+    Args:
+        solutions: Liste von Solution-Objekten (ursprüngliche Instanz)
+        new_instance: Die abgeänderte Instanz
+        constraint_names: Optional Liste von Constraint-Namen, die gezählt werden sollen (sonst alle)
+        return_all: Wenn True, werden alle Lösungen und ihre Verletzungszahlen zurückgegeben
+
+    Returns:
+        dict mit Schlüsseln:
+            'best_solution': Solution mit den wenigsten Verletzungen
+            'min_violations': Anzahl der minimalen Verletzungen
+            'all_results': (optional) Liste mit (solution, violations, details)
+    """
+    results = []
+    for sol in solutions:
+        # Kopiere Solution und setze Instanz auf die neue Instanz
+        sol_mod = Solution.model_copy(sol)
+        sol_mod.set_instance(new_instance)
+        # Constraint-Check auf neuer Instanz
+        all_valid, constraint_results = sol_mod.checkt_constraints
+        # Zähle Verletzungen
+        total_violations = 0
+        details = {}
+        for cname, (is_valid, violations) in constraint_results.items():
+            if (constraint_names is None) or (cname in constraint_names):
+                total_violations += len(violations)
+                details[cname] = len(violations)
+        results.append(
+            {"solution": sol, "violations": total_violations, "details": details}
+        )
+
+    # Finde die Lösung mit den wenigsten Verletzungen
+    min_viol = min(r["violations"] for r in results)
+    best = [r for r in results if r["violations"] == min_viol]
+    # Falls mehrere gleich gut, nimm die erste
+    best_solution = best[0]["solution"]
+
+    ret = {
+        "best_solution": best_solution,
+        "min_violations": min_viol,
+    }
+    if return_all:
+        ret["all_results"] = results
+    return ret
 
 
 def hash_string(s: str) -> int:
