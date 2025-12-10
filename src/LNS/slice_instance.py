@@ -336,13 +336,13 @@ class Slice_instance:
         end_needed: same for the end of the window.
         """
         start_free = self.count_not_assigned_shifts_start(emp_uid)
-        if start_free == -1:
+        if start_free == -1 or start_free == 0:
             start_needed = -1
         else:
             start_needed = max(0, emp.min_number_consecutive_days_off - start_free)
 
         end_free = self.count_not_assigned_shifts_end(emp_uid)
-        if end_free == -1:
+        if end_free == -1 or end_free == 0:
             end_needed = -1
         else:
             end_needed = max(0, emp.min_number_consecutive_days_off - end_free)

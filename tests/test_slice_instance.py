@@ -176,8 +176,8 @@ class Test_slice_instance_count_days_off:
         count_start, count_end = si.calulate_minimum_consecutive_days_off_config(
             self.lokal_employee.uid, self.lokal_employee
         )
-        assert count_start == 2, "start"
-        assert count_end == 2, "end"
+        assert count_start == -1, "start"
+        assert count_end == -1, "end"
 
     def test_count_days_off_4(self):
         self.lokal_employee.min_number_consecutive_days_off = 2
@@ -200,7 +200,7 @@ class Test_slice_instance_count_days_off:
             self.lokal_employee.uid, self.lokal_employee
         )
         assert count_start == 0, "start"
-        assert count_end == 2, "end"
+        assert count_end == -1, "end"
 
 
 class Test_slice_instance_min_days:
