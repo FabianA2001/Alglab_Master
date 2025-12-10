@@ -2,6 +2,8 @@ from datetime import datetime
 
 from ortools.sat.python import cp_model
 
+import random
+
 from typing import Callable
 
 from . import shift_vars
@@ -47,8 +49,8 @@ class Solver:
     ) -> Solution:
         self.set_constraints(disabled_constraints=disabled_constraints, constraint_set = constraint_set)
         solver = cp_model.CpSolver()
-        solver.parameters.random_seed = random.randint(0, 99999)
-	solver.parameters.log_search_progress = log_search_progress
+        solver.parameters.random_seed = random.randint(0, 999999)
+        solver.parameters.log_search_progress = log_search_progress
         solver.parameters.max_time_in_seconds = max_time_in_seconds
 
         if stop_after_first_solution:
@@ -233,6 +235,7 @@ class Solver:
                 )
                 solution.set_above_prefferd_var(day, type_uid, above_value)
                 solution.set_below_prefferd_var(day, type_uid, below_value)
+        solution.instance.name = solution.instance.name + "_" + f"seed{solver.parameters.random_seed}"
 
     def process_infeasible_solution(self) -> None:
         """Handles the case when no feasible solution exists."""
