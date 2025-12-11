@@ -103,8 +103,11 @@ class Slice_instance:
         for uid, emp in old_instance.employees.items():
             emp_with_shifts = self.edit_max_numbers_of_shifts_for_emploeey(uid, emp)
             emp_with_work_time = self.edit_work_time_for_emploeey(uid, emp_with_shifts)
+            emp_with_max_weekends = self.edit_max_weekends_for_employee(
+                uid, emp_with_work_time
+            )
             employees[uid] = self.edit_blocked_shifts_for_employee(
-                uid, emp_with_work_time, self.start_day, self.end_day
+                uid, emp_with_max_weekends, self.start_day, self.end_day
             )
 
         # Kopiere shift_types (Referenz auf dieselben ShiftType-Objekte)
@@ -230,6 +233,55 @@ class Slice_instance:
 
         new_emp.blocked_shifts = new_blocked_shifts
         return new_emp
+
+    def edit_max_weekends_for_employee(
+        self,
+        uid: employee.EmployeeUid,
+        old_emp: employee.Employee,
+    ) -> employee.Employee:
+        return old_emp
+        # new_emp = old_emp.model_copy()
+
+        # # Count occupied weekends outside the window
+        # occupied_weekends_outside = 0
+
+        # # Iterate through all weekends in the original instance
+        # for weekend in range(round(self.inst.number_of_days / 7)):
+        #     # Calculate weekend days (Saturday and Sunday)
+        #     # Weekend days are at positions 7*(weekend+1)-2 and 7*(weekend+1)-1 (0-indexed)
+        #     saturday = 7 * (weekend + 1) - 2
+        #     sunday = 7 * (weekend + 1) - 1
+
+        #     # Check if this weekend is completely outside the window
+        #     weekend_outside_window = (sunday < self.start_day) or (
+        #         saturday > self.end_day
+        #     )
+
+        #     if weekend_outside_window:
+        #         # Check if employee works on this weekend
+        #         weekend_worked = False
+        #         for day in [saturday, sunday]:
+        #             if 0 <= day < self.inst.number_of_days:
+        #                 for shift_type_uid in self.inst.shift_types:
+        #                     if self.sol.is_employee_assigned(day, shift_type_uid, uid):
+        #                         weekend_worked = True
+        #                         break
+        #                 if weekend_worked:
+        #                     break
+
+        #         if weekend_worked:
+        #             occupied_weekends_outside += 1
+
+        # # Subtract occupied weekends from max_number_weekends
+        # assert old_emp.max_number_weekends >= occupied_weekends_outside, (
+        #     f"Employee {uid} has more weekends assigned outside the window ({occupied_weekends_outside}) "
+        #     f"than their maximum allowed ({old_emp.max_number_weekends})."
+        # )
+        # new_emp.max_number_weekends = max(
+        #     0, old_emp.max_number_weekends - occupied_weekends_outside
+        # )
+
+        # return new_emp
 
     def calulate_maximum_consecutive_shifts_config(
         self,
