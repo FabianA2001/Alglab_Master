@@ -293,5 +293,44 @@ class TestUpdateSearchWindow:
         assert lns_instance.end_day > lns_instance.start_day
 
 
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+# class Test_Module_Max_Weekends:
+#     class Test_slice_instance_max_days:
+#         @pytest.fixture(autouse=True)
+#         def setup(self):
+#             self.lokal_shift_types = shiftType.ShiftType()
+#             self.lokal_employee = employee.Employee()
+#             self.instance = instace.Instance.create(
+#                 number_of_days=18,
+#                 shift_typs=[self.lokal_shift_types],
+#                 emplyees=[self.lokal_employee],
+#             )
+#             self.solution = Solution(self.instance)
+
+#         def get_slice_instance(self, start: int = 3, end: int = 5):
+#             # Mock the solver and window instance creation to speed up tests
+#             with patch.object(
+#                 Slice_instance, "__init__", lambda self, sol, start, end: None
+#             ):
+#                 self.slice_instance = Slice_instance(
+#                     self.solution, start=start, end=end
+#                 )
+#                 # Manually set only the attributes needed for counting methods
+#                 self.slice_instance.sol = self.solution
+#                 self.slice_instance.inst = self.instance
+#                 self.slice_instance.start_day = start
+#                 self.slice_instance.end_day = end
+#             return self.slice_instance
+
+#         def test_count_max_days_1(self):
+#             for day in range(18):
+#                 if day in []:
+#                     self.solution.set_var(
+#                         day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
+#                     )
+#                 else:
+#                     self.solution.set_var(
+#                         day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
+#                     )
+
+#             si = self.get_slice_instance(start=4, end=7)
+#             window_instance = si.create_window_instance()
