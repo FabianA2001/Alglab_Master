@@ -176,13 +176,13 @@ class Test_slice_instance_count_days_off:
         count_start, count_end = si.calulate_minimum_consecutive_days_off_config(
             self.lokal_employee.uid, self.lokal_employee
         )
-        assert count_start == -1, "start"
-        assert count_end == -1, "end"
+        assert count_start == -2, "start"
+        assert count_end == -2, "end"
 
     def test_count_days_off_4(self):
         self.lokal_employee.min_number_consecutive_days_off = 2
         for day in range(9):
-            if day in [0, 7, 8]:
+            if day in [0, 8]:
                 self.solution.set_var(
                     day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
                 )
@@ -191,7 +191,7 @@ class Test_slice_instance_count_days_off:
                     day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
                 )
 
-        si = self.get_slice_instance(start=3, end=6)
+        si = self.get_slice_instance(start=3, end=5)
         assert si.count_not_assigned_shifts_start(self.lokal_employee.uid) == 2, (
             "error in count not assined shifts start"
         )
@@ -200,7 +200,7 @@ class Test_slice_instance_count_days_off:
             self.lokal_employee.uid, self.lokal_employee
         )
         assert count_start == 0, "start"
-        assert count_end == -1, "end"
+        assert count_end == 0, "end"
 
 
 class Test_slice_instance_min_days:

@@ -333,17 +333,25 @@ class Slice_instance:
         start_needed: how many more consecutive days-off are required at the start of the window
         to satisfy min_number_consecutive_days_off.
 
+        >= 0 free days needed
+        ==- 1 no previus shifts, no restriction
+        ==- 2 last shift start_day-1 => start_day ist first free day
+
         end_needed: same for the end of the window.
         """
         start_free = self.count_not_assigned_shifts_start(emp_uid)
-        if start_free == -1 or start_free == 0:
+        if start_free == -1:
             start_needed = -1
+        elif start_free == 0:
+            start_needed = -2
         else:
             start_needed = max(0, emp.min_number_consecutive_days_off - start_free)
 
         end_free = self.count_not_assigned_shifts_end(emp_uid)
-        if end_free == -1 or end_free == 0:
+        if end_free == -1:
             end_needed = -1
+        elif end_free == 0:
+            end_needed = -2
         else:
             end_needed = max(0, emp.min_number_consecutive_days_off - end_free)
 
