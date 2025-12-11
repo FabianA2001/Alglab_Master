@@ -171,7 +171,8 @@ class LNS:
             else:
                 # Keine Verbesserung -> Fenster vergrößern
                 new_window_size = min(
-                    self.MAX_DAY, int(old_window_size * self.window_increase_factor)
+                    self.MAX_DAY,
+                    round(old_window_size * self.window_increase_factor),
                 )
                 self.logger.debug(
                     f"No improvement: Increasing window size from {old_window_size} to {new_window_size}"
