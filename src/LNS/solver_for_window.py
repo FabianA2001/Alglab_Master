@@ -393,6 +393,13 @@ class Solver_for_window(solver.Solver):
         min_consecutive_days_off = self.config[
             employee_uid
         ].min_consecutive_days_off_start
+        if min_consecutive_days_off == -1 or min_consecutive_days_off == -3:
+            return
+        if min_consecutive_days_off == -2:
+            min_consecutive_days_off = self.instance.employees[
+                employee_uid
+            ].min_number_consecutive_days_off
+
         for day in range(min_consecutive_days_off):
             shifts_vars = []
             for shift_type_uid in self.instance.shift_types:
@@ -405,6 +412,13 @@ class Solver_for_window(solver.Solver):
         min_consecutive_days_off = self.config[
             employee_uid
         ].min_consecutive_days_off_end
+        if min_consecutive_days_off == -1 or min_consecutive_days_off == -3:
+            return
+        if min_consecutive_days_off == -2:
+            min_consecutive_days_off = self.instance.employees[
+                employee_uid
+            ].min_number_consecutive_days_off
+
         last_modifibarbe_day = self.instance.number_of_days - 1
         assert min_consecutive_days_off <= last_modifibarbe_day
         for day in range(min_consecutive_days_off):

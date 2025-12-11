@@ -285,14 +285,9 @@ class Slice_instance:
     def update_minimum_consecutive_days_off(self):
         """Aktualisiert die minimum consecutive days-off Constraints basierend auf self.config."""
         for emp_uid, emp in self.window_instance.employees.items():
-            start_needed = self.config[emp_uid].min_consecutive_days_off_start
-            end_needed = self.config[emp_uid].min_consecutive_days_off_end
+            self.solvr.add_start_minimum_consecutive_days_off_constraints(emp_uid)
 
-            if start_needed > 0:
-                self.solvr.add_start_minimum_consecutive_days_off_constraints(emp_uid)
-
-            if end_needed > 0:
-                self.solvr.add_end_minimum_consecutive_days_off_constraints(emp_uid)
+            self.solvr.add_end_minimum_consecutive_days_off_constraints(emp_uid)
 
     def calulate_minimum_consecutive_shifts_config(
         self,
@@ -334,8 +329,9 @@ class Slice_instance:
         to satisfy min_number_consecutive_days_off.
 
         >= 0 free days needed
-        ==- 1 no previus shifts, no restriction
-        ==- 2 last shift start_day-1 => start_day ist first free day
+        == -1 no previus shifts, no restriction
+        == -2 last shift start_day-1 => start_day ist first free day
+        == -3 shifts at start_day
 
         end_needed: same for the end of the window.
         """
@@ -343,7 +339,18 @@ class Slice_instance:
         if start_free == -1:
             start_needed = -1
         elif start_free == 0:
-            start_needed = -2
+            shifts = []
+            for shift_type_uid in self.inst.shift_types:
+                if self.sol.is_employee_assigned(
+                    self.start_day, shift_type_uid, emp_uid
+                ):
+                    shifts.append(1)
+                else:
+                    shifts.append(0)
+            if max(shifts):
+                start_needed = -3
+            else:
+                start_needed = -2
         else:
             start_needed = max(0, emp.min_number_consecutive_days_off - start_free)
 
@@ -351,7 +358,16 @@ class Slice_instance:
         if end_free == -1:
             end_needed = -1
         elif end_free == 0:
-            end_needed = -2
+            shifts = []
+            for shift_type_uid in self.inst.shift_types:
+                if self.sol.is_employee_assigned(self.end_day, shift_type_uid, emp_uid):
+                    shifts.append(1)
+                else:
+                    shifts.append(0)
+            if max(shifts):
+                end_needed = -3
+            else:
+                end_needed = -2
         else:
             end_needed = max(0, emp.min_number_consecutive_days_off - end_free)
 
