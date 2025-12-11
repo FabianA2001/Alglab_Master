@@ -83,9 +83,10 @@ def check_min_cons_days_constraint(sol: "Solution") -> Tuple[bool, List[str]]:
                     - sum(assigned_shifts_interval_end)
                 )
 
+                # TODO war hier day_d +1 richtig?
                 if result <= 0:
                     violations.append(
-                        f"Mitarbeiter {emp_name} hat nicht genug aufeinanderfolgende freie Tage ab Tag {day_d}"
+                        f"Mitarbeiter {emp_name} hat nicht genug aufeinanderfolgende freie Tage ab Tag {day_d + 1}"
                     )
 
     return len(violations) == 0, violations
