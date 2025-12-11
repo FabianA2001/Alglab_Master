@@ -45,7 +45,7 @@ class Solver_for_window(solver.Solver):
             disabled_constraints
             + [
                 # SolverConstraints.max_Cons_Shifts,
-                SolverConstraints.max_weekend_days,
+                # SolverConstraints.max_weekend_days,
                 # SolverConstraints.minimum_consecutive_days_off,
                 SolverConstraints.minimum_consecutive_shifts,
                 # SolverConstraints.cover_requirements,

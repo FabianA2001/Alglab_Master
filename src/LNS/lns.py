@@ -94,15 +94,7 @@ class LNS:
         self.timeout_seconds: float = max(
             0.0, timeout_seconds - create_time_first_solution
         )
-
-        # HACK wieder raus nehmen
-        # Deaktiviere Weekend-Constraints für LNS-Subprobleme, da sie auf Tage außerhalb des Fensters zugreifen
-        from ..module.solverConstraints import SolverConstraints
-
-        self.disabled_for_window = [
-            SolverConstraints.max_weekend_days,
-        ]
-
+        self.disabled_for_window = []
         # logging info
         self.logger.info(
             f"LNS initialized with search_window_size={self.start_search_window_size}, "
