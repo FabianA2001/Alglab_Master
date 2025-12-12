@@ -35,7 +35,18 @@ def gather_sol_times(data_dir):
                     'solve_time': solution.solve_time,
                     'objective_value': solution.objective_value
                 })
-    
+            file_pattern = data_dir.glob(f"*_{key}_first_good_{try_num}.json")
+            for file in file_pattern:
+                solution = Solution.from_json_file(file.stem)  # Load using the base filename
+                instance_name = file.stem.split('_')[0]
+                sol_times.append({
+                    'instance': instance_name,
+                    'key': key,
+                    'type': 'optimal',
+                    'value': 'time',
+                    'solve_time': solution.solve_time,
+                    'objective_value': solution.objective_value
+                })
     # Repeat for immediate first solutions
     for key in dict_constraint.values():
         for try_num in range(0, 5):
@@ -94,7 +105,7 @@ def gather_sol_times(data_dir):
 
 
 def plot_sol_times_lines(df, solution_type, value_type):
-    measures = ['min', 'max', 'mean', 'median']
+    measures = ['min', 'max', 'mean', 'median', 'count']
     
     for measure in measures:
         # Create a new figure for each measure
@@ -109,6 +120,8 @@ def plot_sol_times_lines(df, solution_type, value_type):
             plot_data = df.groupby(['instance', 'key'])['solve_time'].mean().reset_index(name='value')
         elif measure == 'median':
             plot_data = df.groupby(['instance', 'key'])['solve_time'].median().reset_index(name='value')
+        elif measure == 'count':
+            plot_data = df.groupby(['instance', 'key'])['solve_time'].count().reset_index(name='value')
         
         for key in plot_data['key'].unique():
             subset = plot_data[plot_data['key'] == key]
@@ -131,13 +144,13 @@ def plot_sol_times_lines(df, solution_type, value_type):
         plt.savefig(filename)
 
 def plot_sol_times_barchart(df, solution_type, value_type):
-    measures = ['min', 'max', 'mean', 'median']
+    measures = ['min', 'max', 'mean', 'median', 'count']
     bar_width = 0.05  # Width of each bar
     indices = np.arange(len(df['instance'].unique()))  # Bar positions
 
     for measure in measures:
         fig, ax = plt.subplots(figsize=(15, 8))
-        
+
         # Compute aggregation
         if measure == 'min':
             plot_data = df.groupby(['instance', 'key'])['solve_time'].min().reset_index(name='value')
@@ -147,10 +160,16 @@ def plot_sol_times_barchart(df, solution_type, value_type):
             plot_data = df.groupby(['instance', 'key'])['solve_time'].mean().reset_index(name='value')
         elif measure == 'median':
             plot_data = df.groupby(['instance', 'key'])['solve_time'].median().reset_index(name='value')
+        elif measure == 'count':
+            plot_data = df.groupby(['instance', 'key'])['solve_time'].count().reset_index(name='value')
 
         # Get unique instances and keys
         instances = plot_data['instance'].unique()
         keys = plot_data['key'].unique()
+
+        # Set bar width and indices
+        bar_width = 0.15
+        indices = np.arange(len(instances))
 
         # Iterate through keys to create grouped bars
         for i, key in enumerate(keys):
@@ -159,11 +178,6 @@ def plot_sol_times_barchart(df, solution_type, value_type):
             
             # Offset for each bar based on its order
             bar_positions = indices + (i * bar_width)
-
-            # Debugging outputs
-            print("Keys:", keys)
-            print("Y values for key", key, ":", y)
-            print("Bar Positions for key", key, ":", bar_positions)
 
             # Ensure y and bar_positions have the same length
             if len(y) != len(bar_positions):
@@ -177,10 +191,16 @@ def plot_sol_times_barchart(df, solution_type, value_type):
         # Adding details
         ax.set_ylabel('Solve Time (seconds)')
         ax.set_title(f'Solve {measure.capitalize()} for {solution_type.capitalize()} {value_type.capitalize()} Solutions')
-        ax.legend(title="Keys", loc='upper left', ncols=len(keys))
 
+        # Set x-axis ticks and labels
+        ax.set_xticks(indices + bar_width * (len(keys) - 1) / 2)  # Center bars
+        ax.set_xticklabels(instances, rotation=45)  # Rotate labels for better visibility
+
+        ax.legend(title="Keys", loc='upper left')
         plt.tight_layout()
-        filename = f'solve_{solution_type}_{value_type}_{measure}_bar.png'  # Change extension for different formats
+
+        # Save the figure
+        filename = f'solve_{solution_type}_{value_type}_{measure}_bar.png'
         plt.savefig(filename)
 
 
@@ -194,7 +214,7 @@ def main():
             filtered_df = df_sol_times[df_sol_times['type'] == solution_type]
             if len(filtered_df) > 0:
                 plot_sol_times_lines(filtered_df, solution_type= solution_type, value_type=df_sol_times.iloc[0]['value'])
-                # plot_sol_times_barchart(filtered_df, solution_type= solution_type, value_type=df_sol_times.iloc[0]['value'])
+                plot_sol_times_barchart(filtered_df, solution_type= solution_type, value_type=df_sol_times.iloc[0]['value'])
 
 if __name__ == "__main__":
     main()
