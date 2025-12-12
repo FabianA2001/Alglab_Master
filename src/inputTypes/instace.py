@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
 from . import employee, shift, shiftType
 
@@ -14,8 +14,6 @@ class Instance(BaseModel):
         shift_typs: list[shiftType.ShiftType],
         emplyees: list[employee.Employee],
         name: str = "Default Instance",
-        # set saturday(Samstag)
-        weekend_days: set[int] | None = None,
         # (day, shifttype_id) -> (employee_id ->, weight)
         shift_on_requests: dict[tuple[int, int], dict[int, int]] | None = None,
         # (day, shifttype_id) -> (employee_id -> weight)
@@ -40,8 +38,6 @@ class Instance(BaseModel):
             A fully configured Instance object
         """
         # Handle mutable default arguments
-        if weekend_days is None:
-            weekend_days = set()
         if shift_on_requests is None:
             shift_on_requests = defaultdict(dict)
         if shift_off_requests is None:
@@ -58,8 +54,6 @@ class Instance(BaseModel):
         for day in range(number_of_days):
             for type in shift_typs:
                 new_shift = shift.Shift()
-                if (day in weekend_days) or (day > 0 and day - 1 in weekend_days):
-                    new_shift.is_weekend = True
                 new_shift.penalty_assigned_day_employee = shift_on_requests.get(
                     (day, type.uid), {}
                 )
@@ -77,7 +71,6 @@ class Instance(BaseModel):
         return cls(
             name=name,
             number_of_days=number_of_days,
-            weekend_days=weekend_days,
             employees=employees_dict,
             shift_types=shift_types_dict,
             shifts=shifts_dict,
@@ -101,10 +94,6 @@ class Instance(BaseModel):
     number_of_days: int = Field(
         default=0, description="Number of days in the scheduling Instance"
     )
-    weekend_days: set[int] = Field(
-        default_factory=set,
-        description="Set of saturday days in the Instance, does not include sunday",
-    )
     # shifts[day][type] = shift
     shifts: dict[int, dict[shiftType.TypeUid, shift.Shift]] = Field(
         default=defaultdict(dict), description="Set of Shifts in the Instance"
@@ -115,11 +104,3 @@ class Instance(BaseModel):
 
     def get_shift(self, day: int, type_uid: int) -> shift.Shift:
         return self.shifts[day][type_uid]
-
-    @model_validator(mode="after")
-    def validate_nurses_unique_uids(self):
-        """Weekends are maximal one consecutive day."""
-        for weekend in self.weekend_days:
-            if weekend + 1 in self.weekend_days:
-                raise ValueError("Weekend days cannot be consecutive.")
-        return self

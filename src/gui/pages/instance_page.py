@@ -46,13 +46,11 @@ def show_instance_information(instance):
     st.header("📊 Instance Details")
 
     # Grundlegende Informationen
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
     with col1:
         st.metric("Name", instance.name)
     with col2:
         st.metric("Anzahl Tage", instance.number_of_days)
-    with col3:
-        st.metric("Wochenenden", len(instance.weekend_days))
 
     # Shift Types
     st.subheader("🔄 Schichttypen")
@@ -187,14 +185,6 @@ def show_instance_information(instance):
     else:
         st.info("Keine Mitarbeiter definiert.")
 
-    # Wochenenden Details
-    if instance.weekend_days:
-        st.subheader("📅 Wochenenden (Samstage)")
-        weekend_cols = st.columns(min(len(instance.weekend_days), 5))
-        for idx, weekend_day in enumerate(sorted(instance.weekend_days)):
-            with weekend_cols[idx % 5]:
-                st.info(f"Tag {weekend_day}")
-
     # Erweiterte Mitarbeiter-Details (ausklappbar)
     with st.expander("📋 Detaillierte Mitarbeiter-Informationen"):
         for emp in instance.employees.values():
@@ -263,15 +253,6 @@ def show_instance_information(instance):
         if selected_day in instance.shifts:
             for shift_type_uid, shift in instance.shifts[selected_day].items():
                 shift_type = instance.shift_types.get(shift_type_uid)
-                shift_type_name = (
-                    shift_type.name
-                    if shift_type
-                    else f"UID ...{str(shift_type_uid)[-4:]}"
-                )
-
-                st.markdown(
-                    f"**{shift_type_name}** {'🌙 (Wochenende)' if shift.is_weekend else ''}"
-                )
 
                 col1, col2, col3 = st.columns(3)
                 with col1:
