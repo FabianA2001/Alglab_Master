@@ -285,7 +285,7 @@ def test_max_weekends():
             number_of_days=7,
             shift_typs=lokal_shift_types,
             emplyees=[lokal_employee],
-            weekend_days={5},
+            weekend_days={6},
         )
         vars = shift_vars.Shift_vars(instance, model)
         max_weekend_days.Max_weekend_days().build(instance, vars)
