@@ -42,7 +42,7 @@ class Instance(BaseModel):
         # Handle mutable default arguments
         if weekend_days is None:
             # add all sundays as weekend days by default
-            weekend_days = set((i + 1) * 7 for i in range(number_of_days // 7))
+            weekend_days = set(((i + 1) * 7) - 1 for i in range(number_of_days // 7))
         if shift_on_requests is None:
             shift_on_requests = defaultdict(dict)
         if shift_off_requests is None:
