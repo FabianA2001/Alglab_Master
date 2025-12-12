@@ -31,7 +31,7 @@ def gather_sol_times(data_dir):
                     'instance': instance_name,
                     'key': key,
                     'type': 'optimal',
-                    'value': 'time',
+                    'value': 'solve_time',
                     'solve_time': solution.solve_time,
                     'objective_value': solution.objective_value
                 })
@@ -43,7 +43,7 @@ def gather_sol_times(data_dir):
                     'instance': instance_name,
                     'key': key,
                     'type': 'optimal',
-                    'value': 'time',
+                    'value': 'solve_time',
                     'solve_time': solution.solve_time,
                     'objective_value': solution.objective_value
                 })
@@ -60,7 +60,7 @@ def gather_sol_times(data_dir):
                     'instance': instance_name,
                     'key': key,
                     'type': 'immediate_first',
-                    'value': 'time',
+                    'value': 'solve_time',
                     'solve_time': solution.solve_time,
                     'objective_value': solution.objective_value
                 })
@@ -75,7 +75,7 @@ def gather_sol_times(data_dir):
                     'instance': instance_name,
                     'key': key,
                     'type': 'immediate_first',
-                    'value': 'time',
+                    'value': 'solve_time',
                     'solve_time': solution.solve_time,
                     'objective_value': solution.objective_value
                 })
@@ -93,14 +93,14 @@ def gather_sol_times(data_dir):
                     'instance': instance_name,
                     'key': key,
                     'type': 'first_good',
-                    'value': 'time',
+                    'value': 'solve_time',
                     'solve_time': solution.solve_time,
                     'objective_value': solution.objective_value
                 })
 
     for key in dict_constraint.values():
         for try_num in range(0, 5):
-            file_pattern = data_dir.glob(f"*_{key}_first_good_{try_num}.json")
+            file_pattern = data_dir.glob(f"*_{key}_time_out_30_{try_num}.json")
             
             
             for file in file_pattern:
@@ -111,7 +111,7 @@ def gather_sol_times(data_dir):
                         'instance': instance_name,
                         'key': key,
                         'type': 'timed_out',
-                        'value': 'objective_function',
+                        'value': 'objective_value',
                         'solve_time': solution.objective_value,
                         'objective_value': solution.objective_value
                     })
@@ -128,15 +128,15 @@ def plot_sol_times_lines(df, solution_type, value_type):
         
         # Compute aggregation based on the current measure
         if measure == 'min':
-            plot_data = df.groupby(['instance', 'key'])['solve_time'].min().reset_index(name='value')
+            plot_data = df.groupby(['instance', 'key'])[value_type].min().reset_index(name='value')
         elif measure == 'max':
-            plot_data = df.groupby(['instance', 'key'])['solve_time'].max().reset_index(name='value')
+            plot_data = df.groupby(['instance', 'key'])[value_type].max().reset_index(name='value')
         elif measure == 'mean':
-            plot_data = df.groupby(['instance', 'key'])['solve_time'].mean().reset_index(name='value')
+            plot_data = df.groupby(['instance', 'key'])[value_type].mean().reset_index(name='value')
         elif measure == 'median':
-            plot_data = df.groupby(['instance', 'key'])['solve_time'].median().reset_index(name='value')
+            plot_data = df.groupby(['instance', 'key'])[value_type].median().reset_index(name='value')
         elif measure == 'count':
-            plot_data = df.groupby(['instance', 'key'])['solve_time'].count().reset_index(name='value')
+            plot_data = df.groupby(['instance', 'key'])[value_type].count().reset_index(name='value')
         
         for key in plot_data['key'].unique():
             subset = plot_data[plot_data['key'] == key]
@@ -168,15 +168,15 @@ def plot_sol_times_barchart(df, solution_type, value_type):
 
         # Compute aggregation
         if measure == 'min':
-            plot_data = df.groupby(['instance', 'key'])['solve_time'].min().reset_index(name='value')
+            plot_data = df.groupby(['instance', 'key'])[value_type].min().reset_index(name='value')
         elif measure == 'max':
-            plot_data = df.groupby(['instance', 'key'])['solve_time'].max().reset_index(name='value')
+            plot_data = df.groupby(['instance', 'key'])[value_type].max().reset_index(name='value')
         elif measure == 'mean':
-            plot_data = df.groupby(['instance', 'key'])['solve_time'].mean().reset_index(name='value')
+            plot_data = df.groupby(['instance', 'key'])[value_type].mean().reset_index(name='value')
         elif measure == 'median':
-            plot_data = df.groupby(['instance', 'key'])['solve_time'].median().reset_index(name='value')
+            plot_data = df.groupby(['instance', 'key'])[value_type].median().reset_index(name='value')
         elif measure == 'count':
-            plot_data = df.groupby(['instance', 'key'])['solve_time'].count().reset_index(name='value')
+            plot_data = df.groupby(['instance', 'key'])[value_type].count().reset_index(name='value')
 
         # Get unique instances and keys
         instances = plot_data['instance'].unique()
@@ -224,7 +224,7 @@ def main():
     df_sol_times = gather_sol_times(DATA_DIR)
     
     # Filter the data for different solution types
-    for solution_type in ['optimal', 'immediate_first', 'first_good']:
+    for solution_type in ['optimal', 'immediate_first', 'first_good', 'timed_out']:
         if len(df_sol_times) > 0:
             filtered_df = df_sol_times[df_sol_times['type'] == solution_type]
             if len(filtered_df) > 0:
