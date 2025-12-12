@@ -3,6 +3,7 @@ from ortools.sat.python import cp_model
 
 from src import shift_vars
 from src.inputTypes import employee, instace, shiftType
+from src.LNS.module import max_weekend_days as max_weekend_days_lns
 from src.module import (
     cover_requirements,
     days_off,
@@ -277,21 +278,63 @@ def test_cover_requirements():
 
 
 # nicht vollumfassend
-def test_max_weekends():
+def test_max_weekends_1():
     with AssertModelInfeasible() as model:
-        lokal_shift_types = [shiftType.ShiftType() for _ in range(2)]
+        lokal_shift_type = shiftType.ShiftType()
         lokal_employee = employee.Employee(max_number_weekends=0)
         instance = instace.Instance.create(
             number_of_days=7,
-            shift_typs=lokal_shift_types,
+            shift_typs=[lokal_shift_type],
             emplyees=[lokal_employee],
             weekend_days={6},
         )
         vars = shift_vars.Shift_vars(instance, model)
         max_weekend_days.Max_weekend_days().build(instance, vars)
         # test if an employee can work one weekend, which shouldnt be possible
-        for type_uid in lokal_shift_types:
-            model.Add(vars.vars[(6, type_uid.uid, lokal_employee.uid)] == 1)
 
-            # wird automatisch mit dem Solver gesetzt
-            # model.Add(vars.weekend_vars[(0, lokal_employee.uid)] == 1)
+        model.Add(vars.vars[(6, lokal_shift_type.uid, lokal_employee.uid)] == 1)
+
+
+# nicht vollumfassend
+def test_max_weekends_2():
+    lokal_shift_type = shiftType.ShiftType()
+    lokal_employee = employee.Employee(max_number_weekends=1)
+    instance = instace.Instance.create(
+        number_of_days=7,
+        shift_typs=[lokal_shift_type],
+        emplyees=[lokal_employee],
+    )
+    vars = shift_vars.Shift_vars(instance)
+    max_weekend_days.Max_weekend_days().build(instance, vars)
+    # test if weekend_var is correctly set to 1 when employee works on weekend
+
+    vars.model.Add(vars.vars[(6, lokal_shift_type.uid, lokal_employee.uid)] == 1)
+
+    solver = cp_model.CpSolver()
+    status = solver.Solve(vars.model)
+    assert status == cp_model.OPTIMAL or status == cp_model.FEASIBLE
+    x = solver.Value(vars.weekend_vars[(6, lokal_employee.uid)])
+    assert x == 1
+
+
+# nicht vollumfassend
+def test_max_weekends_lns_1():
+    lokal_shift_type = shiftType.ShiftType()
+    lokal_employee = employee.Employee(max_number_weekends=1)
+    instance = instace.Instance.create(
+        number_of_days=4,
+        shift_typs=[lokal_shift_type],
+        emplyees=[lokal_employee],
+        weekend_days={0},
+    )
+    vars = shift_vars.Shift_vars(instance)
+    max_weekend_days_lns.Max_weekend_days(start_day=13).build(instance, vars)
+    # test if weekend_var is correctly set to 1 when employee works on weekend
+
+    vars.model.Add(vars.vars[(0, lokal_shift_type.uid, lokal_employee.uid)] == 1)
+
+    solver = cp_model.CpSolver()
+    status = solver.Solve(vars.model)
+    assert status == cp_model.OPTIMAL or status == cp_model.FEASIBLE
+    x = solver.Value(vars.weekend_vars[(0, lokal_employee.uid)])
+    assert x == 1

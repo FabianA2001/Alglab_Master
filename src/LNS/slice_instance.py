@@ -239,7 +239,27 @@ class Slice_instance:
         uid: employee.EmployeeUid,
         old_emp: employee.Employee,
     ) -> employee.Employee:
-        return old_emp
+        new_emp = old_emp.model_copy()
+        for day in self.inst.weekend_days:
+            if day < self.start_day or day > self.end_day:
+                if self.sol.is_employee_assigned_ad_weekend(day, uid):
+                    new_emp.max_number_weekends -= 1
+
+        # TODO check if self.start_day == 1 needs special treatment
+        if self.start_day > 0 and self.start_day in self.inst.weekend_days:
+            assigned = []
+            for shift_type_uid in self.inst.shift_types:
+                if self.sol.is_employee_assigned(
+                    self.start_day - 1, shift_type_uid, uid
+                ) and not self.sol.is_employee_assigned(
+                    self.start_day, shift_type_uid, uid
+                ):
+                    assigned.append(1)
+                else:
+                    assigned.append(0)
+            if max(assigned):
+                new_emp.max_number_weekends -= 1
+        return new_emp
 
     def calulate_maximum_consecutive_shifts_config(
         self,

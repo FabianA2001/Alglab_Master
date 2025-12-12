@@ -139,8 +139,11 @@ class Solution(BaseModel):
         self, day: int, shift_type_uid: int, employee_uid: int
     ) -> bool:
         """Überprüft, ob ein Mitarbeiter einem bestimmten Schichttyp an einem bestimmten Tag zugewiesen ist."""
-
         return self.vars[(day, shift_type_uid, employee_uid)] == 1
+
+    def is_employee_assigned_ad_weekend(self, weekend: int, employee_uid: int) -> bool:
+        """Überprüft, ob ein Mitarbeiter an einem bestimmten Wochenende arbeitet."""
+        return self.weekend_vars[(weekend, employee_uid)] == 1
 
     # def print_assign(self):
     #     for day, type_uid, employee_uid in self.vars.keys():
