@@ -514,3 +514,95 @@ class Test_Module_Max_Weekends:
                 window_instance.employees[self.lokal_employee.uid].max_number_weekends
                 == 1
             )
+
+        def test_count_max_days_10(self):
+            for day in range(18):
+                if day in [6, 12, 13]:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
+                    )
+                else:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
+                    )
+            for day in self.instance.weekend_days:
+                if day in [6, 13]:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 1)
+                else:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 0)
+
+            si = self.get_slice_instance(start=9, end=12)
+            window_instance = si.create_window_instance()
+            assert (
+                window_instance.employees[self.lokal_employee.uid].max_number_weekends
+                == 0
+            )
+
+        def test_count_max_days_11(self):
+            for day in range(18):
+                if day in [6, 12]:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
+                    )
+                else:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
+                    )
+            for day in self.instance.weekend_days:
+                if day in [6, 13]:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 1)
+                else:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 0)
+
+            si = self.get_slice_instance(start=9, end=12)
+            window_instance = si.create_window_instance()
+            assert (
+                window_instance.employees[self.lokal_employee.uid].max_number_weekends
+                == 0
+            )
+
+        def test_count_max_days_12(self):
+            for day in range(18):
+                if day in [6, 13]:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
+                    )
+                else:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
+                    )
+            for day in self.instance.weekend_days:
+                if day in [6, 13]:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 1)
+                else:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 0)
+
+            si = self.get_slice_instance(start=9, end=12)
+            window_instance = si.create_window_instance()
+            assert (
+                window_instance.employees[self.lokal_employee.uid].max_number_weekends
+                == 0
+            )
+
+        def test_count_max_days_13(self):
+            for day in range(18):
+                if day in [6]:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
+                    )
+                else:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
+                    )
+            for day in self.instance.weekend_days:
+                if day in [6]:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 1)
+                else:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 0)
+
+            si = self.get_slice_instance(start=9, end=12)
+            window_instance = si.create_window_instance()
+            assert (
+                window_instance.employees[self.lokal_employee.uid].max_number_weekends
+                == 0
+            )
