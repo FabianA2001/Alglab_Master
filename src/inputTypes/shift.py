@@ -16,6 +16,9 @@ class Shift(BaseModel):
     )
     name: str = Field(default_factory=str, description="Name of the Shift")
 
+    is_weekend: bool = Field(
+        default=False, description="Indicates if the Day is a weekend"
+    )
     penalty_not_assigned_day_employee: dict[employee.EmployeeUid, int] = Field(
         default=defaultdict(int),
         description="dict of penalty for employee assigned on specific day",
