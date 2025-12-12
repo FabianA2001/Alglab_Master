@@ -64,6 +64,21 @@ def gather_sol_times(data_dir):
                     'solve_time': solution.solve_time,
                     'objective_value': solution.objective_value
                 })
+
+            file_pattern = data_dir.glob(f"*_{key}_immediate_{try_num}.json")
+            
+            
+            for file in file_pattern:
+                solution = Solution.from_json_file(file.stem)  # Load using the base filename
+                instance_name = file.stem.split('_')[0]
+                sol_times.append({
+                    'instance': instance_name,
+                    'key': key,
+                    'type': 'immediate_first',
+                    'value': 'time',
+                    'solve_time': solution.solve_time,
+                    'objective_value': solution.objective_value
+                })
     
     # Repeat for first good solutions
     for key in dict_constraint.values():
