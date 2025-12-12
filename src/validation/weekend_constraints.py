@@ -13,15 +13,14 @@ def check_max_weekend_days_constraint(sol: "Solution") -> Tuple[bool, List[str]]
         emp_name = sol.instance.employees[employee_uid].name
         assigned_weekends = []
 
-        for weekend in range(round(sol.instance.number_of_days / 7)):
+        for weekend in sol.instance.weekend_days:
             assigned_shifts = []
             for type_uid in sol.instance.shifts[weekend]:
-                assigned_shifts.append(
-                    sol.vars[((7 * (weekend + 1) - 1 - 1), type_uid, employee_uid)]
-                )
-                assigned_shifts.append(
-                    sol.vars[((7 * (weekend + 1) - 1), type_uid, employee_uid)]
-                )
+                if weekend > 0:
+                    assigned_shifts.append(
+                        sol.vars[((weekend - 1), type_uid, employee_uid)]
+                    )
+                assigned_shifts.append(sol.vars[(weekend, type_uid, employee_uid)])
 
             weekend_var = sol.weekend_vars[(weekend, employee_uid)]
 

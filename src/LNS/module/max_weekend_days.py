@@ -22,20 +22,16 @@ class Max_weekend_days(ShiftAssignmentModule):
     ) -> cp_model.LinearExprT:
         for employee_uid in instance.employees:
             assigned_weekends = []
-            for weekend in range(round(instance.number_of_days / 7)):
+            for weekend in instance.weekend_days:
                 assigned_shifts = []
-                day = 7 * (weekend + 1) - 1 - (self.start_day % 7)
-                if day > instance.number_of_days - 1:
-                    continue
                 for type_uid in instance.shifts[weekend]:
-                    # + 1 because of for range start with 0, - 1 because are weekends days are on 5 and 6
-                    # not 6 and 7
-                    if day != 0:
+                    if weekend > 0:
                         assigned_shifts.append(
-                            vars.vars[(day - 1, type_uid, employee_uid)]
+                            # + 1 because of for range start with 0, - 1 because are weekends days are on 5 and 6
+                            # not 6 and 7
+                            vars.vars[((weekend - 1), type_uid, employee_uid)]
                         )
-                    if day != instance.number_of_days - 1:
-                        assigned_shifts.append(vars.vars[(day, type_uid, employee_uid)])
+                    assigned_shifts.append(vars.vars[(weekend, type_uid, employee_uid)])
 
                 vars.model.Add(
                     vars.weekend_vars[(weekend, employee_uid)] <= sum(assigned_shifts)

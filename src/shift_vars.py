@@ -29,7 +29,7 @@ class Shift_vars:
     def __init_weekend_vars(self, instance: instace.Instance):
         self.weekend_vars = {}
         for employee_uid in instance.employees:
-            for weekend in range(round(instance.number_of_days / 7)):
+            for weekend in instance.weekend_days:
                 self.weekend_vars[(weekend, employee_uid)] = self.model.new_bool_var(
                     f"weekend_work_{weekend}_for_{employee_uid}"
                 )
