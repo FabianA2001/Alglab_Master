@@ -209,7 +209,7 @@ class Test_slice_instance_min_days:
         self.lokal_shift_types = shiftType.ShiftType()
         self.lokal_employee = employee.Employee()
         self.instance = instace.Instance.create(
-            number_of_days=9,
+            number_of_days=10,
             shift_typs=[self.lokal_shift_types],
             emplyees=[self.lokal_employee],
         )
@@ -230,7 +230,7 @@ class Test_slice_instance_min_days:
 
     def test_count_min_days_1(self):
         self.lokal_employee.min_number_consecutive_shifts = 3
-        for day in range(9):
+        for day in range(10):
             if day in [1, 2, 7, 8]:
                 self.solution.set_var(
                     day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
@@ -250,7 +250,7 @@ class Test_slice_instance_min_days:
 
     def test_count_min_days_2(self):
         self.lokal_employee.min_number_consecutive_shifts = 3
-        for day in range(9):
+        for day in range(10):
             if day in [1, 2, 3, 6, 7, 8]:
                 self.solution.set_var(
                     day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
@@ -270,7 +270,7 @@ class Test_slice_instance_min_days:
 
     def test_count_min_days_3(self):
         self.lokal_employee.min_number_consecutive_shifts = 3
-        for day in range(9):
+        for day in range(10):
             if day in []:
                 self.solution.set_var(
                     day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
@@ -290,7 +290,7 @@ class Test_slice_instance_min_days:
 
     def test_count_min_days_4(self):
         self.lokal_employee.min_number_consecutive_shifts = 3
-        for day in range(9):
+        for day in range(10):
             if day in [0, 1, 2, 6, 7, 8]:
                 self.solution.set_var(
                     day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
@@ -306,7 +306,7 @@ class Test_slice_instance_min_days:
         ).calulate_minimum_consecutive_shifts_config(
             self.lokal_employee.uid, self.lokal_employee
         )
-        assert count_start == 0, "start"
+        assert count_start == -2, "start"
         assert count_end == 0, "end"
 
 

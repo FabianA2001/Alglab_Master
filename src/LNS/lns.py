@@ -33,9 +33,7 @@ class LNS:
         sol_or_instance: solution.Solution | instace.Instance,
         percent_search_time_first_solution: float = 0.1,
         timeout_seconds: float = 180,
-        # small_runtime_base: float = 0.01,  # * number_of_days * (number_of_shift_types + number_of_employees)
-        # HACK
-        small_runtime_base: float = 0.1,  # * number_of_days * (number_of_shift_types + number_of_employees)
+        small_runtime_base: float = 0.01,  # * number_of_days * (number_of_shift_types + number_of_employees)
         ####################
         start_search_window_size: int = 7,
         search_window_size_min: int = 3,
@@ -197,14 +195,6 @@ class LNS:
         assert self.end_day - self.start_day >= self.search_window_size_min
         assert self.start_day >= self.MIN_DAY
         assert self.end_day <= self.MAX_DAY
-
-        # HACK weil min consecutive shifts constraints fehlerhaft ist
-        if self.start_day <= 2:
-            self.start_day = 3
-        if self.end_day >= self.MAX_DAY - 2:
-            self.end_day = self.MAX_DAY - 3
-
-        ###############
 
     def merge_solutions(self, new_solution: solution.Solution) -> solution.Solution:
         """

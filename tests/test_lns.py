@@ -74,7 +74,7 @@ class TestUpdateSearchWindow:
             lns.end_day = 15  # Window size = 5
             return lns
 
-    def test_no_improvement_increases_window(self, lns_instance):
+    def test_no_improvement_increases_window(self, lns_instance: LNS):
         """
         Test: Bei keiner Verbesserung (improvement=0) wird das Fenster vergrößert.
 
@@ -83,17 +83,17 @@ class TestUpdateSearchWindow:
             - Fenster wird zufällig nach links/rechts erweitert
             - Grenzen (MIN_DAY, MAX_DAY) werden respektiert
         """
-        # Arrange: Initial window [10, 15], size=5
+        # Arrange: Initial window [10, 15], size=6
         initial_start = lns_instance.start_day
         initial_end = lns_instance.end_day
-        initial_size = initial_end - initial_start
+        initial_size = initial_end - initial_start + 1
 
         # Act: Keine Verbesserung
         with patch("random.randint", return_value=3):  # Deterministisch für Test
             lns_instance.update_search_window(improvement=0)
 
         # Assert: Fenster sollte größer sein
-        new_size = lns_instance.end_day - lns_instance.start_day
+        new_size = lns_instance.end_day - lns_instance.start_day + 1
         expected_size = int(initial_size * lns_instance.window_increase_factor)
         assert new_size >= initial_size, (
             "Fenster sollte bei keiner Verbesserung größer werden"
@@ -604,5 +604,5 @@ class Test_Module_Max_Weekends:
             window_instance = si.create_window_instance()
             assert (
                 window_instance.employees[self.lokal_employee.uid].max_number_weekends
-                == 0
+                == 1
             )
