@@ -43,13 +43,6 @@ class Slice_instance:
             ],
         )
 
-        # TODO Remove
-        # for emp_uid, entry in self.config.items():
-        #     if str(entry):
-        #         print(self.inst.employees[emp_uid].name)
-        #         print(entry)
-        ######
-
         self.fix_first_and_last_day()
 
         # TODO rework to also use modules
