@@ -79,11 +79,6 @@ class LNS:
                 self.MAX_DAY - self.start_search_window_size,
             ),
         )
-        # HACK Löschen
-        ###################
-        # self.start_day: int = 2
-        # self.start_search_window_size = 24
-        ###################
         self.end_day: int = self.start_day + self.start_search_window_size
 
         # time parameters
@@ -339,29 +334,23 @@ class LNS:
                 self.logger.debug(
                     f"Iteration {iteration}: No feasible solution found (status: {sol.solve_status})"
                 )
-
-                # HACK
-                import sys
-
-                sys.exit(1)
-                ###
-
+                self.old_solution.to_json_file(
+                    f"error_lns_infeasible_start_{self.start_day}_end_{self.end_day}.json"
+                )
                 continue
-            self.old_solution.to_json_file("temp_lns_old_solution.json")
-            sol.to_json_file("temp_lns_bevor_merge.json")
+            old_sol_debugg = sol.model_copy()
             sol = self.merge_solutions(sol)
-            print("Merged solution created")
-            sol.to_json_file("temp_lns_solution.json")
             if not sol.checkt_constraints[0]:
-                for cst, satisfied in sol.checkt_constraints[1].items():
-                    if not satisfied[0]:
-                        self.logger.warning(
-                            f"Iteration {iteration}: Merged solution violates constraint: {cst}"
-                        )
-                        for v in satisfied[1]:
-                            self.logger.warning(f"\t\t\tViolation: {v}")
-
-                assert False, "Merged solution violates constraints!"
+                self.old_solution.to_json_file(
+                    f"error_lns_merge_old_start_{self.start_day}_end_{self.end_day}.json"
+                )
+                old_sol_debugg.to_json_file(
+                    f"error_lns_merge_bevor_start_{self.start_day}_end_{self.end_day}.json"
+                )
+                sol.to_json_file(
+                    f"error_lns_merge_after_start_{self.start_day}_end_{self.end_day}.json"
+                )
+                continue
 
             self.logger.debug(
                 f"Iteration {iteration}: Found solution with objective {sol.objective_value}"
