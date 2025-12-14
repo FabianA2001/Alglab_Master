@@ -386,41 +386,49 @@ class Slice_instance:
 
         end_needed: same for the end of the window.
         """
-        start_free = self.count_not_assigned_shifts_start(emp_uid)
-        if start_free < 0:
-            start_needed = -1
-        elif start_free == 0:
-            shifts = []
-            for shift_type_uid in self.inst.shift_types:
-                if self.sol.is_employee_assigned(
-                    self.start_day, shift_type_uid, emp_uid
-                ):
-                    shifts.append(1)
+        if self.start_day != 0:
+            start_free = self.count_not_assigned_shifts_start(emp_uid)
+            if start_free < 0:
+                start_needed = -1
+            elif start_free == 0:
+                shifts = []
+                for shift_type_uid in self.inst.shift_types:
+                    if self.sol.is_employee_assigned(
+                        self.start_day, shift_type_uid, emp_uid
+                    ):
+                        shifts.append(1)
+                    else:
+                        shifts.append(0)
+                if max(shifts):
+                    start_needed = -3
                 else:
-                    shifts.append(0)
-            if max(shifts):
-                start_needed = -3
+                    start_needed = -2
             else:
-                start_needed = -2
+                start_needed = max(0, emp.min_number_consecutive_days_off - start_free)
         else:
-            start_needed = max(0, emp.min_number_consecutive_days_off - start_free)
+            start_needed = 0
 
-        end_free = self.count_not_assigned_shifts_end(emp_uid)
-        if end_free < 0:
-            end_needed = -1
-        elif end_free == 0:
-            shifts = []
-            for shift_type_uid in self.inst.shift_types:
-                if self.sol.is_employee_assigned(self.end_day, shift_type_uid, emp_uid):
-                    shifts.append(1)
+        if self.end_day != self.inst.number_of_days - 1:
+            end_free = self.count_not_assigned_shifts_end(emp_uid)
+            if end_free < 0:
+                end_needed = -1
+            elif end_free == 0:
+                shifts = []
+                for shift_type_uid in self.inst.shift_types:
+                    if self.sol.is_employee_assigned(
+                        self.end_day, shift_type_uid, emp_uid
+                    ):
+                        shifts.append(1)
+                    else:
+                        shifts.append(0)
+                if max(shifts):
+                    end_needed = -3
                 else:
-                    shifts.append(0)
-            if max(shifts):
-                end_needed = -3
+                    end_needed = -2
             else:
-                end_needed = -2
+                end_needed = max(0, emp.min_number_consecutive_days_off - end_free)
         else:
-            end_needed = max(0, emp.min_number_consecutive_days_off - end_free)
+            end_needed = 0
 
         return (start_needed, end_needed)
 

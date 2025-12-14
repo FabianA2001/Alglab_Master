@@ -202,6 +202,25 @@ class Test_slice_instance_count_days_off:
         assert count_start == 0, "start"
         assert count_end == 0, "end"
 
+    def test_count_days_off_5(self):
+        self.lokal_employee.min_number_consecutive_days_off = 2
+        for day in range(9):
+            if day in [1, 2, 3]:
+                self.solution.set_var(
+                    day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
+                )
+            else:
+                self.solution.set_var(
+                    day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
+                )
+
+        si = self.get_slice_instance(start=0, end=5)
+
+        count_start, count_end = si.calulate_minimum_consecutive_days_off_config(
+            self.lokal_employee.uid, self.lokal_employee
+        )
+        assert count_start == 0
+
 
 class Test_slice_instance_min_days:
     @pytest.fixture(autouse=True)
@@ -289,6 +308,27 @@ class Test_slice_instance_min_days:
         assert count_end == -1, "end"
 
     def test_count_min_days_4(self):
+        self.lokal_employee.min_number_consecutive_shifts = 3
+        for day in range(10):
+            if day in [0, 1, 2, 6, 7, 8]:
+                self.solution.set_var(
+                    day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
+                )
+            else:
+                self.solution.set_var(
+                    day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
+                )
+
+        # ACHTUNG: ende verschoben
+        count_start, count_end = self.get_slice_instance(
+            start=3, end=5
+        ).calulate_minimum_consecutive_shifts_config(
+            self.lokal_employee.uid, self.lokal_employee
+        )
+        assert count_start == -2, "start"
+        assert count_end == 0, "end"
+
+    def test_count_min_days_5(self):
         self.lokal_employee.min_number_consecutive_shifts = 3
         for day in range(10):
             if day in [0, 1, 2, 6, 7, 8]:
