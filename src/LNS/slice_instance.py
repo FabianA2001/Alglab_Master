@@ -268,23 +268,21 @@ class Slice_instance:
     ) -> tuple[int, int]:
         """Erstellt eine Konfigurations-Dictionary für maximale aufeinanderfolgende Schichten pro Mitarbeiter."""
         current_consecutive_shifts = self.count_assigned_shifts_start(emp_uid)
-        needed = emp.max_number_consecutive_shifts
         if current_consecutive_shifts < 0:
-            if needed == -current_consecutive_shifts:
-                current_consecutive_shifts = -current_consecutive_shifts
-            else:
-                current_consecutive_shifts = 0
+            current_consecutive_shifts = -current_consecutive_shifts
+
+        assert emp.max_number_consecutive_shifts >= current_consecutive_shifts, (
+            f"Employee {emp_uid} has {current_consecutive_shifts} consecutive shifts "
+            f"before the window, which exceeds their maximum allowed "
+            f"({emp.max_number_consecutive_shifts})."
+        )
         start_vorbidden_days = (
-            max(0, emp.max_number_consecutive_shifts - current_consecutive_shifts)
-            if current_consecutive_shifts != 0
-            else -1
+            emp.max_number_consecutive_shifts - current_consecutive_shifts
         )
         current_consecutive_shifts = self.count_assigned_shifts_end(emp_uid)
+
         if current_consecutive_shifts < 0:
-            if needed == -current_consecutive_shifts:
-                current_consecutive_shifts = -current_consecutive_shifts
-            else:
-                current_consecutive_shifts = 0
+            current_consecutive_shifts = -current_consecutive_shifts
 
         assert emp.max_number_consecutive_shifts >= current_consecutive_shifts, (
             f"Employee {emp_uid} has {current_consecutive_shifts} consecutive shifts "
@@ -292,9 +290,7 @@ class Slice_instance:
             f"({emp.max_number_consecutive_shifts})."
         )
         end_vorbidden_days = (
-            (emp.max_number_consecutive_shifts - current_consecutive_shifts)
-            if current_consecutive_shifts != 0
-            else -1
+            emp.max_number_consecutive_shifts - current_consecutive_shifts
         )
         return (start_vorbidden_days, end_vorbidden_days)
 

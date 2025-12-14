@@ -394,3 +394,60 @@ class Test_slice_instance_max_days:
         )
         assert count_start == 2, "start"
         assert count_end == 2, "end"
+
+    def test_count_max_days_4(self):
+        self.lokal_employee.max_number_consecutive_shifts = 4
+        for day in range(9):
+            if day in [5, 6, 7, 8]:
+                self.solution.set_var(
+                    day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
+                )
+            else:
+                self.solution.set_var(
+                    day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
+                )
+
+        count_start, count_end = self.get_slice_instance(
+            start=3, end=7
+        ).calulate_maximum_consecutive_shifts_config(
+            self.lokal_employee.uid, self.lokal_employee
+        )
+        assert count_end == 3
+
+    def test_count_max_days_5(self):
+        self.lokal_employee.max_number_consecutive_shifts = 4
+        for day in range(9):
+            if day in [8]:
+                self.solution.set_var(
+                    day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
+                )
+            else:
+                self.solution.set_var(
+                    day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
+                )
+
+        count_start, count_end = self.get_slice_instance(
+            start=3, end=7
+        ).calulate_maximum_consecutive_shifts_config(
+            self.lokal_employee.uid, self.lokal_employee
+        )
+        assert count_end == 3
+
+    def test_count_max_days_6(self):
+        self.lokal_employee.max_number_consecutive_shifts = 4
+        for day in range(9):
+            if day in [7, 8]:
+                self.solution.set_var(
+                    day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
+                )
+            else:
+                self.solution.set_var(
+                    day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
+                )
+
+        count_start, count_end = self.get_slice_instance(
+            start=2, end=6
+        ).calulate_maximum_consecutive_shifts_config(
+            self.lokal_employee.uid, self.lokal_employee
+        )
+        assert count_end == 2
