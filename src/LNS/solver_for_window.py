@@ -123,6 +123,8 @@ class Solver_for_window(solver.Solver):
         is_assigend = emp_vars.is_assigend_start
 
         for i in range(max_consecutive_shifts):
+            if i >= self.instance.number_of_days:
+                break
             shift_vars = [
                 self.vars.vars[(i, shift_type_uid, employee_uid)]
                 for shift_type_uid in self.instance.shift_types
@@ -179,6 +181,8 @@ class Solver_for_window(solver.Solver):
 
         for i in range(max_consecutive_shifts):
             day = self.instance.number_of_days - max_consecutive_shifts + i
+            if day < 0 or day >= self.instance.number_of_days:
+                break
             # suffix_true[i] = 1, wenn an Tag day der Mitarbeiter einen Dienst hat
             shift_vars = [
                 self.vars.vars[(day, shift_type_uid, employee_uid)]

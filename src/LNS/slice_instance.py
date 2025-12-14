@@ -292,6 +292,8 @@ class Slice_instance:
         end_vorbidden_days = (
             emp.max_number_consecutive_shifts - current_consecutive_shifts
         )
+        assert start_vorbidden_days >= 0
+        assert end_vorbidden_days >= 0
         return (start_vorbidden_days, end_vorbidden_days)
 
     def update_maximum_consecutive_shifts(self):
