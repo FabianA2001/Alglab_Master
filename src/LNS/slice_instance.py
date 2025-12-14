@@ -444,7 +444,7 @@ class Slice_instance:
 
     def count_not_assigned_shifts_start(self, emp_uid: employee.EmployeeUid) -> int:
         current_free_consecutive_shifts = 0
-        if self.start_day < 2:
+        if self.start_day < 1:
             return current_free_consecutive_shifts
         for day in range(self.start_day - 1, -1, -1):
             not_assigneds = []
