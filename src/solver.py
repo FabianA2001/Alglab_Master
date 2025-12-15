@@ -7,6 +7,7 @@ from typing import Callable
 from . import shift_vars
 from .callback_early_stop import Callback_Early_Stop
 from .solverCallback.callback_three_best_solutions import Callback_Top_Solutions
+from .solverCallback.callback_collect_all_solutions import CollectAllSolutions
 from .inputTypes import instace
 from .module import (
     assign_employee_day_shift,
@@ -254,6 +255,28 @@ class Solver:
             max_time_in_seconds=max_time_in_seconds,
         )
 
+    def warm_start_multi(
+        self,
+        solution: Solution,
+        instance: instace.Instance,
+        disabled_constraints: list[SolverConstraints] = [],
+        max_time_in_seconds: float = 60.0,
+    ) -> list[tuple[int, Solution]]:
+        """Warm starts the solver with a given solution."""
+        self.instance = instance
+        for day in range(instance.number_of_days):
+            for type_uid in instance.shifts[day]:
+                for employee_uid in instance.employees:
+                    var_value = solution.vars[(day, type_uid, employee_uid)] == 1
+                    self.vars.model.AddHint(
+                        self.vars.get_var(day, type_uid, employee_uid), var_value
+                    )
+        return self.solve_min_changes_multiple_results(
+            solution=solution,
+            disabled_constraints=disabled_constraints,
+            max_time_in_seconds=max_time_in_seconds,
+        )
+
     def objective_value_weight_changes(
         self,
         solution: Solution,
@@ -432,10 +455,16 @@ class Solver:
                     self.vars.model.AddHint(
                         self.vars.get_var(day, type_uid, employee_uid), var_value
                     )
-        return self.solve_with_early_stop(
-            disabled_constraints=disabled_constraints,
-            max_time_in_seconds=max_time_in_seconds,
+        # return self.solve_with_early_stop(
+        #     disabled_constraints=disabled_constraints,
+        #     max_time_in_seconds=max_time_in_seconds,
+        #     log_search_progress=log_search_progress,
+        # )
+        return self.solve(
             log_search_progress=log_search_progress,
+            max_time_in_seconds=max_time_in_seconds,
+            disabled_constraints=disabled_constraints,
+            stop_after_first_solution=True,
         )
 
     def warm_start_greedy2(
@@ -457,8 +486,91 @@ class Solver:
                     self.vars.model.AddHint(
                         self.vars.get_var(day, type_uid, employee_uid), var_value
                     )
-        return self.solve_with_early_stop(
-            disabled_constraints=disabled_constraints,
-            max_time_in_seconds=max_time_in_seconds,
+        # return self.solve_with_early_stop(
+        #     disabled_constraints=disabled_constraints,
+        #     max_time_in_seconds=max_time_in_seconds,
+        #     log_search_progress=log_search_progress,
+        # )
+        return self.solve(
             log_search_progress=log_search_progress,
+            max_time_in_seconds=max_time_in_seconds,
+            disabled_constraints=disabled_constraints,
+            stop_after_first_solution=True,
         )
+
+    def solve_min_changes_multiple_results(
+        self,
+        solution: Solution,
+        log_search_progress: bool = True,
+        max_time_in_seconds: float = 60.0,
+        disabled_constraints: list[SolverConstraints] = [],
+        **solver_params,
+    ) -> list[tuple[int, Solution]]:
+        """Run solver minimizing changes weight and collect multiple solutions via a callback.
+
+        Returns a list of Solution objects collected by the callback (may be empty).
+        """
+        self.set_constraints(disabled_constraints=disabled_constraints)
+        solver = cp_model.CpSolver()
+        solver.parameters.log_search_progress = log_search_progress
+        solver.parameters.max_time_in_seconds = max_time_in_seconds
+
+        for key, value in solver_params.items():
+            setattr(solver.parameters, key, value)
+
+        self.vars.model.Minimize(self.objective_value_weight_changes(solution=solution))
+        # record start time for solutions
+        self.start_solve_time = datetime.now()
+
+        # Use external callback to collect all intermediate solutions
+        callback = CollectAllSolutions(
+            self.instance, self.vars, disabled_constraints, self.start_solve_time
+        )
+
+        _ = solver.SolveWithSolutionCallback(self.vars.model, callback)
+
+        self.solve_time = (datetime.now() - self.start_solve_time).total_seconds()
+
+        # Now compute number of changes for each collected solution relative to the provided base `solution`.
+        def count_changes(sol: Solution, base: Solution) -> int:
+            changes = 0
+            for day in range(self.instance.number_of_days):
+                for type_uid in self.instance.shifts[day]:
+                    for emp in self.instance.employees:
+                        a = sol.vars.get((day, type_uid, emp), 0)
+                        b = base.vars.get((day, type_uid, emp), 0)
+                        if a != b:
+                            changes += 1
+            return changes
+
+        collected = callback.collected
+
+        results: list[tuple[int, Solution]] = []
+
+        for sol in collected:
+            changes = count_changes(sol, solution)
+            results.append((changes, sol))
+
+        # Nach Anzahl der Änderungen sortieren (aufsteigend)
+        # Nach Anzahl der Änderungen sortieren (aufsteigend)
+        results_sorted = sorted(results, key=lambda t: t[0])
+
+        if not results_sorted:
+            return []
+
+        best_changes = results_sorted[0][0]
+
+        # Schwellenwert bestimmen
+        if best_changes < 5:
+            max_allowed_changes = 10
+        else:
+            max_allowed_changes = 2 * best_changes
+
+        # Filtern
+        filtered_results = [
+            (changes, sol)
+            for changes, sol in results_sorted
+            if changes <= max_allowed_changes
+        ]
+
+        return filtered_results

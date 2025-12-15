@@ -70,7 +70,7 @@ def run_benchmark(
     instance_dir: Path,
     output_dir: Path,
     timeout: float = 60.0,
-    save_solutions: bool = False,
+    save_solutions: bool = True,
     limit: int | None = None,
     out_name: str | None = None,
     single_instance: Path | None = None,
@@ -108,12 +108,12 @@ def run_benchmark(
 
         start = time.time()
         try:
-            sol = solver.solve_with_early_stop(
-                max_time_in_seconds=timeout, log_search_progress=False, automaton=False
-            )
-            # sol = solver.warm_start_greedy(
-            #     max_time_in_seconds=timeout, instance=instance
+            # sol = solver.solve_with_early_stop(
+            #     max_time_in_seconds=timeout, log_search_progress=False, automaton=False
             # )
+            sol = solver.warm_start_greedy2(
+                max_time_in_seconds=timeout, instance=instance
+            )
             # HIER
             # sol = solver.warm_start_greedy2(
             #     max_time_in_seconds=timeout, instance=instance

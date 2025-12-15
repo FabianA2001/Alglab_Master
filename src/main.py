@@ -171,6 +171,28 @@ def try_compare_multiple_solutions():
     print(find_best_solution_for_modified_instance([sol1, sol2, sol3], instance))
 
 
+def try_warmstart_callback():
+    test_file = Path.joinpath(
+        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance3.txt"
+    )
+    instance = parseTXT.parse_txt(test_file)
+    vars = Shift_vars(instance)
+    solv = Solver(instance, vars)
+    sol1 = solv.solve(max_time_in_seconds=180)
+    sollist = solv.warm_start_multi(
+        solution=sol1, max_time_in_seconds=180, instance=instance
+    )
+    for sol in sollist:
+        sol2 = sol[1]
+        print("Änderungen: ", sol[0])
+    print(sol2.solve_status)
+    if sol2.solve_status == cp_model.OPTIMAL or sol2.solve_status == cp_model.FEASIBLE:
+        sol2.to_json_file(instance.name)
+    else:
+        print(f"No feasible solution found for {instance.name}")
+        return
+
+
 def main() -> None:
     # inst = get_tes_data()
     # x = inst
@@ -181,7 +203,8 @@ def main() -> None:
     # get_test_solution_from_model()
     # try_compare_solutions()
     # run_lns_example()
-    try_compare_multiple_solutions()
+    # try_compare_multiple_solutions()
+    try_warmstart_callback()
     # calculate_all_instancen()
     # print_some_infos()
 
