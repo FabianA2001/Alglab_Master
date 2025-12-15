@@ -105,7 +105,7 @@ def gather_sol_times(data_dir):
             
             for file in file_pattern:
                 solution = Solution.from_json_file(file.stem)  # Load using the base filename
-                if solution.solve_time >= 1800:
+                if solution.solve_time >= 1800 or True:
                     instance_name = file.stem.split('_')[0]
                     sol_times.append({
                         'instance': instance_name,
@@ -218,6 +218,112 @@ def plot_sol_times_barchart(df, solution_type, value_type):
         filename = f'solve_{solution_type}_{value_type}_{measure}_bar.png'
         plt.savefig(filename)
 
+def aggregate_scores(df, value_type, solution_type):
+    # Creating a dictionary to store scores
+    method_scores = {}
+
+    # Get unique instances
+    instances = df['instance'].unique()
+
+    for instance in instances:
+        # Filter the data for the current instance
+        subset = df[df['instance'] == instance]
+        
+        # Calculate min, max, mean, median
+        min_values = subset.groupby('key')[value_type].min()
+        max_values = subset.groupby('key')[value_type].max()
+        mean_values = subset.groupby('key')[value_type].mean()
+        median_values = subset.groupby('key')[value_type].median()
+        # Combine metrics into a single DataFrame
+        metrics_df = pd.DataFrame({
+            'min': min_values,
+            'max': max_values,
+            'mean': mean_values,
+            'median': median_values
+        }).reset_index()
+
+        # Sort by each metric and assign scores
+        for metric in ['min', 'max', 'mean', 'median']:
+            sorted_metric = metrics_df.sort_values(by=metric)
+            sorted_metric['score'] = sorted_metric[metric].rank(method='dense').astype(int)
+            # Accumulate scores for each method
+            for row in sorted_metric.itertuples():
+                method = row.key
+                score = row.score
+                if method not in method_scores:
+                    method_scores[method] = 0
+                method_scores[method] += score  # Summing scores across instances
+    
+    return method_scores
+
+def get_top_methods(method_scores, n=3):
+    # Sort methods by their total scores
+    sorted_methods = sorted(method_scores.items(), key=lambda x: x[1])
+    
+    # Get the top n methods
+    top_methods = sorted_methods[:n]
+    
+    return top_methods
+
+
+def aggregate_scores_(df, value_type, solution_type):
+    # Create a dictionary to store scores
+    method_scores = {}
+
+    # Get unique instances
+    instances = df['instance'].unique()
+
+    for instance in instances:
+        # Filter the data for the current instance
+        subset = df[df['instance'] == instance]
+        
+        # Calculate metrics for each method
+        min_values = subset.groupby('key')[value_type].min()
+        max_values = subset.groupby('key')[value_type].max()
+        mean_values = subset.groupby('key')[value_type].mean()
+        median_values = subset.groupby('key')[value_type].median()
+        # Combine metrics into a single DataFrame
+        metrics_df = pd.DataFrame({
+            'key': min_values.index,
+            'min': min_values.values,
+            'max': max_values.values,
+            'mean': mean_values.values,
+            'median': median_values.values
+        })
+
+        # Sort and assign scores for each metric
+        for metric in ['min', 'max', 'mean', 'median']:
+            sorted_metric = metrics_df.sort_values(by=metric)
+            sorted_metric['score'] = sorted_metric[metric].rank(method='dense').astype(int)
+            # Accumulate scores for each method
+            for row in sorted_metric.itertuples():
+                method = row.key
+                score = row.score
+                if method not in method_scores:
+                    method_scores[method] = {metric: 0 for metric in ['min', 'max', 'mean', 'median']}
+                method_scores[method][metric] += score  # Summing scores across instances
+    return method_scores
+
+def print_top_methods(method_scores, n=3):
+    overall_scores = {}
+    
+    for metric in ['min', 'max', 'mean', 'median']:
+        # Sort methods by their score for the current metric
+        sorted_methods = sorted(method_scores.items(), key=lambda x: x[1][metric])
+        
+        print(f"\nTop {n} methods for {metric}:")
+        for method, scores in sorted_methods[:n]:
+            print(f"Method: {method}, Score: {scores[metric]}")
+            # Calculate overall scores
+            if method not in overall_scores:
+                overall_scores[method] = 0
+            overall_scores[method] += scores[metric]
+    
+    # Print overall scores
+    sorted_overall = sorted(overall_scores.items(), key=lambda x: x[1])
+    print(f"\nTop {n} methods overall:")
+    for method, score in sorted_overall[:n]:
+        print(f"Method: {method}, Overall Score: {score}")
 
 def main():
     DATA_DIR = Path(__file__).resolve().parent / "data" / "solutions"
@@ -228,8 +334,11 @@ def main():
         if len(df_sol_times) > 0:
             filtered_df = df_sol_times[df_sol_times['type'] == solution_type]
             if len(filtered_df) > 0:
-                plot_sol_times_lines(filtered_df, solution_type= solution_type, value_type=df_sol_times.iloc[0]['value'])
-                plot_sol_times_barchart(filtered_df, solution_type= solution_type, value_type=df_sol_times.iloc[0]['value'])
+                print(solution_type, df_sol_times.iloc[0]['value'])
+                print(get_top_methods(aggregate_scores(filtered_df, df_sol_times.iloc[0]['value'], solution_type), n=10))
+                print_top_methods(aggregate_scores_(filtered_df, df_sol_times.iloc[0]['value'], solution_type), n=10)
+                #plot_sol_times_lines(filtered_df, solution_type= solution_type, value_type=df_sol_times.iloc[0]['value'])
+                #plot_sol_times_barchart(filtered_df, solution_type= solution_type, value_type=df_sol_times.iloc[0]['value'])
 
 if __name__ == "__main__":
     main()
