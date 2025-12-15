@@ -59,7 +59,7 @@ class Solver:
         for key, value in solver_params.items():
             setattr(solver.parameters, key, value)
 
-        self.vars.model.Minimize(self.objective_value_new())
+        self.vars.model.Minimize(self.objevtive_value())
         self.start_solve_time = datetime.now()
         if callback is not None:
             status = solver.SolveWithSolutionCallback(self.vars.model, callback)
