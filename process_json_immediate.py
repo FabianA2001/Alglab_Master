@@ -22,7 +22,7 @@ def process_file_immediate(json_file, x, constraint_number, key):
     print("\n" + filename)
     solution = solver.solve_with_early_stop_immediate(log_search_progress=False, max_time_in_seconds=15*60, constraint_set = constraint_number).model_copy(deep=True)
 
-    filename = f"{solution.instance.name}_{key}_first_good_{x}"  # Include x in the filename
+    filename = f"{solution.instance.name}_{key}_immediate_{x}"  # Include x in the filename
     print("\n" + filename)
 
     if solution.solve_status in [cp_model.OPTIMAL, cp_model.FEASIBLE]:
