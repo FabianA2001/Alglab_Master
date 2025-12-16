@@ -4,6 +4,7 @@ import numpy as np
 from pathlib import Path
 import json
 from src.solution import Solution
+import os
 
 def gather_sol_times(data_dir):
     sol_times = []
@@ -47,6 +48,38 @@ def gather_sol_times(data_dir):
                     'solve_time': solution.solve_time,
                     'objective_value': solution.objective_value
                 })
+
+
+            file_pattern = data_dir.glob(f"*_{key}_timeout_{try_num}.json")
+            for file in file_pattern:
+                solution = Solution.from_json_file(file.stem)  # Load using the base filename
+                instance_name = file.stem.split('_')[0]
+                sol_times.append({
+                    'instance': instance_name,
+                    'key': key,
+                    'type': 'optimal',
+                    'value': 'solve_time',
+                    'solve_time': solution.solve_time,
+                    'objective_value': solution.objective_value
+                })
+
+    if os.path.exists('no_opt_solution_found.txt'):
+        with open('no_opt_solution_found.txt', 'r') as file:
+            for line in file:
+                line = line.strip()  # Remove any leading/trailing whitespace
+                if line:  # Ensure the line is not empty
+                    instance_name = line.split('_')[0]  # Extract instance name from the filename
+                    key = line.split('_')[2:-2]
+                    key = '_'.join(key)
+                    sol_times.append({
+                        'instance': instance_name,
+                        'key': key,
+                        'type': 'optimal',
+                        'value': 'solve_time',
+                        'solve_time': 30*60,  # Hard-coded solve time
+                        'objective_value': 0  # Hard-coded objective value
+                    })
+                
     # Repeat for immediate first solutions
     for key in dict_constraint.values():
         for try_num in range(0, 5):
@@ -79,6 +112,23 @@ def gather_sol_times(data_dir):
                     'solve_time': solution.solve_time,
                     'objective_value': solution.objective_value
                 })
+
+    if os.path.exists('no_immediate_solution_found_new.txt'):
+        with open('no_immediate_solution_found_new.txt', 'r') as file:
+            for line in file:
+                line = line.strip()  # Remove any leading/trailing whitespace
+                if line:  # Ensure the line is not empty
+                    instance_name = line.split('_')[0]  # Extract instance name from the filename
+                    key = line.split('_')[1:-2]
+                    key = '_'.join(key)
+                    sol_times.append({
+                        'instance': instance_name,
+                        'key': key,
+                        'type': 'immediate_first',
+                        'value': 'solve_time',
+                        'solve_time': 15*60,  # Hard-coded solve time
+                        'objective_value': 0  # Hard-coded objective value
+                    })
     
     # Repeat for first good solutions
     for key in dict_constraint.values():
@@ -112,8 +162,25 @@ def gather_sol_times(data_dir):
                         'key': key,
                         'type': 'timed_out',
                         'value': 'objective_value',
-                        'solve_time': solution.objective_value,
+                        'solve_time': solution.solve_time,
                         'objective_value': solution.objective_value
+                    })
+                    
+    if os.path.exists('no_solution_in_30min_found_new.txt'):
+        with open('no_solution_in_30min_found_new.txt', 'r') as file:
+            for line in file:
+                line = line.strip()  # Remove any leading/trailing whitespace
+                if line:  # Ensure the line is not empty
+                    instance_name = line.split('_')[0]  # Extract instance name from the filename
+                    key = line.split('_')[1:-4]
+                    key = '_'.join(key)
+                    sol_times.append({
+                        'instance': instance_name,
+                        'key': key,
+                        'type': 'timed_out',
+                        'value': 'objective_value',
+                        'solve_time': 30*60,  # Hard-coded solve time
+                        'objective_value': 20000  # Hard-coded objective value
                     })
 
     return pd.DataFrame(sol_times)
@@ -333,12 +400,13 @@ def main():
     for solution_type in ['optimal', 'immediate_first', 'first_good', 'timed_out']:
         if len(df_sol_times) > 0:
             filtered_df = df_sol_times[df_sol_times['type'] == solution_type]
+            filtered_df = filtered_df[filtered_df['key'].isin(['Alternative_exact_Enforce', 'new'])]
             if len(filtered_df) > 0:
                 print(solution_type, df_sol_times.iloc[0]['value'])
-                print(get_top_methods(aggregate_scores(filtered_df, df_sol_times.iloc[0]['value'], solution_type), n=10))
-                print_top_methods(aggregate_scores_(filtered_df, df_sol_times.iloc[0]['value'], solution_type), n=10)
-                #plot_sol_times_lines(filtered_df, solution_type= solution_type, value_type=df_sol_times.iloc[0]['value'])
-                #plot_sol_times_barchart(filtered_df, solution_type= solution_type, value_type=df_sol_times.iloc[0]['value'])
+                print(get_top_methods(aggregate_scores(filtered_df, filtered_df.iloc[0]['value'], solution_type), n=10))
+                print_top_methods(aggregate_scores_(filtered_df, filtered_df.iloc[0]['value'], solution_type), n=10)
+                # plot_sol_times_lines(filtered_df, solution_type= solution_type, value_type=filtered_df.iloc[0]['value'])
+                # plot_sol_times_barchart(filtered_df, solution_type= solution_type, value_type=filtered_df.iloc[0]['value'])
 
 if __name__ == "__main__":
     main()
