@@ -322,17 +322,17 @@ class Solver:
                 self.instance, self.vars
             )
         if SolverConstraints.max_Cons_Shifts not in disabled_constraints:
-            max_Cons_shifts_new.Max_Cons_Shifts_Automaton().build(
+            max_Cons_shifts_new.Max_Cons_Shifts_new().build(
                 self.instance, self.vars
             )
         if SolverConstraints.max_weekend_days not in disabled_constraints:
             max_weekend_days.Max_weekend_days().build(self.instance, self.vars)
         if SolverConstraints.minimum_consecutive_days_off not in disabled_constraints:
-            minimum_consecutove_days_off_new.Min_Cons_Days_Off_Automaton().build(
+            minimum_consecutove_days_off_new.Minimum_consecutive_days_off_new().build(
                 self.instance, self.vars
             )
         if SolverConstraints.minimum_consecutive_shifts not in disabled_constraints:
-            minimum_consecutive_shifts_new.Min_Cons_Shifts_Automaton().build(
+            minimum_consecutive_shifts_new.Minimum_consecutive_shifts_new().build(
                 self.instance, self.vars
             )
         if SolverConstraints.minMaxWorkTime not in disabled_constraints:
@@ -384,6 +384,29 @@ class Solver:
                     * self.instance.shifts[day][type_uid].weight_below_preferred
                     * 2
                 )
+
+                # objective_value += (
+                #     self.vars.above_prefferd_vars[(day, type_uid)]
+                #     * self.instance.shifts[day][type_uid].weight_above_preferred
+                # )
+        return objective_value
+    
+    def objective_value_only_wishes(self) -> cp_model.ObjLinearExprT:
+        objective_value = 0
+        for employee_uid in self.instance.employees:
+            for day in range(self.instance.number_of_days):
+                for type_uid in self.instance.shifts[day]:
+                    objective_value += self.instance.get_shift(
+                        day=day, type_uid=type_uid
+                    ).penalty_assigned_day_employee.get(employee_uid, 0) * (
+                        1 - self.vars.vars[(day, type_uid, employee_uid)]
+                    )
+                    objective_value += (
+                        self.instance.shifts[day][
+                            type_uid
+                        ].penalty_not_assigned_day_employee.get(employee_uid, 0)
+                        * self.vars.vars[(day, type_uid, employee_uid)]
+                    )
 
                 # objective_value += (
                 #     self.vars.above_prefferd_vars[(day, type_uid)]

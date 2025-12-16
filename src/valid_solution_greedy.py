@@ -63,18 +63,18 @@ class valid_solution_greedy(BaseModel):
         print(f'something went wrong: \n day - {day}\nemployee - {self.instance.employees[EmployeeUid].name}')
         exit()
 
-    def get_score_min_max(self, day: int, EmployeeUid : employee.EmployeeUid, min_max_consecutive_shifts: List[int]):
+    # def get_score_min_max(self, day: int, EmployeeUid : employee.EmployeeUid, min_max_consecutive_shifts: List[int]):
         
-        # just assign a shift if it is
-        for in min:
-            for shiftTypeUID, shift in self.instance.shifts[day].items():
-                if EmployeeUid in shift.penalty_assigned_day_employee:
+    #     # just assign a shift if it is
+    #     for in min:
+    #         for shiftTypeUID, shift in self.instance.shifts[day].items():
+    #             if EmployeeUid in shift.penalty_assigned_day_employee:
 
-    # fix shifts assignment created in get_score_min_max
-    def fix_shifts_assignment(self):
+    # # fix shifts assignment created in get_score_min_max
+    # def fix_shifts_assignment(self):
 
 
 
-    instance: instace.Instance = Field(
-            description="An instance that contains all given variables",
-        )
+    # instance: instace.Instance = Field(
+    #         description="An instance that contains all given variables",
+    #     )

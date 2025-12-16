@@ -14,6 +14,8 @@ from .parseData import parseTXT
 from .shift_vars import Shift_vars
 from .solver import Solver
 
+from .solve_employees import solve_employee
+
 # Logging konfigurieren
 logging.basicConfig(
     level=logging.INFO,
@@ -37,7 +39,7 @@ def sayHello(name="World") -> str:
 
 def get_tes_data() -> instace.Instance:
     test_file = Path.joinpath(
-        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance9.txt"
+        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance20.txt"
     )
     # test_file = Path.joinpath(
     #     Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance13.txt"
@@ -146,6 +148,10 @@ def print_some_infos():
 
         print()
 
+def test_solve_employee():
+    instance_9 = get_tes_data()
+    solve_employee_obj = solve_employee(instance=instance_9, vars=Shift_vars(instance_9))
+    solve_employee_obj.solve_all_employees()
 
 def main() -> None:
     # inst = get_tes_data()
@@ -157,9 +163,9 @@ def main() -> None:
     # get_test_solution_from_model()
     # try_compare_solutions()
     # run_lns_example()
-    calculate_all_instancen()
+    #calculate_all_instancen()
     # print_some_infos()
-
+    test_solve_employee()
 
 if __name__ == "__main__":
     main()
