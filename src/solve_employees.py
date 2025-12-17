@@ -52,14 +52,14 @@ class solve_employee():
             employee_uids.append(employee_uid)
             if incrementally:
                 result = subprocess.run(
-                    ['py', 'subprocess_employees.py', ','.join(map(str, employee_uids)), str(self.instance.name)],
+                    ['python3', 'subprocess_employees.py', ','.join(map(str, employee_uids)), str(self.instance.name)],
     capture_output=True, text=True
                 )
                 print(result.stdout)
             else:
                 # Call the subprocess
                 result = subprocess.run(
-                    ['py', 'subprocess_employee.py', str(employee_uid), str(self.instance.name)],
+                    ['python3', 'subprocess_employee.py', str(employee_uid), str(self.instance.name)],
                     capture_output=True, text=True
                 )
             

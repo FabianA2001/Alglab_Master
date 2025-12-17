@@ -40,7 +40,7 @@ def main():
     #             print(f"incrementally {incrementally} opt")
     #             print(f"Processing {json_file.name} with iteration {x} ...")
     #             # Call the secondary script with the current JSON file and iteration x
-    #             subprocess.run(["py", "process_json_solve_employee.py", str(json_file), str(x), "True", incrementally, str(30*60), "False"])
+    #             subprocess.run(["python3", "process_json_solve_employee.py", str(json_file), str(x), "True", incrementally, str(30*60), "False"])
 
     for json_file in json_files_immediate:
         for x in range(0, 1):
