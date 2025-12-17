@@ -50,16 +50,21 @@ class solve_employee():
             count_ += 1
             print(count_)
             employee_uids.append(employee_uid)
+            end_time = time.time()
+            execution_time = end_time - start_time
+            soft_max_time_in_seconds_employee = soft_max_time_in_seconds - int(execution_time)
+            if (len(self.instance.employees)-len(employee_uids)) != 0:
+                soft_max_time_in_seconds_employee = int(soft_max_time_in_seconds_employee/(len(self.instance.employees)-len(employee_uids)))
             if incrementally:
                 result = subprocess.run(
-                    ['python3', 'subprocess_employees.py', ','.join(map(str, employee_uids)), str(self.instance.name)],
+                    ['python3', 'subprocess_employees.py', ','.join(map(str, employee_uids)), str(self.instance.name), str(soft_max_time_in_seconds_employee)],
     capture_output=True, text=True
                 )
                 print(result.stdout)
             else:
                 # Call the subprocess
                 result = subprocess.run(
-                    ['python3', 'subprocess_employee.py', str(employee_uid), str(self.instance.name)],
+                    ['python3', 'subprocess_employee.py', str(employee_uid), str(self.instance.name), str(soft_max_time_in_seconds_employee)],
                     capture_output=True, text=True
                 )
             
