@@ -73,7 +73,7 @@ class solve_employee():
                 self.store_employee_solution(solution, employee_uid)
             else:
                 print(f"Error solving for employee {employee_uid}: {result.stderr}")
-            if len(employee_uids) > 2:
+            if len(employee_uids) > 1:
                 Solution.delete_json_solution(str(employee_uids[-2]))
         Solution.delete_json_solution(str(employee_uids[-1]))
 
