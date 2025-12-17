@@ -236,8 +236,8 @@ def show():
                     solution = future.result()
                     st.session_state[SSN.solver_future.name] = None
                     elapsed_time = (
-                            time.time() - st.session_state[SSN.solver_start_time.name]
-                        )
+                        time.time() - st.session_state[SSN.solver_start_time.name]
+                    )
                     st.session_state[SSN.solver_running.name] = False
                     st.session_state[SSN.solver_executor.name].shutdown(wait=False)
                     if solution.solve_status == 2:

@@ -334,6 +334,197 @@ class Solution(BaseModel):
         print(f"Solution geladen aus: {path_obj}")
 
         return solution
+    
+
+    def minimal_shift_fulfillment(self) -> float:
+        """Return the minimum fulfillment ratio across all shifts."""
+        min_fulfillment = float('inf')
+
+        for day, day_shift_dict in self.instance.shifts.items():
+            for type_uid, shift in day_shift_dict.items():
+                filled_count = sum(1 for emp in self.instance.employees if self.vars.get((day, type_uid, emp), 0) == 1)
+                total_required = shift.preffert_number_employees
+                
+                # Calculate the fulfillment ratio
+                if total_required > 0:
+                    fulfillment_ratio = filled_count / total_required
+                    min_fulfillment = min(min_fulfillment, fulfillment_ratio)
+
+        return min_fulfillment if min_fulfillment != float('inf') else 1
+
+    def maximum_shift_fulfillment(self) -> float:
+        """Return the maximum fulfillment ratio across all shifts."""
+        max_fulfillment = float('-inf')
+
+        for day, day_shift_dict in self.instance.shifts.items():
+            for type_uid, shift in day_shift_dict.items():
+                filled_count = sum(1 for emp in self.instance.employees if self.vars.get((day, type_uid, emp), 0) == 1)
+                total_required = shift.preffert_number_employees
+                
+                # Calculate the fulfillment ratio
+                if total_required > 0:
+                    fulfillment_ratio = filled_count / total_required
+                    max_fulfillment = max(max_fulfillment, fulfillment_ratio)
+
+        return max_fulfillment if max_fulfillment != float('-inf') else 1
+
+    def average_shift_fulfillment(self) -> float:
+        """Return the average fulfillment ratio across all shifts."""
+        total_fulfillment = 0.0
+        shift_count = 0
+
+        for day, day_shift_dict in self.instance.shifts.items():
+            for type_uid, shift in day_shift_dict.items():
+                filled_count = sum(1 for emp in self.instance.employees if self.vars.get((day, type_uid, emp), 0) == 1)
+                total_required = shift.preffert_number_employees
+
+                # Calculate the fulfillment ratio
+                if total_required > 0:
+                    fulfillment_ratio = filled_count / total_required
+                    total_fulfillment += fulfillment_ratio
+                    shift_count += 1
+
+        return total_fulfillment / shift_count if shift_count > 0 else 1
+
+    def _calculate_fulfillment_ratio(self, wishes_type: str):
+        """Helper method to calculate fulfillment ratios for positive or negative wishes."""
+        min_percentage = float('inf')  # For minimal
+        max_percentage = float('-inf')  # For maximum
+        total_percentage = 0.0
+        count = 0
+
+        for emp in self.instance.employees:
+            total_wishes = 0
+            fulfilled_wishes = 0
+
+            for day, day_shift_dict in self.instance.shifts.items():
+                for type_uid, shift in day_shift_dict.items():
+                    if wishes_type == 'positive':
+                        weight = shift.penalty_assigned_day_employee.get(emp, 0)
+                    else:  # negative wishes
+                        weight = shift.penalty_not_assigned_day_employee.get(emp, 0)
+
+                    if weight > 0:
+                        total_wishes += 1
+                        if self.vars.get((day, type_uid, emp), 0) == (1 if wishes_type == 'positive' else 0):
+                            fulfilled_wishes += 1
+
+            if total_wishes > 0:
+                percentage = fulfilled_wishes / total_wishes
+                min_percentage = min(min_percentage, percentage)
+                max_percentage = max(max_percentage, percentage)
+                total_percentage += percentage
+                count += 1
+
+        # Return appropriate values based on the type of fulfillment requested
+        if wishes_type == 'positive':
+            return min_percentage if min_percentage != float('inf') else 1, max_percentage if max_percentage != float('-inf') else 1, total_percentage / count if count > 0 else 1
+        else:
+            return min_percentage if min_percentage != float('inf') else 1, max_percentage if max_percentage != float('-inf') else 1, total_percentage / count if count > 0 else 1
+
+    def minimal_employee_positive_wishes_met(self) -> float:
+        return self._calculate_fulfillment_ratio('positive')[0]  # Return min
+
+    def maximum_employee_positive_wishes_met(self) -> float:
+        return self._calculate_fulfillment_ratio('positive')[1]  # Return max
+
+    def average_employee_positive_wishes_met(self) -> float:
+        return self._calculate_fulfillment_ratio('positive')[2]  # Return average
+
+    def minimal_employee_negative_wishes_met(self) -> float:
+        return self._calculate_fulfillment_ratio('negative')[0]  # Return min
+
+    def maximum_employee_negative_wishes_met(self) -> float:
+        return self._calculate_fulfillment_ratio('negative')[1]  # Return max
+
+    def average_employee_negative_wishes_met(self) -> float:
+        return self._calculate_fulfillment_ratio('negative')[2]  # Return average
+
+
+    def total_fulfilled_wishes(self) -> int:
+        """Count total fulfilled positive and negative wishes."""
+        total_fulfilled = 0
+
+        # Counting positive wishes
+        for emp in self.instance.employees:
+            for day, day_shift_dict in self.instance.shifts.items():
+                for type_uid, shift in day_shift_dict.items():
+                    if shift.penalty_assigned_day_employee.get(emp, 0) > 0:
+                        if self.vars.get((day, type_uid, emp), 0) == 1:
+                            total_fulfilled += 1
+
+        # Counting negative wishes (assumed similar logic)
+        for emp in self.instance.employees:
+            for day, day_shift_dict in self.instance.shifts.items():
+                for type_uid, shift in day_shift_dict.items():
+                    if shift.penalty_not_assigned_day_employee.get(emp, 0) > 0:
+                        if self.vars.get((day, type_uid, emp), 0) == 0:
+                            total_fulfilled += 1
+
+        return total_fulfilled
+
+
+    def median_employee_positive_wishes_met(self) -> float:
+        """Return the median percentage of fulfilled positive wishes for all employees."""
+        percentages = []
+
+        for emp in self.instance.employees:
+            total_positive_wishes = 0
+            fulfilled_positive_wishes = 0
+
+            for day, day_shift_dict in self.instance.shifts.items():
+                for type_uid, shift in day_shift_dict.items():
+                    weight_pos = shift.penalty_assigned_day_employee.get(emp, 0)
+                    if weight_pos > 0:
+                        total_positive_wishes += 1
+                        if self.vars.get((day, type_uid, emp), 0) == 1:
+                            fulfilled_positive_wishes += 1
+
+            if total_positive_wishes > 0:
+                percentages.append(fulfilled_positive_wishes / total_positive_wishes)
+
+        if not percentages:  # No employee data
+            return 1
+
+        percentages.sort()
+        n = len(percentages)
+        mid = n // 2
+
+        if n % 2 == 1:  # Odd number of elements
+            return percentages[mid]
+        else:  # Even number of elements
+            return (percentages[mid - 1] + percentages[mid]) / 2
+
+    def median_employee_negative_wishes_met(self) -> float:
+        """Return the median percentage of fulfilled negative wishes for all employees."""
+        percentages = []
+
+        for emp in self.instance.employees:
+            total_negative_wishes = 0
+            fulfilled_negative_wishes = 0
+
+            for day, day_shift_dict in self.instance.shifts.items():
+                for type_uid, shift in day_shift_dict.items():
+                    weight_neg = shift.penalty_not_assigned_day_employee.get(emp, 0)
+                    if weight_neg > 0:
+                        total_negative_wishes += 1
+                        if self.vars.get((day, type_uid, emp), 0) == 0:
+                            fulfilled_negative_wishes += 1
+
+            if total_negative_wishes > 0:
+                percentages.append(fulfilled_negative_wishes / total_negative_wishes)
+
+        if not percentages:  # No employee data
+            return 1
+
+        percentages.sort()
+        n = len(percentages)
+        mid = n // 2
+
+        if n % 2 == 1:  # Odd number of elements
+            return percentages[mid]
+        else:  # Even number of elements
+            return (percentages[mid - 1] + percentages[mid]) / 2
 
 
 # Standalone constraint checking functions

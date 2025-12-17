@@ -27,6 +27,8 @@ class Callback_Early_Stop(cp_model.CpSolverSolutionCallback):
         self.vars = vars
         self.solve_time = 0
         self.start_solve_time: datetime = datetime(2005, 1, 1, 0, 0)
+        self.ratio_wishes = 0.8
+        self.reatio_below_pref = 0.5
 
     def on_solution_callback(self):
         total_weights = 0
@@ -39,7 +41,7 @@ class Callback_Early_Stop(cp_model.CpSolverSolutionCallback):
                 pref = shift.preffert_number_employees
 
                 below = self.Value(self.vars.below_prefferd_vars[(day, type_uid)])
-                if below > pref * 0.5:
+                if below > pref * self.reatio_below_pref:
                     return  # schlechte Lösung -> sofort abbrechen
 
                 # Wünsche
@@ -62,6 +64,6 @@ class Callback_Early_Stop(cp_model.CpSolverSolutionCallback):
 
         ratio = satisfied_wishes / total_weights
 
-        if ratio >= 0.8:
+        if ratio >= self.ratio_wishes:
             print("Gute Lösung -> StopSearch()")
             self.StopSearch()

@@ -21,7 +21,7 @@ class Shift(BaseModel):
     )
     penalty_not_assigned_day_employee: dict[employee.EmployeeUid, int] = Field(
         default=defaultdict(int),
-        description="dict of penalty for employee assigned on specific day",
+        description="dict of penalty for employee being assigned on specific day",
     )
     assign_employee_day_shift: set[employee.EmployeeUid] = Field(
         default_factory=set,

@@ -335,20 +335,20 @@ class LNS:
                     f"Iteration {iteration}: No feasible solution found (status: {sol.solve_status})"
                 )
                 self.old_solution.to_json_file(
-                    f"error_lns_infeasible_start_{self.start_day}_end_{self.end_day}.json"
+                    f"error_lns_infeasible_start_{self.start_day}_end_{self.end_day}"
                 )
                 continue
             old_sol_debugg = sol.model_copy()
             sol = self.merge_solutions(sol)
             if not sol.checkt_constraints[0]:
                 self.old_solution.to_json_file(
-                    f"error_lns_merge_old_start_{self.start_day}_end_{self.end_day}.json"
+                    f"error_lns_merge_old_start_{self.start_day}_end_{self.end_day}"
                 )
                 old_sol_debugg.to_json_file(
-                    f"error_lns_merge_bevor_start_{self.start_day}_end_{self.end_day}.json"
+                    f"error_lns_merge_bevor_start_{self.start_day}_end_{self.end_day}"
                 )
                 sol.to_json_file(
-                    f"error_lns_merge_after_start_{self.start_day}_end_{self.end_day}.json"
+                    f"error_lns_merge_after_start_{self.start_day}_end_{self.end_day}"
                 )
                 continue
 

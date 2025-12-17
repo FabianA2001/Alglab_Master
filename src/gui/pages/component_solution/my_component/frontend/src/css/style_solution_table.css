@@ -150,7 +150,7 @@
     align-items: center;
 }
 
-#submit_cover_change {
+.submit_changed_button {
     background-color: #4CAF50; /* Green background */
     color: white; /* White text color */
     padding: 10px 20px; /* Vertical and horizontal padding */

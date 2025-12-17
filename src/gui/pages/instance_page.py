@@ -259,7 +259,12 @@ def show_instance_information(instance):
         selected_day = st.selectbox(
             "Tag auswählen", day_options, format_func=lambda x: f"Tag {x}"
         )
+        if SSN.editor_instance.name not in st.session_state:
+            st.session_state[SSN.editor_instance.name] = st.session_state[SSN.instance.name].model_copy(deep=True)
+        elif st.session_state[SSN.editor_instance.name].name != st.session_state[SSN.instance.name].name:
+            st.session_state[SSN.editor_instance.name] = st.session_state[SSN.instance.name].model_copy(deep=True)
 
+        # TODO make the employee remove and add a selction dialog
         if selected_day in instance.shifts:
             for shift_type_uid, shift in instance.shifts[selected_day].items():
                 shift_type = instance.shift_types.get(shift_type_uid)
@@ -274,62 +279,84 @@ def show_instance_information(instance):
                 )
 
                 col1, col2, col3, col4, col5 = st.columns(5)
+                
+                # Preferred staffing
                 with col1:
                     st.write("**Bevorzugte Besetzung:**")
-                    st.write(f"Anzahl: {shift.preffert_number_employees}")
-                    st.write(f"Strafe unter: {shift.weight_below_preferred}")
-                    st.write(f"Strafe über: {shift.weight_above_preferred}")
+                    shift.preffert_number_employees = st.number_input(
+                        "Anzahl:", value=shift.preffert_number_employees, min_value=0, key=f"pref_num_{shift_type_uid}"
+                    )
+                    shift.weight_below_preferred = st.number_input(
+                        "Strafe unter:", value=shift.weight_below_preferred, key=f"weight_below_{shift_type_uid}"
+                    )
+                    shift.weight_above_preferred = st.number_input(
+                        "Strafe über:", value=shift.weight_above_preferred, key=f"weight_above_{shift_type_uid}"
+                    )
 
+                # Assignment wishes (ON)
                 with col2:
                     st.write("**Zuweisungswünsche (ON):**")
-                    if shift.penalty_assigned_day_employee:
-                        for (
-                            emp_uid,
-                            penalty,
-                        ) in shift.penalty_assigned_day_employee.items():
-                            emp = instance.employees.get(emp_uid)
-                            emp_name = (
-                                emp.name if emp else f"UID ...{str(emp_uid)[-4:]}"
-                            )
-                            st.write(f"- {emp_name}: Gewicht {penalty}")
-                    else:
-                        st.write("Keine")
+                    emp_names_on = [emp.name for emp in instance.employees.values() if emp.uid in shift.penalty_assigned_day_employee]
+                    for emp_uid, penalty in shift.penalty_assigned_day_employee.items():
+                        emp = instance.employees.get(emp_uid)
+                        emp_name = emp.name if emp else f"UID ...{str(emp_uid)[-4:]}"
+                        penalty_key = f"penalty_on_{emp_uid}_{shift_type_uid}"
+                        penalty_input = st.number_input(f"{emp_name}:", value=penalty, key=penalty_key)
+                        st.session_state[SSN.editor_instance.name].shifts[selected_day][shift_type_uid].penalty_assigned_day_employee[hash_string(emp_name)] = penalty_input
 
+                    remove_emp = st.selectbox("Select Employee to Remove (ON):", emp_names_on, key=f"remove_emp_on_{shift_type_uid}")
+                    if st.button("Remove", key=f"remove_button_on_{shift_type_uid}"):
+                        print(st.session_state[SSN.editor_instance.name].shifts[selected_day][shift_type_uid])
+                        # TODO changing the selected employee after pressing remove is refreshing the page
+                        if remove_emp is not None and hash_string(remove_emp) in shift.penalty_assigned_day_employee:
+                            print(remove_emp)
+                            print(hash_string(remove_emp))
+                            del st.session_state[SSN.editor_instance.name].shifts[selected_day][shift_type_uid].penalty_assigned_day_employee[hash_string(remove_emp)]
+                            print(st.session_state[SSN.editor_instance.name].shifts[selected_day][shift_type_uid].penalty_assigned_day_employee)
+
+                # Rejection wishes (OFF)
                 with col3:
                     st.write("**Ablehnungswünsche (OFF):**")
-                    if shift.penalty_not_assigned_day_employee:
-                        for (
-                            emp_uid,
-                            penalty,
-                        ) in shift.penalty_not_assigned_day_employee.items():
-                            emp = instance.employees.get(emp_uid)
-                            emp_name = (
-                                emp.name if emp else f"UID ...{str(emp_uid)[-4:]}"
-                            )
-                            st.write(f"- {emp_name}: Gewicht {penalty}")
-                    else:
-                        st.write("Keine")
+                    for emp_uid, penalty in shift.penalty_not_assigned_day_employee.items():
+                        emp = instance.employees.get(emp_uid)
+                        emp_name = emp.name if emp else f"UID ...{str(emp_uid)[-4:]}"
+                        penalty_key = f"penalty_off_{emp_uid}_{shift_type_uid}"
+                        penalty_input = st.number_input(f"{emp_name}:", value=penalty, key=penalty_key)
+                        st.session_state[SSN.editor_instance.name].shifts[selected_day][shift_type_uid].penalty_not_assigned_day_employee[hash_string(emp_name)] = penalty_input
+
+                    remove_emp = st.text_input("Remove Employee UID (OFF):", key=f"remove_off_{shift_type_uid}")
+                    if st.button("Remove", key=f"remove_button_off_{shift_type_uid}"):
+                        if hash_string(remove_emp) in shift.penalty_not_assigned_day_employee:
+                            print(st.session_state[SSN.editor_instance.name].shifts[selected_day][shift_type_uid].penalty_not_assigned_day_employee)
+                            del st.session_state[SSN.editor_instance.name].shifts[selected_day][shift_type_uid].penalty_not_assigned_day_employee[hash_string(remove_emp)]
+                            print(st.session_state[SSN.editor_instance.name].shifts[selected_day][shift_type_uid].penalty_not_assigned_day_employee)
+
+                # Forced assignments
                 with col4:
-                    st.write("**Forced Assignment:**")
-                    for key, shift_dict in instance.shifts.items():
-                        for type_uid, shift_detail in shift_dict.items():
-                            for emp_uid in instance.shifts[key][type_uid].ban_employee_day_shift:
-                                emp = instance.employees.get(emp_uid)
-                                emp_name = (
-                                    emp.name if emp else f"UID ...{str(emp_uid)[-4:]}"
-                                )
-                                st.write(f"- {emp_name}")
+                    st.write("**Forced Assignment:**") 
+                    for emp_uid in shift.ban_employee_day_shift:
+                        emp = instance.employees.get(emp_uid)
+                        emp_name = emp.name if emp else f"UID ...{str(emp_uid)[-4:]}"
+                        if st.checkbox(f"Banish {emp_name}", value=True, key=f"ban_{emp_uid}_{shift_type_uid}"):
+                            st.session_state[SSN.editor_instance.name].shifts[selected_day][shift_type_uid].ban_employee_day_shift.add(hash_string(emp_name))
+
+                # Banned employees
                 with col5:
                     st.write("**Banned employees:**")
-                    for key, shift_dict in instance.shifts.items():
-                        for type_uid, shift_detail in shift_dict.items():
-                            for emp_uid in instance.shifts[key][type_uid].assign_employee_day_shift:
-                                emp = instance.employees.get(emp_uid)
-                                emp_name = (
-                                    emp.name if emp else f"UID ...{str(emp_uid)[-4:]}"
-                                )
-                                st.write(f"- {emp_name}")
+                    for emp_uid in shift.assign_employee_day_shift:
+                        emp = instance.employees.get(emp_uid)
+                        emp_name = emp.name if emp else f"UID ...{str(emp_uid)[-4:]}"
+                        if st.checkbox(f"Unban {emp_name}", value=True, key=f"unban_{emp_uid}_{shift_type_uid}"):
+                            st.session_state[SSN.editor_instance.name].shifts[selected_day][shift_type_uid].assign_employee_day_shift.remove(hash_string(emp_name))
+
                 st.divider()
+            # Commit changes to the original instance
+            if st.button("Save Changes"):
+                print(st.session_state[SSN.editor_instance.name].shifts[selected_day])
+                st.session_state[SSN.instance.name] = st.session_state[SSN.editor_instance.name].model_copy(deep=True)
+                del st.session_state[SSN.editor_instance.name]
+                # Rerun the app
+                st.rerun()
 
 
 def show_select_instance():

@@ -1,5 +1,64 @@
 import hashlib
-import string
+from typing import List, Tuple, Dict, Optional, TYPE_CHECKING
+
+
+from src.solution import Solution
+from src.inputTypes import instace
+
+
+def find_best_solution_for_modified_instance(
+    solutions: List[Solution],
+    new_instance: instace.Instance,
+    constraint_names: Optional[List[str]] = None,
+    return_all: bool = False,
+) -> dict:
+    """
+    Vergleicht mehrere Solutions einer ursprünglichen Instanz mit einer abgeänderten Instanz
+    und gibt die Solution zurück, die die wenigsten Constraint-Verletzungen auf der neuen Instanz hat.
+
+    Args:
+        solutions: Liste von Solution-Objekten (ursprüngliche Instanz)
+        new_instance: Die abgeänderte Instanz
+        constraint_names: Optional Liste von Constraint-Namen, die gezählt werden sollen (sonst alle)
+        return_all: Wenn True, werden alle Lösungen und ihre Verletzungszahlen zurückgegeben
+
+    Returns:
+        dict mit Schlüsseln:
+            'best_solution': Solution mit den wenigsten Verletzungen
+            'min_violations': Anzahl der minimalen Verletzungen
+            'all_results': (optional) Liste mit (solution, violations, details)
+    """
+    results = []
+    for sol in solutions:
+        # Kopiere Solution und setze Instanz auf die neue Instanz
+        sol_mod = Solution.model_copy(sol)
+        sol_mod.set_instance(new_instance)
+        # Constraint-Check auf neuer Instanz
+        all_valid, constraint_results = sol_mod.checkt_constraints
+        # Zähle Verletzungen
+        total_violations = 0
+        details = {}
+        for cname, (is_valid, violations) in constraint_results.items():
+            if (constraint_names is None) or (cname in constraint_names):
+                total_violations += len(violations)
+                details[cname] = len(violations)
+        results.append(
+            {"solution": sol, "violations": total_violations, "details": details}
+        )
+
+    # Finde die Lösung mit den wenigsten Verletzungen
+    min_viol = min(r["violations"] for r in results)
+    best = [r for r in results if r["violations"] == min_viol]
+    # Falls mehrere gleich gut, nimm die erste
+    best_solution = best[0]["solution"]
+
+    ret = {
+        "best_solution": best_solution,
+        "min_violations": min_viol,
+    }
+    if return_all:
+        ret["all_results"] = results
+    return ret
 
 
 def hash_string(s: str) -> int:
@@ -7,7 +66,9 @@ def hash_string(s: str) -> int:
     return int(hashlib.md5(s.encode()).hexdigest(), 16)
 
 
-def compare_solutions(solution_a, solution_b, *, include_details: bool = True) -> dict:
+def compare_solutions(
+    solution_a: Solution, solution_b: Solution, *, include_details: bool = True
+) -> dict:
     """
     Vergleicht zwei Solution-Objekte und liefert zusammenfassende Informationen
     darüber, wie viele Mitarbeitende an wie vielen Tagen andere Schichten hätten.
@@ -30,7 +91,7 @@ def compare_solutions(solution_a, solution_b, *, include_details: bool = True) -
                          mitgeliefert. Sonst nur summary counts.
     """
 
-    def _build_assignments(solution) -> tuple[dict, int, dict]:
+    def _build_assignments(solution: Solution) -> tuple[dict, int, dict]:
         """Gibt zurück: assignments(emp_uid -> {day: shift_uid}), number_of_days, employee_names"""
         vars_map = solution.vars
         assignments: dict[int, dict[int, int]] = {}
@@ -98,5 +159,143 @@ def compare_solutions(solution_a, solution_b, *, include_details: bool = True) -
     # if include_details:
     #     result["per_employee_changes"] = per_employee_changes
     #     result["per_day_changes"] = per_day_changes
+
+    return result
+
+
+def compare_multiple_solutions(
+    solutions: List[Solution], *, threshold: float = 2.0, include_details: bool = True
+) -> dict:
+    """
+    Vergleicht mehrere Solutions derselben Instanz und findet "stabile"
+    Lösungsbereiche, d.h. Assignments (day, shift_uid, emp_uid), die in
+    mindestens `threshold` Anteil der Lösungen gleich (assigned==1) sind.
+
+    Args:
+        solutions: Liste von Solution-Objekten (müssen dieselbe Instanz repräsentieren)
+        threshold: Bruchteil der Lösungen (0..1), ab dem eine Zuweisung als "stabil" gilt.
+                   Default 1.0 (in allen Lösungen vorhanden).
+        include_details: Falls True, werden detaillierte Counts/Fractions zurückgegeben.
+
+    Rückgabe (Beispiel):
+    {
+      'num_solutions': 5,
+      'threshold': 1.0,
+      'stable_assignments_count': 12,
+      'stable_assignments': {(0,774): [3,4], ...}, # pro (day,shift) Liste von emp_uids
+      'stable_details': {(day,shift,emp): {'count':3,'fraction':0.6}, ...},
+      'stable_employee_ranges': {emp_uid: {shift_uid:[(start,end), ...]}},
+      'per_day_summary': {day: {'stable_triples': 5, 'stable_shifts': 2}}
+    }
+
+    Hinweis: Die Funktion erwartet, dass alle Solutions dieselbe Instanz-Struktur
+    (Anzahl Tage, Shift-Types, Employee-IDs) besitzen. Es wird anhand der ersten
+    Solution validiert.
+    """
+
+    if not solutions:
+        return {
+            "num_solutions": 0,
+            "threshold": threshold,
+            "stable_assignments_count": 0,
+            "stable_assignments": {},
+        }
+
+    # Grundvalidierung: alle Solutions sollten zur selben Instanz gehören
+    base_inst = solutions[0].instance
+    num_solutions = len(solutions)
+
+    for s in solutions[1:]:
+        if (
+            s.instance.number_of_days != base_inst.number_of_days
+            or s.instance.name != base_inst.name
+        ):
+            raise ValueError(
+                "Alle Solutions müssen dieselbe Instanz (gleiches Instance.name und number_of_days) haben"
+            )
+
+    # Zähle für jedes Tripel (day, shift_uid, emp_uid) wie oft assigned==1
+    counts: Dict[Tuple[int, int, int], int] = {}
+
+    # Wir gehen über alle möglichen (day, shift_uid, emp_uid) basierend auf der Instanz
+    days = list(range(base_inst.number_of_days))
+    employee_ids = list(base_inst.employees.keys())
+
+    for sol in solutions:
+        # jeweils vorhandene vars nutzen (falls key fehlt -> 0)
+        for day in days:
+            day_shifts = base_inst.shifts.get(day, {})
+            for shift_uid in day_shifts.keys():
+                for emp_uid in employee_ids:
+                    if sol.vars.get((day, shift_uid, emp_uid), 0) == 1:
+                        counts[(day, shift_uid, emp_uid)] = (
+                            counts.get((day, shift_uid, emp_uid), 0) + 1
+                        )
+
+    # Grenze: minimaler Count, basierend auf threshold
+    min_count = int(round(threshold))
+
+    stable_triples = {k: v for k, v in counts.items() if v >= min_count}
+
+    # organize by (day, shift) -> list of employees
+    stable_by_shift: Dict[Tuple[int, int], List[int]] = {}
+    stable_details: Dict[Tuple[int, int, int], Dict[str, float]] = {}
+    per_day_summary: Dict[int, Dict[str, int]] = {
+        d: {"stable_triples": 0, "stable_shifts": 0} for d in days
+    }
+
+    # helper to track which shifts have at least one stable assignment that day
+    shifts_with_stable_on_day: Dict[int, set] = {d: set() for d in days}
+
+    for (day, shift_uid, emp_uid), cnt in stable_triples.items():
+        stable_by_shift.setdefault((day, shift_uid), []).append(emp_uid)
+        frac = cnt / num_solutions
+        if include_details:
+            stable_details[(day, shift_uid, emp_uid)] = {"count": cnt, "fraction": frac}
+        per_day_summary[day]["stable_triples"] += 1
+        shifts_with_stable_on_day[day].add(shift_uid)
+
+    for d in days:
+        per_day_summary[d]["stable_shifts"] = len(shifts_with_stable_on_day[d])
+
+    # build consecutive-day ranges per employee per shift for which the triple was stable
+    stable_employee_ranges: Dict[int, Dict[int, List[Tuple[int, int]]]] = {}
+
+    # For each (emp, shift) collect days where stable
+    emp_shift_days: Dict[Tuple[int, int], List[int]] = {}
+    for (day, shift_uid, emp_uid), cnt in stable_triples.items():
+        emp_shift_days.setdefault((emp_uid, shift_uid), []).append(day)
+
+    for (emp_uid, shift_uid), day_list in emp_shift_days.items():
+        day_list_sorted = sorted(day_list)
+        ranges: List[Tuple[int, int]] = []
+        if not day_list_sorted:
+            stable_employee_ranges.setdefault(emp_uid, {})[shift_uid] = []
+            continue
+        start = day_list_sorted[0]
+        prev = start
+        for d in day_list_sorted[1:]:
+            if d == prev + 1:
+                prev = d
+                continue
+            # gap -> close previous range
+            ranges.append((start, prev))
+            start = d
+            prev = d
+        # close last range
+        ranges.append((start, prev))
+
+        stable_employee_ranges.setdefault(emp_uid, {})[shift_uid] = ranges
+
+    result = {
+        "num_solutions": num_solutions,
+        "threshold": threshold,
+        "min_count": min_count,
+        "stable_assignments_count": len(stable_triples),
+        "stable_assignments": stable_by_shift,
+        "stable_details": stable_details if include_details else {},
+        "stable_employee_ranges": stable_employee_ranges,
+        "per_day_summary": per_day_summary,
+    }
 
     return result

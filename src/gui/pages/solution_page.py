@@ -132,6 +132,11 @@ def render_shift_plan_component(
         return
     st.markdown(f"The selected employee is: {solution_changes_response}")
     instance = sol.instance.model_copy(deep=True)
+    submit_type_hard = True
+    if solution_changes_response["submit_type"] == "soft":
+        submit_type_hard = False
+    elif solution_changes_response["submit_type"] == "hard":
+        submit_type_hard = True
     if len(solution_changes_response["cover_weights"]) > 0:
         for day, shift_type_dict in solution_changes_response["cover_weights"].items():
             for shift_type, value in shift_type_dict.items():
@@ -147,7 +152,7 @@ def render_shift_plan_component(
         for type_uid, shift_detail in shift_dict.items():
             instance.shifts[key][type_uid].ban_employee_day_shift = set()
             instance.shifts[key][type_uid].assign_employee_day_shift = set()
-    if len(solution_changes_response["added_employees"]) > 0:
+    if len(solution_changes_response["added_employees"]) > 0 and submit_type_hard:
         for day, shift_type_dict in solution_changes_response[
             "added_employees"
         ].items():
@@ -157,8 +162,18 @@ def render_shift_plan_component(
                         hash_string(shift_type)
                     ].assign_employee_day_shift.add(hash_string(employee))
         instance.name = instance.name + "_2"
+    elif len(solution_changes_response["added_employees"]) > 0 and not submit_type_hard:
+        for day, shift_type_dict in solution_changes_response[
+            "added_employees"
+        ].items():
+            for shift_type, employees in shift_type_dict.items():
+                for employee in employees:
+                    #TODO instead of immediately giving it the value of 300 allow some how for changes
+                    instance.shifts[int(day)][
+                        hash_string(shift_type)
+                    ].penalty_assigned_day_employee[hash_string(employee)] = 300
 
-    if len(solution_changes_response["removed_employees"]) > 0:
+    if len(solution_changes_response["removed_employees"]) > 0 and submit_type_hard:
         for day, shift_type_dict in solution_changes_response[
             "removed_employees"
         ].items():
@@ -168,14 +183,19 @@ def render_shift_plan_component(
                         hash_string(shift_type)
                     ].ban_employee_day_shift.add(hash_string(employee))
         instance.name = instance.name + "_3"
-    if (
-        len(solution_changes_response["cover_weights"]) > 0
-        or len(solution_changes_response["added_employees"]) > 0
-        or len(solution_changes_response["removed_employees"]) > 0
-    ):
-        st.session_state[SSN.instance.name] = instance
-        st.success("Instance updated with the removed employees.")
-        st.session_state[SSN.allow_resolve.name] = True
+    elif len(solution_changes_response["removed_employees"]) > 0 and not submit_type_hard:
+        for day, shift_type_dict in solution_changes_response[
+            "removed_employees"
+        ].items():
+            for shift_type, employees in shift_type_dict.items():
+                for employee in employees:
+                    instance.shifts[int(day)][
+                        hash_string(shift_type)
+                    ].penalty_not_assigned_day_employee[hash_string(employee)] = 300
+
+    st.session_state[SSN.instance.name] = instance
+    st.success("Instance updated with the removed employees.")
+    st.session_state[SSN.allow_resolve.name] = True
     # TODO add reset parameters for employee add and remove
     return
 
@@ -367,3 +387,49 @@ def show():
         use_container_width=True,
         hide_index=True,
     )
+
+    if SSN.solutions.name in st.session_state and st.session_state[SSN.solutions.name]:
+        sol = st.session_state[SSN.solutions.name][-1]
+        
+        # Calculate fulfillment metrics
+        min_positive = sol.minimal_employee_positive_wishes_met()
+        max_positive = sol.maximum_employee_positive_wishes_met()
+        avg_positive = sol.average_employee_positive_wishes_met()
+        
+        min_negative = sol.minimal_employee_negative_wishes_met()
+        max_negative = sol.maximum_employee_negative_wishes_met()
+        avg_negative = sol.average_employee_negative_wishes_met()
+        
+        min_shift = sol.minimal_shift_fulfillment()
+        max_shift = sol.maximum_shift_fulfillment()
+        avg_shift = sol.average_shift_fulfillment()
+
+        # Display the results in Streamlit
+        st.title("Solution Fulfillment Metrics")
+        
+        st.header("Employee Positive Wishes Fulfillment")
+        st.write(f"Minimal Fulfillment: {min_positive:.2%}")
+        st.write(f"Maximum Fulfillment: {max_positive:.2%}")
+        st.write(f"Average Fulfillment: {avg_positive:.2%}")
+
+        st.header("Employee Negative Wishes Fulfillment")
+        st.write(f"Minimal Fulfillment: {min_negative:.2%}")
+        st.write(f"Maximum Fulfillment: {max_negative:.2%}")
+        st.write(f"Average Fulfillment: {avg_negative:.2%}")
+
+        st.header("Shift Fulfillment")
+        st.write(f"Minimal Fulfillment: {min_shift:.2%}")
+        st.write(f"Maximum Fulfillment: {max_shift:.2%}")
+        st.write(f"Average Fulfillment: {avg_shift:.2%}")
+
+        # Inside your main Streamlit app function
+        median_positive = sol.median_employee_positive_wishes_met()
+        median_negative = sol.median_employee_negative_wishes_met()
+
+        st.header("Employee Positive Wishes Median")
+        st.write(f"Median Fulfillment: {median_positive:.2%}")
+
+        st.header("Employee Negative Wishes Median")
+        st.write(f"Median Fulfillment: {median_negative:.2%}")
+    else:
+        st.warning("No solutions available in session state.")
