@@ -16,6 +16,7 @@ from src.analyze_solutions import (
     analyze_all_solutions,
     print_analysis_summary,
     save_analysis_to_json,
+    generate_markdown_results,
 )
 
 
@@ -31,5 +32,8 @@ if __name__ == "__main__":
 
         # Als JSON speichern
         save_analysis_to_json(results)
+
+        # MD-Datei generieren
+        generate_markdown_results(results)
     else:
         print("❌ Keine Solutions gefunden!")

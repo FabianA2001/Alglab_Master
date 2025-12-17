@@ -1,0 +1,65 @@
+[
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance1.txt",
+    "name": "Instance1",
+    "status": "OPTIMAL",
+    "is_success": true,
+    "solve_time": 0.051386,
+    "objective_value": 607.0,
+    "timestamp": "2025-12-01T20:21:37.593664"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance1ExtraLong.txt",
+    "name": "Instance1ExtraLong",
+    "status": "OPTIMAL",
+    "is_success": true,
+    "solve_time": 0.1184,
+    "objective_value": 607.0,
+    "timestamp": "2025-12-01T20:21:37.751788"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance2.txt",
+    "name": "Instance2",
+    "status": "OPTIMAL",
+    "is_success": true,
+    "solve_time": 1.724717,
+    "objective_value": 838.0,
+    "timestamp": "2025-12-01T20:21:39.518099"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance3.txt",
+    "name": "Instance3",
+    "status": "OPTIMAL",
+    "is_success": true,
+    "solve_time": 1.991294,
+    "objective_value": 1100.0,
+    "timestamp": "2025-12-01T20:21:41.591517"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance4.txt",
+    "name": "Instance4",
+    "status": "OPTIMAL",
+    "is_success": true,
+    "solve_time": 9.643168,
+    "objective_value": 2519.0,
+    "timestamp": "2025-12-01T20:21:51.305189"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance5.txt",
+    "name": "Instance5",
+    "status": "FEASIBLE",
+    "is_success": true,
+    "solve_time": 60.183332,
+    "objective_value": 1145.0,
+    "timestamp": "2025-12-01T20:22:51.631598"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance6.txt",
+    "name": "Instance6",
+    "status": "FEASIBLE",
+    "is_success": true,
+    "solve_time": 60.274019,
+    "objective_value": 1955.0,
+    "timestamp": "2025-12-01T20:23:52.143063"
+  }
+]

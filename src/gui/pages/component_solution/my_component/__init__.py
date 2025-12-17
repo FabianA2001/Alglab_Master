@@ -81,7 +81,7 @@ def my_component(
         render_option=render_option,
         data=data,
         extra_options=extra_options,
-        default={},
+        default={"cover_weights": {}, "added_employees": {}, "removed_employees": {}, "submit_type": "soft"},
     )
 
     # We could modify the value returned from the component if we wanted.

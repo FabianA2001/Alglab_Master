@@ -3,6 +3,7 @@ import enum
 
 class Session_state_Names(enum.Enum):
     instance = enum.auto()
+    editor_instance = enum.auto()
     solutions = enum.auto()
     allow_resolve = enum.auto()
     disabled_constraints = enum.auto()

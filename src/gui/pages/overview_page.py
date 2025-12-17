@@ -32,7 +32,6 @@ def show():
         try:
             # Solution laden
             sol = Solution.from_json_file(solution_name)
-            print(sol)
 
             # Daten zur Tabelle hinzufügen
             table_data.append(

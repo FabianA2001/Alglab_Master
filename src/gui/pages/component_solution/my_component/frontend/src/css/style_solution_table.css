@@ -110,6 +110,9 @@
     color: #555; /* Color for time text */
 }
 
+.marked {
+    background-color: rgba(255, 165, 0, 0.5);
+}
 .cover-weight, .employee-list {
     display: flex; /* Flex for checkbox and text field align */
     align-items: center; /* Center items vertically */
@@ -121,6 +124,7 @@
 .employee-list {
     display: flex;
     flex-wrap: wrap;
+    padding-top: 5px;
     gap: 6px;
     justify-content: center; /* Center horizontally */
 }
@@ -130,7 +134,7 @@
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 0.9em;
-    width: 300px;
+    width: 350px;
 }
 
 .table-info {
@@ -146,7 +150,7 @@
     align-items: center;
 }
 
-#submit_cover_change {
+.submit_changed_button {
     background-color: #4CAF50; /* Green background */
     color: white; /* White text color */
     padding: 10px 20px; /* Vertical and horizontal padding */
