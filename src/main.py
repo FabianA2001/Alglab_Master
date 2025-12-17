@@ -205,7 +205,7 @@ def main() -> None:
     run_lns_example()
     # run_lns_example()
     # try_compare_multiple_solutions()
-    try_warmstart_callback()
+    # try_warmstart_callback()
     # calculate_all_instancen()
     # print_some_infos()
 

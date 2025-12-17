@@ -79,6 +79,12 @@ class LNS:
                 self.MAX_DAY - self.start_search_window_size,
             ),
         )
+
+        # HACK
+        # self.start_day = 11
+        # self.start_search_window_size = 3
+        ################
+
         self.end_day: int = self.start_day + self.start_search_window_size
 
         # time parameters
@@ -337,6 +343,11 @@ class LNS:
                 self.old_solution.to_json_file(
                     f"error_lns_infeasible_start_{self.start_day}_end_{self.end_day}"
                 )
+                # HACK
+                # import sys
+
+                # sys.exit(1)
+                #############
                 continue
             old_sol_debugg = sol.model_copy()
             sol = self.merge_solutions(sol)
@@ -349,6 +360,15 @@ class LNS:
                 )
                 sol.to_json_file(
                     f"error_lns_merge_after_start_{self.start_day}_end_{self.end_day}"
+                )
+                # HACK
+                # import sys
+
+                # sys.exit(1)
+                ##########
+
+                self.logger.debug(
+                    f"Iteration {iteration}: Merged solution violates constraints!"
                 )
                 continue
 
