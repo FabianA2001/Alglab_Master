@@ -4,7 +4,6 @@ from .. import solution, solver
 from ..inputTypes import employee, instace
 from . import solver_for_window
 from .module.max_weekend_days import Max_weekend_days
-from .module.minimum_consecutive_shifts import Minimum_consecutive_shifts
 
 
 class Slice_instance:
@@ -38,7 +37,6 @@ class Slice_instance:
             solver.shift_vars.Shift_vars(self.window_instance),
             self.config,
             add_module_constraints=[
-                Minimum_consecutive_shifts(self.config),
                 Max_weekend_days(self.start_day),
             ],
         )

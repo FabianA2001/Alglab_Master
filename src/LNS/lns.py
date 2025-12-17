@@ -344,9 +344,9 @@ class LNS:
                     f"error_lns_infeasible_start_{self.start_day}_end_{self.end_day}"
                 )
                 # HACK
-                # import sys
+                import sys
 
-                # sys.exit(1)
+                sys.exit(1)
                 #############
                 continue
             old_sol_debugg = sol.model_copy()
@@ -361,15 +361,16 @@ class LNS:
                 sol.to_json_file(
                     f"error_lns_merge_after_start_{self.start_day}_end_{self.end_day}"
                 )
-                # HACK
-                # import sys
-
-                # sys.exit(1)
-                ##########
 
                 self.logger.debug(
                     f"Iteration {iteration}: Merged solution violates constraints!"
                 )
+
+                # HACK
+                import sys
+
+                sys.exit(1)
+                ##########
                 continue
 
             self.logger.debug(
