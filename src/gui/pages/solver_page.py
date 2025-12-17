@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 import streamlit as st
 
 from ... import shift_vars, solution, solver
-from ...LNS import lns
+from ...LNS import lns, minimal_change_lns
 from .session_state_names import Session_state_Names as SSN
 
 
@@ -64,6 +64,28 @@ def solve_with_lns(**kwargs) -> solution.Solution:
     sol = lns_solver.solve()
     if sol.solve_status == 4 or sol.solve_status == 2:
         sol.to_json_file(sol.instance.name)
+    return sol
+
+
+def solve_with_lns_minimal_changes(**kwargs) -> solution.Solution:
+    """Führt den Solver in einem separaten Thread aus"""
+    sol = kwargs["solution"]
+    inst = kwargs["instance"]
+    disabled_constraints = kwargs["disabled_constraints"]
+    if disabled_constraints != []:
+        st.error("⚠️ LNS unterstützt derzeit keine Deaktivierung von Constraints.")
+        assert False
+    sol = minimal_change_lns.solve_changes(
+        old_solution=sol,
+        new_instanc=inst,
+        days_with_change=kwargs["days_with_change"],
+        max_solve_time=kwargs["timeout_seconds"],
+        log_search_progress=False,
+    )
+    if sol.solve_status == 4 or sol.solve_status == 2:
+        sol.to_json_file(sol.instance.name)
+    else:
+        print("keine Lösung gefunden bei minimal changes LNS")
     return sol
 
 
@@ -224,6 +246,26 @@ def show():
                     instance_solution=inst_sol,
                     disabled_constraints=disabled_constraints,
                     timeout_seconds=st.session_state[SSN.solver_timeout.name],
+                )
+
+        if (
+            len(st.session_state[SSN.solutions.name]) > 0
+            and st.session_state[SSN.allow_resolve.name]
+        ):
+            if st.button(
+                "Minimal Changes with Large neighborhood search",
+                type="primary",
+                disabled=st.session_state[SSN.solver_running.name],
+                key="lns_changs_start_solver_button",
+            ):
+                print(f"changs_days: {st.session_state[SSN.changes_days.name]}")
+                run_solver_in_thread(
+                    solve_funktion=solve_with_lns_minimal_changes,
+                    instance=st.session_state[SSN.instance.name],
+                    solution=st.session_state[SSN.solutions.name][-1],
+                    disabled_constraints=disabled_constraints,
+                    timeout_seconds=st.session_state[SSN.solver_timeout.name],
+                    days_with_change=st.session_state[SSN.changes_days.name],
                 )
 
         # Check if solver is running
