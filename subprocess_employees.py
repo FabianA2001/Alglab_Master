@@ -19,7 +19,6 @@ def solve_employees_incrementally(employee_uids: list[employee.EmployeeUid], ins
     instance_data = instance_data + ".txt"
     path = DATA_DIR / instance_data
     instance = parseTXT.parse_txt(path)
-    print(employee_uids)
     employee_copy = instance.employees.copy()
     instance.employees.clear()
     for employee_uid in employee_uids:

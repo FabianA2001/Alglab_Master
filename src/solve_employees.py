@@ -52,14 +52,14 @@ class solve_employee():
             employee_uids.append(employee_uid)
             if incrementally:
                 result = subprocess.run(
-                    ['python3', 'subprocess_employees.py', ','.join(map(str, employee_uids)), str(self.instance.name)],
+                    ['py', 'subprocess_employees.py', ','.join(map(str, employee_uids)), str(self.instance.name)],
     capture_output=True, text=True
                 )
                 print(result.stdout)
             else:
                 # Call the subprocess
                 result = subprocess.run(
-                    ['python3', 'subprocess_employee.py', str(employee_uid), str(self.instance.name)],
+                    ['py', 'subprocess_employee.py', str(employee_uid), str(self.instance.name)],
                     capture_output=True, text=True
                 )
             
@@ -73,7 +73,9 @@ class solve_employee():
                 self.store_employee_solution(solution, employee_uid)
             else:
                 print(f"Error solving for employee {employee_uid}: {result.stderr}")
-            Solution.delete_json_solution(str(employee_uid))
+            if len(employee_uids) > 2:
+                Solution.delete_json_solution(str(employee_uids[-2]))
+        Solution.delete_json_solution(str(employee_uids[-1]))
 
         solver_1 = Solver(self.instance, shift_vars.Shift_vars(self.instance))
         self.solution = solver_1.test_solution_validity(solution=self.solution.model_copy(deep=True), max_time_in_seconds=30, objective_function=solver_1.objective_value_new).model_copy(deep=True)
