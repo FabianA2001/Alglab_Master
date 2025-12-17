@@ -7,9 +7,15 @@ from .module.max_weekend_days import Max_weekend_days
 
 
 class Slice_instance:
-    def __init__(self, sol: solution.Solution, start: int, end: int):
+    def __init__(
+        self,
+        sol: solution.Solution,
+        start: int,
+        end: int,
+        inst: instace.Instance | None = None,
+    ):
         self.sol = sol
-        self.inst: instace.Instance = sol.instance
+        self.inst: instace.Instance = sol.instance if inst is None else inst
         self.start_day = start
         self.end_day = end
 
