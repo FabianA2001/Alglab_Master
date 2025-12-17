@@ -1,7 +1,10 @@
 import copy
 
+from ortools.sat.python import cp_model
+
 from ..inputTypes.instace import Instance
 from ..solution import Solution
+from .lns_helper import merge_solutions
 from .slice_instance import Slice_instance
 
 PADDING = 2
@@ -37,7 +40,26 @@ def solve_changes(
         start_day = max(0, day - PADDING)
         end_day = min(new_instanc.number_of_days - 1, day + PADDING)
 
-        old_solution = __solve_change(
+        new_solution = __solve_change(
             old_solution, new_instanc, start_day, end_day, small_max_solve_time
         )
+        if not (
+            new_solution.solve_status == cp_model.OPTIMAL
+            or new_solution.solve_status == cp_model.FEASIBLE
+        ):
+            # TODO behandeln
+            assert False, (
+                f"Kein Lösungsstatus für das Fenster {start_day}-{end_day} gefunden."
+            )
+        old_solution = merge_solutions(
+            old_solutions=old_solution,
+            new_solution=new_solution,
+            start_day=start_day,
+            end_day=end_day,
+        )
+        if not old_solution.checkt_constraints[0]:
+            assert False, (
+                f"Die zusammengeführte Lösung für das Fenster {start_day}-{end_day} verletzt die Nebenbedingungen."
+            )
+
     return old_solution
