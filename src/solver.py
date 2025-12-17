@@ -59,6 +59,7 @@ class Solver:
             status = solver.SolveWithSolutionCallback(self.vars.model, callback)
         else:
             status = solver.Solve(self.vars.model)
+
         self.solve_time = (datetime.now() - self.start_solve_time).total_seconds()
         return self.handle_results(status, solver, disabled_constraints)
 
@@ -152,6 +153,7 @@ class Solver:
         """Handles the different results returned by the solver and returns a solution."""
         
         # Check for the best solution stored in the callback
+        #TODO instead of looking which class it is make it so that a parameter is given or each callback class should have a parameter that say if it should continue or stop at first good enough solution
         if isinstance(callback, Callback_Top_Solutions):
             if callback.best_solution is not None:
                 return callback.best_solution  # Return the best solution if it exists
@@ -226,6 +228,67 @@ class Solver:
         print("The model provided is invalid and cannot be solved.")
         print("The model provided is invalid and cannot be solved.")
 
+    def warm_start_generalized(
+        self,
+        solution: Solution,
+        disabled_constraints: list[SolverConstraints] = [],
+        max_time_in_seconds: float = 60.0,
+        objective_function: Callable[[], cp_model.ObjLinearExprT] | None = None,
+        log_search_progress: bool = False,
+        stop_after_first_solution: bool = False,
+        callback: cp_model.CpSolverSolutionCallback | None = None,
+    ) -> Solution:
+        """Warm starts the solver with a given solution."""
+        for day in range(self.instance.number_of_days):
+            for type_uid in self.instance.shifts[day]:
+                for employee_uid in self.instance.employees:
+                    var_value = solution.vars[(day, type_uid, employee_uid)] == 1
+                    self.vars.model.AddHint(
+                        self.vars.get_var(day, type_uid, employee_uid), var_value
+                    )
+        return self.solve_callback_with_solution(
+            disabled_constraints=disabled_constraints,
+            max_time_in_seconds=max_time_in_seconds,
+            log_search_progress=log_search_progress,
+            objective_function=objective_function,
+            stop_after_first_solution=stop_after_first_solution,
+            callback=callback
+        )
+    
+    #TODO maybe remove
+    def test_solution_validity(
+        self,
+        solution: Solution,
+        disabled_constraints: list[SolverConstraints] = [],
+        max_time_in_seconds: float = 60.0,
+        objective_function: Callable[[], cp_model.ObjLinearExprT] | None = None,
+        log_search_progress: bool = False,
+        stop_after_first_solution: bool = False,
+        callback: cp_model.CpSolverSolutionCallback | None = None,
+    ) -> Solution:
+        """Warm starts the solver with a given solution."""
+        employee_uid_ = None
+        for day in range(self.instance.number_of_days):
+            for type_uid in self.instance.shifts[day]:
+                for employee_uid in self.instance.employees:
+                    if (day, type_uid, employee_uid) in solution.vars:
+                        var_value = solution.vars[(day, type_uid, employee_uid)] == 1
+                        self.vars.model.AddHint(
+                            self.vars.get_var(day, type_uid, employee_uid), var_value
+                        )
+                        self.vars.model.add(self.vars.get_var(day, type_uid, employee_uid) == var_value)
+                    elif employee_uid_ != employee_uid:
+                        employee_uid_ = employee_uid
+                        print(f"{employee_uid}")
+        return self.solve_callback_with_solution(
+            disabled_constraints=disabled_constraints,
+            max_time_in_seconds=max_time_in_seconds,
+            log_search_progress=log_search_progress,
+            objective_function=objective_function,
+            stop_after_first_solution=stop_after_first_solution,
+            callback=callback
+        )
+    
     def warm_start(
         self,
         solution: Solution,
