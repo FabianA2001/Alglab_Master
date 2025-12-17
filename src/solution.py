@@ -284,7 +284,7 @@ class Solution(BaseModel):
         with open(path, "w", encoding="utf-8") as f:
             f.write(json_str)
 
-        print(f"Solution gespeichert in: {path}")
+        #print(f"Solution gespeichert in: {path}")
 
     @classmethod
     def from_json_file(cls, name: str) -> "Solution":
@@ -307,7 +307,7 @@ class Solution(BaseModel):
         # Nutze Pydantic's eingebaute JSON-Deserialisierung
         solution = cls.model_validate_json(json_str)
 
-        print(f"Solution geladen aus: {path}")
+        #print(f"Solution geladen aus: {path}")
 
         return solution
     
@@ -323,7 +323,7 @@ class Solution(BaseModel):
 
         if path.exists():
             path.unlink()  # Delete the file
-            print(f"Datei gelöscht: {path}")
+            #print(f"Datei gelöscht: {path}")
         else:
             print(f"Datei nicht gefunden: {path}")
 
