@@ -1,0 +1,12 @@
+[
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance20.txt",
+    "name": "Instance20",
+    "status": "FEASIBLE",
+    "is_success": true,
+    "solve_time": 840.27896,
+    "objective_value": 48497.0,
+    "timestamp": "2025-12-12T17:28:12.432781",
+    "solution_file": "benchmarks/results/solutions/Instance20.json"
+  }
+]

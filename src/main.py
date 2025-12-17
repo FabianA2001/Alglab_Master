@@ -5,7 +5,11 @@ from pathlib import Path
 from cpsat_utils.testing import AssertModelFeasible
 from ortools.sat.python import cp_model
 
-from src.help_functions import compare_solutions
+from src.help_functions import (
+    compare_solutions,
+    compare_multiple_solutions,
+    find_best_solution_for_modified_instance,
+)
 from src.solution import Solution
 
 from .inputTypes import employee, instace, shiftType
@@ -115,7 +119,8 @@ def calculate_all_instancen():
     for instance in get_all_instancen():
         vars = Shift_vars(instance)
         solv = Solver(instance, vars)
-        sol = solv.solve(max_time_in_seconds=180)
+        # sol = solv.solve(max_time_in_seconds=180)
+        sol = solv.warm_start_greedy(max_time_in_seconds=180, instance=instance)
         print(sol.solve_status)
         if (
             sol.solve_status == cp_model.OPTIMAL
@@ -147,6 +152,47 @@ def print_some_infos():
         print()
 
 
+def try_compare_multiple_solutions():
+    test_file = Path.joinpath(
+        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance3.txt"
+    )
+    instance = parseTXT.parse_txt(test_file)
+    vars = Shift_vars(instance)
+    solv = Solver(instance, vars)
+    sol1 = solv.solve(max_time_in_seconds=180)
+    sol2 = solv.solve(max_time_in_seconds=180)
+    sol3 = solv.solve(max_time_in_seconds=180)
+
+    # print(
+    #     compare_multiple_solutions(
+    #         [sol1, sol2, sol3], threshold=2.0, include_details=True
+    #     )
+    # )
+    print(find_best_solution_for_modified_instance([sol1, sol2, sol3], instance))
+
+
+def try_warmstart_callback():
+    test_file = Path.joinpath(
+        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance3.txt"
+    )
+    instance = parseTXT.parse_txt(test_file)
+    vars = Shift_vars(instance)
+    solv = Solver(instance, vars)
+    sol1 = solv.solve(max_time_in_seconds=180)
+    sollist = solv.warm_start_multi(
+        solution=sol1, max_time_in_seconds=180, instance=instance
+    )
+    for sol in sollist:
+        sol2 = sol[1]
+        print("Änderungen: ", sol[0])
+    print(sol2.solve_status)
+    if sol2.solve_status == cp_model.OPTIMAL or sol2.solve_status == cp_model.FEASIBLE:
+        sol2.to_json_file(instance.name)
+    else:
+        print(f"No feasible solution found for {instance.name}")
+        return
+
+
 def main() -> None:
     # inst = get_tes_data()
     # x = inst
@@ -157,7 +203,9 @@ def main() -> None:
     # get_test_solution_from_model()
     # try_compare_solutions()
     # run_lns_example()
-    calculate_all_instancen()
+    # try_compare_multiple_solutions()
+    try_warmstart_callback()
+    # calculate_all_instancen()
     # print_some_infos()
 
 

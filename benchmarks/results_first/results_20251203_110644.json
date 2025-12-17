@@ -1,0 +1,65 @@
+[
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance1.txt",
+    "name": "Instance1",
+    "status": "OPTIMAL",
+    "is_success": true,
+    "solve_time": 0.050088,
+    "objective_value": 607.0,
+    "timestamp": "2025-12-03T11:04:30.848628"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance1ExtraLong.txt",
+    "name": "Instance1ExtraLong",
+    "status": "OPTIMAL",
+    "is_success": true,
+    "solve_time": 0.116252,
+    "objective_value": 607.0,
+    "timestamp": "2025-12-03T11:04:31.012776"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance2.txt",
+    "name": "Instance2",
+    "status": "OPTIMAL",
+    "is_success": true,
+    "solve_time": 2.408024,
+    "objective_value": 838.0,
+    "timestamp": "2025-12-03T11:04:33.470723"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance3.txt",
+    "name": "Instance3",
+    "status": "OPTIMAL",
+    "is_success": true,
+    "solve_time": 1.970969,
+    "objective_value": 1100.0,
+    "timestamp": "2025-12-03T11:04:35.545545"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance4.txt",
+    "name": "Instance4",
+    "status": "OPTIMAL",
+    "is_success": true,
+    "solve_time": 8.079858,
+    "objective_value": 2519.0,
+    "timestamp": "2025-12-03T11:04:43.703274"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance5.txt",
+    "name": "Instance5",
+    "status": "FEASIBLE",
+    "is_success": true,
+    "solve_time": 60.180559,
+    "objective_value": 1141.0,
+    "timestamp": "2025-12-03T11:05:44.040879"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance6.txt",
+    "name": "Instance6",
+    "status": "FEASIBLE",
+    "is_success": true,
+    "solve_time": 60.236322,
+    "objective_value": 1956.0,
+    "timestamp": "2025-12-03T11:06:44.483332"
+  }
+]
