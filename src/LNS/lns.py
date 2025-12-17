@@ -33,9 +33,7 @@ class LNS:
         sol_or_instance: solution.Solution | instace.Instance,
         percent_search_time_first_solution: float = 0.1,
         timeout_seconds: float = 180,
-        # small_runtime_base: float = 0.01,  # * number_of_days * (number_of_shift_types + number_of_employees)
-        # HACK
-        small_runtime_base: float = 0.1,  # * number_of_days * (number_of_shift_types + number_of_employees)
+        small_runtime_base: float = 0.01,  # * number_of_days * (number_of_shift_types + number_of_employees)
         ####################
         start_search_window_size: int = 7,
         search_window_size_min: int = 3,
@@ -81,10 +79,6 @@ class LNS:
                 self.MAX_DAY - self.start_search_window_size,
             ),
         )
-        # HACK Löschen
-        ###################
-        self.start_day: int = 2
-        ###################
         self.end_day: int = self.start_day + self.start_search_window_size
 
         # time parameters
@@ -93,16 +87,7 @@ class LNS:
         self.timeout_seconds: float = max(
             0.0, timeout_seconds - create_time_first_solution
         )
-
-        # HACK wieder raus nehmen
-        # Deaktiviere Weekend-Constraints für LNS-Subprobleme, da sie auf Tage außerhalb des Fensters zugreifen
-        from ..module.solverConstraints import SolverConstraints
-
-        self.disabled_for_window = [
-            SolverConstraints.max_weekend_days,
-            SolverConstraints.minimum_consecutive_days_off,
-        ]
-
+        self.disabled_for_window = []
         # logging info
         self.logger.info(
             f"LNS initialized with search_window_size={self.start_search_window_size}, "
@@ -171,7 +156,8 @@ class LNS:
             else:
                 # Keine Verbesserung -> Fenster vergrößern
                 new_window_size = min(
-                    self.MAX_DAY, int(old_window_size * self.window_increase_factor)
+                    self.MAX_DAY,
+                    round(old_window_size * self.window_increase_factor),
                 )
                 self.logger.debug(
                     f"No improvement: Increasing window size from {old_window_size} to {new_window_size}"
@@ -348,23 +334,23 @@ class LNS:
                 self.logger.debug(
                     f"Iteration {iteration}: No feasible solution found (status: {sol.solve_status})"
                 )
-
+                self.old_solution.to_json_file(
+                    f"error_lns_infeasible_start_{self.start_day}_end_{self.end_day}.json"
+                )
                 continue
-            self.old_solution.to_json_file("temp_lns_old_solution.json")
-            sol.to_json_file("temp_lns_bevor_merge.json")
+            old_sol_debugg = sol.model_copy()
             sol = self.merge_solutions(sol)
-            print("Merged solution created")
-            sol.to_json_file("temp_lns_solution.json")
             if not sol.checkt_constraints[0]:
-                for cst, satisfied in sol.checkt_constraints[1].items():
-                    if not satisfied[0]:
-                        self.logger.warning(
-                            f"Iteration {iteration}: Merged solution violates constraint: {cst}"
-                        )
-                        for v in satisfied[1]:
-                            self.logger.warning(f"\t\t\tViolation: {v}")
-
-                assert False, "Merged solution violates constraints!"
+                self.old_solution.to_json_file(
+                    f"error_lns_merge_old_start_{self.start_day}_end_{self.end_day}.json"
+                )
+                old_sol_debugg.to_json_file(
+                    f"error_lns_merge_bevor_start_{self.start_day}_end_{self.end_day}.json"
+                )
+                sol.to_json_file(
+                    f"error_lns_merge_after_start_{self.start_day}_end_{self.end_day}.json"
+                )
+                continue
 
             self.logger.debug(
                 f"Iteration {iteration}: Found solution with objective {sol.objective_value}"
