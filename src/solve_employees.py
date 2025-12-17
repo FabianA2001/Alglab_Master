@@ -52,31 +52,34 @@ class solve_employee():
             employee_uids.append(employee_uid)
             if incrementally:
                 result = subprocess.run(
-                    ['python', 'subprocess_employees.py', ','.join(map(str, employee_uids)), str(self.instance.name)],
+                    ['python3', 'subprocess_employees.py', ','.join(map(str, employee_uids)), str(self.instance.name)],
     capture_output=True, text=True
                 )
                 print(result.stdout)
             else:
                 # Call the subprocess
                 result = subprocess.run(
-                    ['python', 'subprocess_employee.py', str(employee_uid), str(self.instance.name)],
+                    ['python3', 'subprocess_employee.py', str(employee_uid), str(self.instance.name)],
                     capture_output=True, text=True
                 )
             
             # Handle return code and output from subprocess
             if result.returncode == 0:
                 solution = Solution.from_json_file(str(employee_uid))
-                if incrementally:
-                    for employee_uid in employee_uids:
-                        self.store_employee_solution(solution, employee_uid)
-                else:
-                    self.store_employee_solution(solution, employee_uid)
+                # if incrementally:
+                #     for employee_uid in employee_uids:
+                #         self.store_employee_solution(solution, employee_uid)
+                # else:
+                self.store_employee_solution(solution, employee_uid)
             else:
                 print(f"Error solving for employee {employee_uid}: {result.stderr}")
+            Solution.delete_json_solution(str(employee_uid))
 
         solver_1 = Solver(self.instance, shift_vars.Shift_vars(self.instance))
         self.solution = solver_1.test_solution_validity(solution=self.solution.model_copy(deep=True), max_time_in_seconds=30, objective_function=solver_1.objective_value_new).model_copy(deep=True)
-        self.solution.to_json_file(self.instance.name + "start")
+        end_time = time.time()
+        self.solution.solve_time = end_time - start_time
+        #self.solution.to_json_file(self.instance.name + "start")
 
         end_time = time.time()
         execution_time = end_time - start_time
@@ -89,7 +92,9 @@ class solve_employee():
         if optimize_till_max_time:
             solver_2 = Solver(self.instance, shift_vars.Shift_vars(self.instance))
             solution2 = solver_2.warm_start_generalized(solution=self.solution.model_copy(deep=True), max_time_in_seconds=soft_max_time_in_seconds, objective_function=solver_2.objective_value_new).model_copy(deep=True)
-            solution2.to_json_file(self.instance.name + "end")
+            end_time = time.time()
+            solution2.solve_time = end_time - start_time
+            #solution2.to_json_file(self.instance.name + "end")
 
             end_time = time.time()
             execution_time = end_time - start_time

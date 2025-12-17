@@ -25,6 +25,7 @@ from .module import (
 from .module.solverConstraints import SolverConstraints
 from .solution import Solution
 
+import random
 
 class Solver:
     def __init__(self, instance: instace.Instance, vars: shift_vars.Shift_vars):
@@ -119,6 +120,7 @@ class Solver:
 
         self.set_constraints(disabled_constraints=disabled_constraints)
         solver = cp_model.CpSolver()
+        solver.parameters.random_seed = random.randint(0, 999999)
         solver.parameters.log_search_progress = log_search_progress
         solver.parameters.max_time_in_seconds = max_time_in_seconds
 
@@ -212,6 +214,8 @@ class Solver:
                 )
                 solution.set_above_prefferd_var(day, type_uid, above_value)
                 solution.set_below_prefferd_var(day, type_uid, below_value)
+                
+        solution.instance.name = solution.instance.name + "_" + f"seed{solver.parameters.random_seed}"
 
     def process_infeasible_solution(self) -> None:
         """Handles the case when no feasible solution exists."""
