@@ -42,15 +42,15 @@ def main():
     #             # Call the secondary script with the current JSON file and iteration x
     #             subprocess.run(["python3", "process_json_solve_employee.py", str(json_file), str(x), "True", incrementally, str(30*60), "False"])
 
-    for json_file in json_files_immediate:
-        for x in range(0, 4):
-            for incrementally in ["True","False"]:
-                print(f"incrementally {incrementally} immediate")
-                print(f"Processing {json_file.name} with iteration {x} ...")
+    #for json_file in json_files_immediate:
+    #    for x in range(0, 4):
+    #        for incrementally in ["False"]:
+    #            print(f"incrementally {incrementally} immediate")
+    #            print(f"Processing {json_file.name} with iteration {x} ...")
                 # Call the secondary script with the current JSON file and iteration x
-                subprocess.run(["python3", "process_json_solve_employee.py", str(json_file), str(x), "False", incrementally, str(15*60), "False"])
+    #            subprocess.run(["python3", "process_json_solve_employee.py", str(json_file), str(x), "False", incrementally, str(15*60), "False"])
 
-    for json_file in json_iles_best_till_time:
+    for json_file in json_files_best_till_time:
         for x in range(0, 3):
             for incrementally in ["True","False"]:
                 print(f"incrementally {incrementally} till time")

@@ -36,7 +36,7 @@ def process_file(json_file, x, optimize: bool = False, incrementally: bool = Fal
         print("error")
         
     print("\n" + filename)
-
+    instance_name=""+solution.instance.name
     if solution.solve_status in [cp_model.OPTIMAL, cp_model.FEASIBLE]:
         solution.instance.name = filename
         solution.to_json_file(filename)
@@ -45,8 +45,7 @@ def process_file(json_file, x, optimize: bool = False, incrementally: bool = Fal
             file.write(filename + "\n")
 
     if optimize and till_time and solution.solve_status in [cp_model.OPTIMAL]:
-        filename = f"{solution.instance.name}_incrementally{incrementally}_opt_{x}"
-        solution.instance.name = filename
+        filename = f"{instance_name}_incrementally{incrementally}_opt_{x}"
         solution.to_json_file(filename)
 
 if __name__ == "__main__":
