@@ -24,13 +24,12 @@ def solve_employees_incrementally(employee_uids: list[employee.EmployeeUid], ins
     instance = parseTXT.parse_txt(path)
     employee_copy = instance.employees.copy()
     if len(employee_uids)>1:
-        previous_solution = Solution.from_json_file(str(employee_uids[-2]))
         for day in range(instance.number_of_days):
             for type_uid in instance.shifts[day]:
                 for employee_uid in employee_uids:
                     if employee_uid == employee_uids[-1]:
                         break
-                    working = previous_solution.vars[(day, type_uid, employee_uid)] == 1
+                    working = vars_dict[(day, type_uid, employee_uid)] == 1
                     instance.shifts[day][type_uid].preffert_number_employees = instance.shifts[day][type_uid].preffert_number_employees - working
                 if instance.shifts[day][type_uid].preffert_number_employees < 0:
                     instance.shifts[day][type_uid].weight_above_preferred = instance.shifts[day][type_uid].weight_above_preferred * (-instance.shifts[day][type_uid].preffert_number_employees + 1)
@@ -53,17 +52,10 @@ def solve_employees_incrementally(employee_uids: list[employee.EmployeeUid], ins
             
 
     if len(employee_uids)>1:
-        solution.vars.update(previous_solution.vars)
+        solution.vars.update(vars_dict)
     
-    instance = parseTXT.parse_txt(path)
-    instance.employees.clear()
-    for employee_uid in employee_uids:
-        instance.employees[employee_uid] = employee_copy[employee_uid]
-    
-    solver_ = Solver(instance, Shift_vars(instance))
-    solution = solver_.test_solution_validity(objective_function=solver_.objective_value_new, solution=solution, log_search_progress=False, max_time_in_seconds=450, stop_after_first_solution=True)
     end_time = time.time()
-    print(f"time {end_time - start_time}")
+    print(end_time-start_time)
     return solution
 
 if __name__ == "__main__":
@@ -71,11 +63,15 @@ if __name__ == "__main__":
     employee_uids_str = sys.argv[1].split(',')  # Assuming input is comma-separated
     instance_data = sys.argv[2]
     soft_max_time_in_seconds = int(sys.argv[3])
-    # Get the serialized data from command-line arguments
-    vars_json = sys.argv[1]
+    # Read from standard input
+    vars_json = sys.stdin.read()
 
     # Deserialize JSON back to dictionary
-    vars_dict = json.loads(vars_json)
+    vars_str_keys = json.loads(vars_json)
+
+    # Convert string keys back to tuples
+    vars_dict = {tuple(map(int, key.split('_'))): value for key, value in vars_str_keys.items()}
+
 
     # Convert string UIDs to employee.EmployeeUid instances
     employee_uids = [employee.EmployeeUid(int(uid)) for uid in employee_uids_str]

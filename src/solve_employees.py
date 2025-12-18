@@ -49,7 +49,11 @@ class solve_employee():
         start_time = time.time()
         employee_uids = []
         for employee_uid in self.instance.employees:
-            vars_json = json.dumps(self.solution.vars)
+            # Convert tuple keys to string keys
+            vars_str_keys = {f"{key[0]}_{key[1]}_{key[2]}": value for key, value in self.solution.vars.items()}
+
+            # Serialize to JSON
+            vars_json = json.dumps(vars_str_keys)
             count_ += 1
             print(count_)
             employee_uids.append(employee_uid)
@@ -60,14 +64,16 @@ class solve_employee():
                 soft_max_time_in_seconds_employee = int(soft_max_time_in_seconds_employee/(len(self.instance.employees)-len(employee_uids)))
             if incrementally:
                 result = subprocess.run(
-                    ['py', 'subprocess_employees.py', ','.join(map(str, employee_uids)), str(self.instance.name), str(soft_max_time_in_seconds_employee), vars_json],
-    capture_output=True, text=True
+                    ['python3', 'subprocess_employees.py', ','.join(map(str, employee_uids)), str(self.instance.name), str(soft_max_time_in_seconds_employee)],
+                    input=vars_json,  # Pass vars_json through stdin
+                    capture_output=True,
+                    text=True
                 )
                 print(result.stdout)
             else:
                 # Call the subprocess
                 result = subprocess.run(
-                    ['py', 'subprocess_employee.py', str(employee_uid), str(self.instance.name), str(soft_max_time_in_seconds_employee)],
+                    ['python3', 'subprocess_employee.py', str(employee_uid), str(self.instance.name), str(soft_max_time_in_seconds_employee)],
                     capture_output=True, text=True
                 )
             
