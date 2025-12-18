@@ -19,7 +19,7 @@ def solve_employee(employee_uid, instance_data, soft_max_time_in_seconds:int=60)
     instance_data = instance_data + ".txt"
     path = DATA_DIR / instance_data
     instance = parseTXT.parse_txt(path)
-    instance.employees = {employee_uid: instance.employees[int(employee_uid)]}
+    instance.employees = {int(employee_uid): instance.employees[int(employee_uid)]}
     
     # Create your ShiftVars and Solver as before
     solver_ = Solver(instance, Shift_vars(instance))

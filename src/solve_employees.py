@@ -31,6 +31,8 @@ import time
 
 import subprocess
 
+import json
+
 #TODO Write automatic solution creator for both
 # Similarly to all this check for a not valid solution, which employees are causing the invalidity
 # at timer and also test to see the difference to subprocess
@@ -47,6 +49,11 @@ class solve_employee():
         start_time = time.time()
         employee_uids = []
         for employee_uid in self.instance.employees:
+            # Convert tuple keys to string keys
+            vars_str_keys = {f"{key[0]}_{key[1]}_{key[2]}": value for key, value in self.solution.vars.items()}
+
+            # Serialize to JSON
+            vars_json = json.dumps(vars_str_keys)
             count_ += 1
             print(count_)
             employee_uids.append(employee_uid)
@@ -58,7 +65,9 @@ class solve_employee():
             if incrementally:
                 result = subprocess.run(
                     ['python3', 'subprocess_employees.py', ','.join(map(str, employee_uids)), str(self.instance.name), str(soft_max_time_in_seconds_employee)],
-    capture_output=True, text=True
+                    input=vars_json,  # Pass vars_json through stdin
+                    capture_output=True,
+                    text=True
                 )
                 print(result.stdout)
             else:
@@ -86,7 +95,7 @@ class solve_employee():
         self.solution = solver_1.test_solution_validity(solution=self.solution.model_copy(deep=True), max_time_in_seconds=30, objective_function=solver_1.objective_value_new).model_copy(deep=True)
         end_time = time.time()
         self.solution.solve_time = end_time - start_time
-        #self.solution.to_json_file(self.instance.name + "start")
+        self.solution.to_json_file(self.instance.name + "start")
 
         end_time = time.time()
         execution_time = end_time - start_time
