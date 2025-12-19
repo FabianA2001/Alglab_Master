@@ -125,6 +125,7 @@ class Instance(BaseModel):
         return self
     
     # 4, 5, 6, 7, 8, 9, 10
+    #TODO I think i did not consider ban and other stuff
     def instance_to_one_shift_type(self):
         # number_of_days: int,
         instance_copy = self.model_copy(deep=True)

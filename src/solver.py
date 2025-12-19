@@ -36,7 +36,7 @@ class Solver:
 
     def solve(
         self,
-        log_search_progress: bool = True,
+        log_search_progress: bool = False,
         max_time_in_seconds: float = 60.0,
         disabled_constraints: list[SolverConstraints] = [],
         stop_after_first_solution: bool = False,
@@ -66,7 +66,7 @@ class Solver:
 
     def solve_with_early_stop(
         self,
-        log_search_progress: bool = True,
+        log_search_progress: bool = False,
         max_time_in_seconds: float = 60.0,
         disabled_constraints: list[SolverConstraints] = [],
         **solver_params,
@@ -109,7 +109,7 @@ class Solver:
 
     def solve_callback_with_solution(
         self,
-        log_search_progress: bool = True,
+        log_search_progress: bool = False,
         max_time_in_seconds: float = 60.0,
         disabled_constraints: list[SolverConstraints] = [],
         stop_after_first_solution: bool = False,
@@ -247,7 +247,8 @@ class Solver:
 
     def warm_start_generalized(
         self,
-        solution: Solution,
+        hint_solution: Solution | None = None,
+        hard_constraint_solution: Solution | None = None,
         disabled_constraints: list[SolverConstraints] = [],
         max_time_in_seconds: float = 60.0,
         objective_function: Callable[[], cp_model.ObjLinearExprT] | None = None,
@@ -255,14 +256,55 @@ class Solver:
         stop_after_first_solution: bool = False,
         callback: cp_model.CpSolverSolutionCallback | None = None,
     ) -> Solution:
-        """Warm starts the solver with a given solution."""
-        for day in range(self.instance.number_of_days):
-            for type_uid in self.instance.shifts[day]:
-                for employee_uid in self.instance.employees:
-                    var_value = solution.vars[(day, type_uid, employee_uid)] == 1
-                    self.vars.model.AddHint(
-                        self.vars.get_var(day, type_uid, employee_uid), var_value
-                    )
+        employee_uid_ = None
+        if hint_solution is not None:
+            """Warm starts the solver with a given solution."""
+            for day in range(self.instance.number_of_days):
+                for employee_uid in self.instance.employees.keys():
+                    for type_uid, _ in self.instance.shifts[day].items():
+                        if (day, type_uid, employee_uid) in hint_solution.vars.keys():
+                            var_value = hint_solution.vars[(day, type_uid, employee_uid)] == 1
+                            self.vars.model.AddHint(
+                                self.vars.get_var(day, type_uid, employee_uid), var_value
+                            )
+                        # elif employee_uid_ != employee_uid:
+                        #     employee_uid_ = employee_uid
+                        #     print(f"var not found in hard_constraint solution {employee_uid}")
+
+        if hard_constraint_solution is not None:
+            for employee_uid in self.instance.employees.keys():
+                for day in range(self.instance.number_of_days):
+                
+                    for type_uid, _ in self.instance.shifts[day].items():
+                        if (day, type_uid, employee_uid) in hard_constraint_solution.vars.keys():
+                            var_value = hard_constraint_solution.vars[(day, type_uid, employee_uid)] == 1
+                            if hint_solution is not None and (day, type_uid, employee_uid) not in hint_solution.vars.keys():
+                                self.vars.model.AddHint(
+                                    self.vars.get_var(day, type_uid, employee_uid), var_value
+                                )
+                            self.vars.model.add(self.vars.get_var(day, type_uid, employee_uid) == var_value)
+                            # if employee_uid_ != employee_uid:
+                            #     employee_uid_ = employee_uid
+                            #     print(f"Everything worked var? {employee_uid}")
+                        # elif employee_uid_ != employee_uid:
+                        #     employee_uid_ = employee_uid
+                        #     print(f"var not found in hard_constraint solution {employee_uid}")
+            for employee_uid, _ in self.instance.employees.items():
+                for day in range(self.instance.number_of_days):
+                
+                    if (day, employee_uid) in hard_constraint_solution.work_vars.keys():
+                        var_value = hard_constraint_solution.work_vars[(day, employee_uid)] == 1
+                        self.vars.model.AddHint(
+                            self.vars.get_work_vars(day, employee_uid), var_value
+                        )
+                        self.vars.model.add(self.vars.get_work_vars(day, employee_uid) == var_value)
+                    #     if employee_uid_ != employee_uid:
+                    #         employee_uid_ = employee_uid
+                    #         print(f"Everything worked work? {employee_uid}")
+                    # elif employee_uid_ != employee_uid:
+                    #     employee_uid_ = employee_uid
+                    #     print(f"work var not found in hard_constraint solution {employee_uid}")
+
         return self.solve_callback_with_solution(
             disabled_constraints=disabled_constraints,
             max_time_in_seconds=max_time_in_seconds,
@@ -374,7 +416,7 @@ class Solver:
     def solve_min_changes(
         self,
         solution: Solution,
-        log_search_progress: bool = True,
+        log_search_progress: bool = False,
         max_time_in_seconds: float = 60.0,
         disabled_constraints: list[SolverConstraints] = [],
         **solver_params,
@@ -399,7 +441,7 @@ class Solver:
 
     def set_constraints(
         self,
-        log_search_progress: bool = True,
+        log_search_progress: bool = False,
         max_time_in_seconds: float = 60.0,
         disabled_constraints: list[SolverConstraints] = [],
         **solver_params,

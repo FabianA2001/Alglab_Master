@@ -534,6 +534,70 @@ class Solution(BaseModel):
         else:  # Even number of elements
             return (percentages[mid - 1] + percentages[mid]) / 2
 
+    def copy_solution(self, solution: "Solution"):
+        self.vars.update(solution.vars)
+        self.weekend_vars.update(solution.weekend_vars)
+        self.above_prefferd_vars.update(solution.above_prefferd_vars)
+        self.work_vars.update(solution.work_vars)
+        self.below_prefferd_vars.update(solution.below_prefferd_vars)
+    
+    def store_solution_vars(self, solution: "Solution", day: int | None = None, employee_uid: employee.EmployeeUid | None = None, shift_type_uid: shift.ShiftUid | None = None):
+        if day is None:
+            day_start = 0
+            day_end = self.instance.number_of_days
+        else:
+            day_start = day
+            day_end = day + 1
+
+        if employee_uid is None:
+            employees = self.instance.employees
+        elif employee_uid in self.instance.employees.keys():
+            employees = {employee_uid: self.instance.employees[employee_uid]}
+        else:
+            print(f"somthing bad happend: {employee_uid} is not in the instance")
+            return
+
+        if shift_type_uid is None:
+            shifts_types = self.instance.shift_types
+        elif shift_type_uid in self.instance.shift_types.keys():
+            shifts_types = {shift_type_uid: self.instance.shift_types[shift_type_uid]}
+        else:
+            print(f"somthing bad happend: shift type {shift_type_uid} is not in the instance")
+            return
+
+        for day_ in range(day_start, day_end):
+            for employee_uid, employee_ in employees.items():
+                for shift_type_uid, shift_type in shifts_types.items():
+                    if (day_, shift_type_uid, employee_uid) in solution.vars.keys():
+                        self.set_var(day_, shift_type_uid, employee_uid, solution.vars[(day_, shift_type_uid, employee_uid)])
+                    else:
+                        print(f"key var {(day_, shift_type_uid, employee_uid)} is not a key in the to be copied solution")
+
+
+    def store_solution_work_vars(self, solution: "Solution", day: int | None = None, employee_uid: employee.EmployeeUid | None = None):
+        if day is None:
+            day_start = 0
+            day_end = self.instance.number_of_days
+        else:
+            day_start = day
+            day_end = day + 1
+
+        if employee_uid is None:
+            employees = self.instance.employees
+        elif employee_uid in self.instance.employees.keys():
+            employees = {employee_uid: self.instance.employees[employee_uid]}
+        else:
+            print(f"somthing bad happend: {employee_uid} is not in the instance")
+            return
+
+        for day_ in range(day_start, day_end):
+            for employee_uid, employee_ in employees.items():
+                if (day_, employee_uid) in solution.work_vars.keys():
+                    self.set_work_vars(day_, employee_uid, solution.work_vars[(day_, employee_uid)])
+                else:
+                    print(f"key work var {(day_, employee_uid)} is not a key in the to be copied solution")
+    
+
 
 # Standalone constraint checking functions
 # (moved here to avoid circular imports)
