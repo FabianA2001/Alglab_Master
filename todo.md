@@ -75,3 +75,14 @@ lns: https://d-krupke.github.io/cpsat-primer/09_lns.html
 # In Hinter kopf(ziehmlich weit):
 * (Änderungen solver, die hard cosntraint für die Änderungensanzahl hat (dann lässt man, mehrere solver mit verschiedene Anzahl laufen))
 * LNS über Instancen (Mehre Windows erstellen => lösen => mergen)
+
+# 19.12:
+* Mohammad:
+    * solve the problem with the Model being kept when creating new solvers
+    * improve the greedy CP method
+    * if the Model problem is solved transform from subprocess to normal 
+    * Refactor 
+* Caro: 
+    * LNS
+* Fabian:
+    * GUI 
