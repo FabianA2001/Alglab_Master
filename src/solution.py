@@ -26,6 +26,11 @@ class Solution(BaseModel):
         description="Mapping of boolean variables that indicate whether a specific employee is assigned to a given shift on a specified day. The key is a tuple of (day, shift type, employee ID).",
     )
 
+    work_vars: Dict[Tuple[int, employee.EmployeeUid], int] = Field(
+        default_factory=dict,
+        description="Mapping of boolean variables that indicate whether a specific employee is assigned to a given shift on a specified day. The key is a tuple of (day, shift type, employee ID).",
+    )
+
     weekend_vars: Dict[Tuple[int, employee.EmployeeUid], int] = Field(
         default_factory=dict,
         description="Mapping of boolean variables that indicate whether a specific employee is working on a weekend day. The key is a tuple of (weekend day, employee ID).",
@@ -77,6 +82,17 @@ class Solution(BaseModel):
                 for k, val in v.items()
             }  # type: ignore
         return v
+    
+    @field_validator("work_vars", mode="before")
+    @classmethod
+    def validate_work_vars(cls, v: Any) -> Dict[Tuple[int, int], int]:
+        """Convert string keys back to tuple keys for work_vars field."""
+        if isinstance(v, dict):
+            return {
+                (int(k.split(",")[0]), employee.EmployeeUid(int(k.split(",")[1]))) if isinstance(k, str) else k: val
+                for k, val in v.items()
+            }  # type: ignore
+        return v
 
     @field_validator("weekend_vars", mode="before")
     @classmethod
@@ -114,7 +130,8 @@ class Solution(BaseModel):
     def set_var(self, day: int, type_uid: int, employee_uid: int, value: int):
         """Sets the boolean variable value."""
         self.vars[(day, type_uid, employee_uid)] = value
-
+    def set_work_vars(self, day: int, employee_uid: int, value: int):
+        self.work_vars[(day, employee_uid)] = value
     def set_weekend_var(self, weekend: int, employee_uid: int, value: int):
         """Sets the weekend variable value."""
         self.weekend_vars[(weekend, employee_uid)] = value

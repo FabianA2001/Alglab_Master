@@ -39,7 +39,7 @@ def sayHello(name="World") -> str:
 
 def get_tes_data() -> instace.Instance:
     test_file = Path.joinpath(
-        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance21.txt"
+        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance24.txt"
     )
     # test_file = Path.joinpath(
     #     Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance13.txt"
@@ -151,7 +151,8 @@ def print_some_infos():
 def test_solve_employee():
     instance_9 = get_tes_data()
     solve_employee_obj = solve_employee(instance=instance_9)
-    solve_employee_obj.solve_all_employees_subprocess(incrementally=True,soft_max_time_in_seconds=15*60)
+    #solve_employee_obj.solve_all_employees_subprocess(incrementally=True,soft_max_time_in_seconds=15*60)
+    solve_employee_obj.solve_instance_one_shift()
 
 def main() -> None:
     # inst = get_tes_data()

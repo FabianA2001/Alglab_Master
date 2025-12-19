@@ -9,7 +9,7 @@ class Shift_vars:
         instance: instace.Instance,
         model: cp_model.CpModel = cp_model.CpModel(),
     ):
-        self.model: cp_model.CpModel = model
+        self.model: cp_model.CpModel = cp_model.CpModel()
         # (day, type_uid, employee_uid) -> variable
 
         self.__init_vars(instance)

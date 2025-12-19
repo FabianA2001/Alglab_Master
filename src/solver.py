@@ -158,6 +158,7 @@ class Solver:
         #TODO instead of looking which class it is make it so that a parameter is given or each callback class should have a parameter that say if it should continue or stop at first good enough solution
         if isinstance(callback, Callback_Top_Solutions):
             if callback.best_solution is not None:
+                del solver
                 return callback.best_solution  # Return the best solution if it exists
         
         solution = Solution(self.instance)  # Create a new Solution instance
@@ -170,18 +171,22 @@ class Solver:
             solution.disabled_constraints = disabled_constraints
             solution.solve_time = self.solve_time
             solution.timestamp = datetime.now()
+            del solver
             return solution  # Return the populated solution
 
         elif status == cp_model.INFEASIBLE:
             self.process_infeasible_solution()
+            del solver
             return solution
 
         elif status == cp_model.UNKNOWN:
             self.process_unknown_status()
+            del solver
             return solution
 
         elif status == cp_model.MODEL_INVALID:
             self.process_invalid_model()
+            del solver
             return solution
 
         return solution  # Return an empty solution for cases where no valid solution was found
@@ -195,6 +200,14 @@ class Solver:
                         self.vars.get_var(day, type_uid, employee_uid)
                     )
                     solution.set_var(day, type_uid, employee_uid, var_value)
+
+        for day in range(self.instance.number_of_days):
+            for type_uid in self.instance.shifts[day]:
+                for employee_uid in self.instance.employees:
+                    work_vars_value = solver.Value(
+                        self.vars.get_work_vars(day, employee_uid)
+                    )
+                    solution.set_work_vars(day, employee_uid, work_vars_value)
 
         for weekend in range(round(self.instance.number_of_days / 7)):
             for employee_uid in self.instance.employees:
@@ -281,9 +294,23 @@ class Solver:
                             self.vars.get_var(day, type_uid, employee_uid), var_value
                         )
                         self.vars.model.add(self.vars.get_var(day, type_uid, employee_uid) == var_value)
+                        #print(f"{employee_uid}")
                     elif employee_uid_ != employee_uid:
                         employee_uid_ = employee_uid
-                        print(f"{employee_uid}")
+                        #print(f"{employee_uid}")
+
+        for day in range(self.instance.number_of_days):
+            for employee_uid in self.instance.employees:
+                if (day, employee_uid) in solution.work_vars:
+                    var_value = solution.work_vars[(day, employee_uid)] == 1
+                    self.vars.model.AddHint(
+                        self.vars.get_work_vars(day, employee_uid), var_value
+                    )
+                    self.vars.model.add(self.vars.get_work_vars(day, employee_uid) == var_value)
+                elif employee_uid_ != employee_uid:
+                    employee_uid_ = employee_uid
+                    #print(f"{employee_uid}")
+
         return self.solve_callback_with_solution(
             disabled_constraints=disabled_constraints,
             max_time_in_seconds=max_time_in_seconds,
