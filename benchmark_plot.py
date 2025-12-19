@@ -17,6 +17,8 @@ def gather_sol_times(data_dir):
         ,4:"Alternative_exact"
         ,5:"Alternative_exact_Enforce"
         ,7:"Alternative_exact_original"
+        ,9:"incrementallyTrue"
+        ,10:"incrementallyFalse"
         }
     # Gathering files for optimal solutions
     for key in dict_constraint.values():  # Modify keys as per your dictionary
@@ -154,6 +156,9 @@ def gather_sol_times(data_dir):
             
             
             for file in file_pattern:
+                if file.stem.count("seed") >= 2:
+                    print(f"{file.stem} Contains 'seed' twice or more.")
+                    continue
                 solution = Solution.from_json_file(file.stem)  # Load using the base filename
                 if solution.solve_time >= 1800 or True:
                     instance_name = file.stem.split('_')[0]
@@ -400,13 +405,13 @@ def main():
     for solution_type in ['optimal', 'immediate_first', 'first_good', 'timed_out']:
         if len(df_sol_times) > 0:
             filtered_df = df_sol_times[df_sol_times['type'] == solution_type]
-            filtered_df = filtered_df[filtered_df['key'].isin(['Alternative_exact_Enforce', 'new'])]
+            #filtered_df = filtered_df[filtered_df['key'].isin(['Alternative_exact_Enforce', 'new'])]
             if len(filtered_df) > 0:
-                print(solution_type, df_sol_times.iloc[0]['value'])
-                print(get_top_methods(aggregate_scores(filtered_df, filtered_df.iloc[0]['value'], solution_type), n=10))
-                print_top_methods(aggregate_scores_(filtered_df, filtered_df.iloc[0]['value'], solution_type), n=10)
-                # plot_sol_times_lines(filtered_df, solution_type= solution_type, value_type=filtered_df.iloc[0]['value'])
-                # plot_sol_times_barchart(filtered_df, solution_type= solution_type, value_type=filtered_df.iloc[0]['value'])
+                # print(solution_type, df_sol_times.iloc[0]['value'])
+                # print(get_top_methods(aggregate_scores(filtered_df, filtered_df.iloc[0]['value'], solution_type), n=10))
+                # print_top_methods(aggregate_scores_(filtered_df, filtered_df.iloc[0]['value'], solution_type), n=10)
+                plot_sol_times_lines(filtered_df, solution_type= solution_type, value_type=filtered_df.iloc[0]['value'])
+                plot_sol_times_barchart(filtered_df, solution_type= solution_type, value_type=filtered_df.iloc[0]['value'])
 
 if __name__ == "__main__":
     main()
