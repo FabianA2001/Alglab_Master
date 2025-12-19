@@ -1,13 +1,20 @@
 from ortools.sat.python import cp_model
 
-from .. import shift_vars
-from ..inputTypes import instace
-from .shift_assignment_module import ShiftAssignmentModule
+from ... import shift_vars
+from ...inputTypes import instace
+from ...module.shift_assignment_module import ShiftAssignmentModule
 
 # wekkend vars gegebenfalls noch nicht korrekt
 
 
 class Max_weekend_days(ShiftAssignmentModule):
+    def __init__(
+        self,
+        start_day: int,
+    ):
+        self.start_day: int = start_day
+        super().__init__()
+
     def build(
         self,
         instance: instace.Instance,

@@ -7,7 +7,6 @@ from ortools.sat.python import cp_model
 
 from src.help_functions import (
     compare_solutions,
-    compare_multiple_solutions,
     find_best_solution_for_modified_instance,
 )
 from src.solution import Solution
@@ -84,8 +83,9 @@ def t_single_day_validation():
 def run_lns_example():
     # old_sol = Solution.from_json_file("Instance9")
     inst = get_tes_data()
+    sol = Solution.from_json_file("Instance9_slow")
     lns_solver = lns.LNS(
-        inst,
+        sol,
         timeout_seconds=60,
         start_search_window_size=5,
     )
@@ -202,9 +202,10 @@ def main() -> None:
     # sol = Solution.from_json_file("Instance1")
     # get_test_solution_from_model()
     # try_compare_solutions()
+    run_lns_example()
     # run_lns_example()
     # try_compare_multiple_solutions()
-    try_warmstart_callback()
+    # try_warmstart_callback()
     # calculate_all_instancen()
     # print_some_infos()
 

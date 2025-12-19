@@ -41,7 +41,8 @@ class Instance(BaseModel):
         """
         # Handle mutable default arguments
         if weekend_days is None:
-            weekend_days = set()
+            # add all sundays as weekend days by default
+            weekend_days = set(((i + 1) * 7) - 1 for i in range(number_of_days // 7))
         if shift_on_requests is None:
             shift_on_requests = defaultdict(dict)
         if shift_off_requests is None:
@@ -103,7 +104,7 @@ class Instance(BaseModel):
     )
     weekend_days: set[int] = Field(
         default_factory=set,
-        description="Set of saturday days in the Instance, does not include sunday",
+        description="Set of sunday days in the Instance",
     )
     # shifts[day][type] = shift
     shifts: dict[int, dict[shiftType.TypeUid, shift.Shift]] = Field(
@@ -120,6 +121,6 @@ class Instance(BaseModel):
     def validate_nurses_unique_uids(self):
         """Weekends are maximal one consecutive day."""
         for weekend in self.weekend_days:
-            if weekend + 1 in self.weekend_days:
+            if weekend > 0 and weekend - 1 in self.weekend_days:
                 raise ValueError("Weekend days cannot be consecutive.")
         return self

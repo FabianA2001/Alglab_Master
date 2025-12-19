@@ -1,13 +1,12 @@
 from datetime import datetime
+from typing import Callable
 
 from ortools.sat.python import cp_model
 
-from typing import Callable
+from src.greedy_scheduler import SequentialGreedyScheduler, SequentialGreedyScheduler2
 
 from . import shift_vars
 from .callback_early_stop import Callback_Early_Stop
-from .solverCallback.callback_three_best_solutions import Callback_Top_Solutions
-from .solverCallback.callback_collect_all_solutions import CollectAllSolutions
 from .inputTypes import instace
 from .module import (
     assign_employee_day_shift,
@@ -23,30 +22,39 @@ from .module import (
     shift_assignment_single_day_validation,
     shift_rotation_constraint,
 )
+from .module.shift_assignment_module import ShiftAssignmentModule
 from .module.solverConstraints import SolverConstraints
 from .solution import Solution
-from src.greedy_scheduler import SequentialGreedyScheduler, SequentialGreedyScheduler2
+from .solverCallback.callback_collect_all_solutions import CollectAllSolutions
+from .solverCallback.callback_three_best_solutions import Callback_Top_Solutions
 
 
 class Solver:
-    def __init__(self, instance: instace.Instance, vars: shift_vars.Shift_vars):
+    def __init__(
+        self,
+        instance: instace.Instance,
+        vars: shift_vars.Shift_vars,
+        disabled_constraints: list[SolverConstraints] = [],
+        add_module_constraints: list[ShiftAssignmentModule] = [],
+    ):
         self.instance = instance
         self.vars = vars
         self.solve_time = 0
         self.start_solve_time: datetime = datetime(2005, 1, 1, 0, 0)
+        self.disabled_constraints: list[SolverConstraints] = disabled_constraints
+        for module in add_module_constraints:
+            module.build(self.instance, self.vars)
 
     def solve(
         self,
         log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
-        disabled_constraints: list[SolverConstraints] = [],
         stop_after_first_solution: bool = False,
         callback: cp_model.CpSolverSolutionCallback | None = None,
         automaton: bool = False,
-        **solver_params,
     ) -> Solution:
         self.set_constraints(
-            disabled_constraints=disabled_constraints, automaton=automaton
+            disabled_constraints=self.disabled_constraints, automaton=automaton
         )
         solver = cp_model.CpSolver()
         solver.parameters.log_search_progress = log_search_progress
@@ -55,9 +63,6 @@ class Solver:
         if stop_after_first_solution:
             solver.parameters.stop_after_first_solution = True
 
-        for key, value in solver_params.items():
-            setattr(solver.parameters, key, value)
-
         self.vars.model.Minimize(self.objective_value_new())
         self.start_solve_time = datetime.now()
         if callback is not None:
@@ -65,20 +70,17 @@ class Solver:
         else:
             status = solver.Solve(self.vars.model)
         self.solve_time = (datetime.now() - self.start_solve_time).total_seconds()
-        return self.handle_results(status, solver, disabled_constraints)
+        return self.handle_results(status, solver)
 
     def solve_with_early_stop(
         self,
         log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
-        disabled_constraints: list[SolverConstraints] = [],
-        **solver_params,
     ):
         callback = Callback_Early_Stop(self.instance, self.vars)
         return self.solve(
             log_search_progress,
             max_time_in_seconds,
-            disabled_constraints,
             callback=callback,
         )
 
@@ -170,7 +172,7 @@ class Solver:
             self.store_solution(solver, solution)  # Store the current solution values
             solution.objective_value = solver.ObjectiveValue()
             solution.instance = self.instance
-            solution.disabled_constraints = disabled_constraints
+            solution.disabled_constraints = self.disabled_constraints
             solution.solve_time = self.solve_time
             solution.timestamp = datetime.now()
             return solution  # Return the populated solution
@@ -199,7 +201,7 @@ class Solver:
                     )
                     solution.set_var(day, type_uid, employee_uid, var_value)
 
-        for weekend in range(round(self.instance.number_of_days / 7)):
+        for weekend in self.instance.weekend_days:
             for employee_uid in self.instance.employees:
                 weekend_value = solver.Value(
                     self.vars.get_weekend_var(weekend, employee_uid)
@@ -237,7 +239,6 @@ class Solver:
         self,
         solution: Solution,
         instance: instace.Instance,
-        disabled_constraints: list[SolverConstraints] = [],
         max_time_in_seconds: float = 60.0,
     ) -> Solution:
         """Warm starts the solver with a given solution."""
@@ -251,7 +252,6 @@ class Solver:
                     )
         return self.solve_min_changes(
             solution=solution,
-            disabled_constraints=disabled_constraints,
             max_time_in_seconds=max_time_in_seconds,
         )
 
@@ -311,16 +311,11 @@ class Solver:
         solution: Solution,
         log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
-        disabled_constraints: list[SolverConstraints] = [],
-        **solver_params,
     ) -> Solution:
-        self.set_constraints(disabled_constraints=disabled_constraints)
+        self.set_constraints()
         solver = cp_model.CpSolver()
         solver.parameters.log_search_progress = log_search_progress
         solver.parameters.max_time_in_seconds = max_time_in_seconds
-
-        for key, value in solver_params.items():
-            setattr(solver.parameters, key, value)
 
         self.vars.model.Minimize(self.objective_value_weight_changes(solution=solution))
         self.start_solve_time = datetime.now()
@@ -330,16 +325,14 @@ class Solver:
         status = solver.SolveWithSolutionCallback(self.vars.model, callback)
         ###
         self.solve_time = (datetime.now() - self.start_solve_time).total_seconds()
-        return self.handle_results(status, solver, disabled_constraints)
+        return self.handle_results(status, solver)
 
     def set_constraints(
         self,
-        log_search_progress: bool = True,
-        max_time_in_seconds: float = 60.0,
         disabled_constraints: list[SolverConstraints] = [],
         automaton: bool = True,
-        **solver_params,
     ):
+        disabled_constraints = self.disabled_constraints
         if SolverConstraints.days_off not in disabled_constraints:
             days_off_new.Days_off_new().build(self.instance, self.vars)
         if SolverConstraints.cover_requirements not in disabled_constraints:
@@ -463,7 +456,6 @@ class Solver:
         return self.solve(
             log_search_progress=log_search_progress,
             max_time_in_seconds=max_time_in_seconds,
-            disabled_constraints=disabled_constraints,
             stop_after_first_solution=True,
         )
 
@@ -494,7 +486,6 @@ class Solver:
         return self.solve(
             log_search_progress=log_search_progress,
             max_time_in_seconds=max_time_in_seconds,
-            disabled_constraints=disabled_constraints,
             stop_after_first_solution=True,
         )
 
