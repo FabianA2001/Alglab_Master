@@ -111,13 +111,17 @@ def run_benchmark(
             # sol = solver.solve_with_early_stop(
             #     max_time_in_seconds=timeout, log_search_progress=False, automaton=False
             # )
-            sol = solver.warm_start_greedy2(
-                max_time_in_seconds=timeout, instance=instance
-            )
+            # sol = solver.warm_start_greedy2(
+            #     max_time_in_seconds=timeout, instance=instance
+            # )
             # HIER
             # sol = solver.warm_start_greedy2(
             #     max_time_in_seconds=timeout, instance=instance
             # )
+            sol = solver.warm_start_half_instance(
+                instance=instance,
+                max_time_in_seconds=timeout,
+            )
         except Exception as e:
             elapsed = time.time() - start
             print(f"Solver error on {inst_file.name}: {e}")
@@ -160,10 +164,10 @@ def run_benchmark(
             try:
                 sols_dir = output_dir / "solutions"
                 sols_dir.mkdir(parents=True, exist_ok=True)
-                out_path = sols_dir / f"{inst_file.stem}.json"
+                out_path = sols_dir / inst_file.stem
                 # solver's to_json_file may accept a path string
                 sol.to_json_file(str(out_path))
-                result["solution_file"] = str(out_path)
+                result["solution_file"] = str(out_path) + ".json"
             except Exception as e:
                 result["solution_file_error"] = str(e)
 

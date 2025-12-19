@@ -69,7 +69,7 @@ class Solver:
 
     def solve_with_early_stop(
         self,
-        log_search_progress: bool = True,
+        log_search_progress: bool = False,
         max_time_in_seconds: float = 60.0,
         disabled_constraints: list[SolverConstraints] = [],
         **solver_params,
@@ -574,3 +574,213 @@ class Solver:
         ]
 
         return filtered_results
+
+    def warm_start_half_instance(
+        self,
+        instance: instace.Instance,
+        disabled_constraints: list[SolverConstraints] = [],
+        max_time_in_seconds: float = 600.0,
+    ) -> Solution:
+        """Warm start the solver by solving four sub-instances in isolated processes:
+        - 1st quarter of employees
+        - 2nd quarter of employees
+        - 3rd quarter of employees
+        - 4th quarter of employees
+        Then add all hints to the main instance.
+
+        Each quarter is solved in a separate Python process to prevent CP-SAT
+        performance degradation from repeated solving.
+        """
+        import subprocess
+        import sys
+        import tempfile
+        import pickle
+        from pathlib import Path
+
+        from copy import deepcopy
+
+        original = instance
+        n = len(original.employees)
+        quarter = n // 4
+        keys = list(original.employees.keys())
+
+        # --- Build quarter instances ---
+        quarter_instances = []
+        quarter_labels = []
+        for i in range(4):
+            q_inst = deepcopy(original)
+            q_keys = (
+                keys[i * quarter : (i + 1) * quarter] if i < 3 else keys[i * quarter :]
+            )
+            q_inst.employees = {k: original.employees[k] for k in q_keys}
+            quarter_instances.append(q_inst)
+            quarter_labels.append(f"quarter {i + 1}")
+
+        # --- Solve each quarter in a separate process ---
+        quarter_solutions = []
+        for i, (inst, label) in enumerate(zip(quarter_instances, quarter_labels)):
+            print(f"Solving {label} in isolated process...")
+
+            # Create temporary files for instance and solution
+            tmp_inst_file = tempfile.NamedTemporaryFile(
+                mode="wb", suffix=".pkl", delete=False
+            )
+            tmp_inst_path = tmp_inst_file.name
+            pickle.dump(inst, tmp_inst_file)
+            tmp_inst_file.close()
+
+            tmp_sol_path = tempfile.NamedTemporaryFile(
+                mode="wb", suffix=".pkl", delete=False
+            ).name
+
+            try:
+                # Launch a subprocess to solve this quarter
+                cmd = [
+                    sys.executable,
+                    "-m",
+                    "src.solver_worker",
+                    "--instance",
+                    tmp_inst_path,
+                    "--output",
+                    tmp_sol_path,
+                    "--timeout",
+                    str(max_time_in_seconds),
+                ]
+
+                print(f"Launching: {' '.join(cmd)}")
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=max_time_in_seconds,
+                )
+
+                if result.returncode != 0:
+                    print(f"Subprocess failed for {label}:")
+                    print("STDOUT:", result.stdout)
+                    print("STDERR:", result.stderr)
+                    quarter_solutions.append(None)
+                    continue
+
+                # Load the solution from the output file
+                with open(tmp_sol_path, "rb") as f:
+                    sol = pickle.load(f)
+
+                print(
+                    f"Solved {label} (status={sol.solve_status}, time={sol.solve_time:.2f}s)"
+                )
+                quarter_solutions.append(sol)
+
+            except subprocess.TimeoutExpired:
+                print(f"Subprocess timed out for {label}")
+                quarter_solutions.append(None)
+            except Exception as e:
+                print(f"Error solving {label} in subprocess: {e}")
+                quarter_solutions.append(None)
+            finally:
+                # Clean up temporary files
+                try:
+                    Path(tmp_inst_path).unlink()
+                    Path(tmp_sol_path).unlink()
+                except Exception:
+                    pass
+
+        def add_hints(solution, sub_instance):
+            if solution is None or solution.solve_status not in [
+                cp_model.OPTIMAL,
+                cp_model.FEASIBLE,
+            ]:
+                print("Skipping infeasible quarter.")
+                return
+
+            for day in range(original.number_of_days):
+                for type_uid in original.shifts[day]:
+                    for emp_uid in sub_instance.employees:
+                        key = (day, type_uid, emp_uid)
+
+                        if key in solution.vars:
+                            value = solution.vars[key] == 1
+                            try:
+                                self.vars.model.AddHint(
+                                    self.vars.get_var(day, type_uid, emp_uid),
+                                    value,
+                                )
+                            except Exception as e:
+                                print(f"Warning: AddHint failed for {key}: {e}")
+
+        # Add hints for all 4 quarters
+        for i in range(4):
+            add_hints(quarter_solutions[i], quarter_instances[i])
+
+        # Finally solve full instance with all hints applied in a subprocess
+        print("Solving full instance with hints in isolated process...")
+
+        # Create temporary file for full instance solve
+        tmp_full_inst_file = tempfile.NamedTemporaryFile(
+            mode="wb", suffix=".pkl", delete=False
+        )
+        tmp_full_inst_path = tmp_full_inst_file.name
+        pickle.dump(original, tmp_full_inst_file)
+        tmp_full_inst_file.close()
+
+        tmp_full_sol_path = tempfile.NamedTemporaryFile(
+            mode="wb", suffix=".pkl", delete=False
+        ).name
+        tmp_hints_path = tempfile.NamedTemporaryFile(
+            mode="wb", suffix=".pkl", delete=False
+        ).name
+
+        # Serialize the hints data: (quarter_solutions, quarter_instances) for hint reconstruction
+        with open(tmp_hints_path, "wb") as f:
+            pickle.dump((quarter_solutions, quarter_instances), f)
+
+        try:
+            # Launch a subprocess to solve the full instance with hints
+            cmd = [
+                sys.executable,
+                "-m",
+                "src.solver_worker",
+                "--instance",
+                tmp_full_inst_path,
+                "--output",
+                tmp_full_sol_path,
+                "--timeout",
+                str(max_time_in_seconds),
+                "--hints",
+                tmp_hints_path,
+            ]
+
+            print(f"Launching: {' '.join(cmd[:6])}...")
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, timeout=max_time_in_seconds + 10
+            )
+
+            if result.returncode != 0:
+                print("Subprocess failed for full instance solve:")
+                print("STDOUT:", result.stdout)
+                print("STDERR:", result.stderr)
+                return Solution(original)
+
+            # Load the solution from the output file
+            with open(tmp_full_sol_path, "rb") as f:
+                solution = pickle.load(f)
+
+            print(
+                f"Full instance solved (status={solution.solve_status}, time={solution.solve_time:.2f}s)"
+            )
+            return solution
+
+        except subprocess.TimeoutExpired:
+            print("Subprocess timed out for full instance solve")
+            return Solution(original)
+        except Exception as e:
+            print(f"Error solving full instance in subprocess: {e}")
+            return Solution(original)
+        finally:
+            # Clean up temporary files
+            try:
+                Path(tmp_full_inst_path).unlink()
+                Path(tmp_full_sol_path).unlink()
+                Path(tmp_hints_path).unlink()
+            except Exception:
+                pass

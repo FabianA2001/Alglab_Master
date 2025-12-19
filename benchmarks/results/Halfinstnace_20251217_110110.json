@@ -1,0 +1,11 @@
+[
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance19.txt",
+    "name": "Instance19",
+    "status": "FEASIBLE",
+    "is_success": true,
+    "solve_time": 82.088027,
+    "objective_value": 5732.0,
+    "timestamp": "2025-12-17T11:01:10.085848"
+  }
+]

@@ -193,6 +193,13 @@ def try_warmstart_callback():
         return
 
 
+def check_solutions():
+    solution1 = Solution.from_json_file("benchmarks/results/solutions/Instance20")
+    solution2 = Solution.from_json_file("benchmarks/results/solutions/Instance21")
+    print(solution1.checkt_constraints)
+    print(solution2.checkt_constraints)
+
+
 def main() -> None:
     # inst = get_tes_data()
     # x = inst
@@ -204,7 +211,8 @@ def main() -> None:
     # try_compare_solutions()
     # run_lns_example()
     # try_compare_multiple_solutions()
-    try_warmstart_callback()
+    # try_warmstart_callback()
+    check_solutions()
     # calculate_all_instancen()
     # print_some_infos()
 
