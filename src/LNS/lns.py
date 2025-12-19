@@ -110,6 +110,7 @@ class LNS:
         timeout_seconds: float,
     ) -> tuple[solution.Solution, float]:
         if isinstance(sol_or_instance, solution.Solution):
+            # TODO calc objective value
             return sol_or_instance, 0.0
         elif isinstance(sol_or_instance, instace.Instance):
             start_time = time.time()
@@ -137,6 +138,8 @@ class LNS:
         Args:
             improvement: Die Verbesserung des Objective-Werts (positiv wenn besser)
         """
+
+        # TODO change random window start
 
         def __calculate_new_window_size():
             old_window_size = self.end_day - self.start_day
@@ -212,6 +215,7 @@ class LNS:
         iteration = 0
         improvements = 0
 
+        # TODO stop with erly stop
         while time.time() - start_time < self.timeout_seconds:
             assert self.end_day > self.start_day
             iteration += 1
@@ -249,9 +253,9 @@ class LNS:
                     f"error_lns_infeasible_start_{self.start_day}_end_{self.end_day}"
                 )
                 # HACK
-                import sys
+                # import sys
 
-                sys.exit(1)
+                # sys.exit(1)
                 #############
                 continue
             old_sol_debugg = sol.model_copy()
@@ -272,9 +276,9 @@ class LNS:
                 )
 
                 # HACK
-                import sys
+                # import sys
 
-                sys.exit(1)
+                # sys.exit(1)
                 ##########
                 continue
 

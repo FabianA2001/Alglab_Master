@@ -2,6 +2,7 @@ from .. import solution
 from ..module.solverConstraints import SolverConstraints
 
 
+# TODO update function
 def calculate_objective_value(sol: solution.Solution) -> float:
     """
     Berechnet den objective value einer Lösung basierend auf den Zuweisungen.
