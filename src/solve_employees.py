@@ -217,7 +217,7 @@ class solve_employee():
             elif solution.solve_status in [cp_model.INFEASIBLE, cp_model.MODEL_INVALID]:
                 print("Something went wrong and the model is infeasible or invalid")
                 return solution
-
+        one_shift_time_end = time.time()
         end_time = time.time()
         #print(end_time - start_time)
         solution.solve_time = end_time - start_time
@@ -245,11 +245,8 @@ class solve_employee():
                             self.solution.work_vars.pop((day, employee_uid))
             else:
                 print(f"Error solving for employee {employee_uid}: ")
-                
-        if len(invalid_employees)>0:
-            with open('invalid_employees_count.txt', 'a') as file:
-                invalid_employees_string=f"\n{self.instance.name}_1S{input_tupel[0]}_wv{input_tupel[1]}_o{input_tupel[2]}: "+str(len(invalid_employees))
-                file.write(invalid_employees_string)
+
+        employee_verification_time=time.time()
 
         stop_after_first_solution=False
         if fixed_work_var_opt_max_time <= 0:
@@ -267,6 +264,15 @@ class solve_employee():
             elif solution_temp.solve_status in [cp_model.INFEASIBLE, cp_model.MODEL_INVALID]:
                 print("Something went wrong and the model is infeasible or invalid")
                 return solution_temp
+            
+        work_var_opt_time = time.time()
+        if len(invalid_employees)>0 or True:
+            with open('invalid_employees_count.txt', 'a') as file:
+                invalid_employees_string=f"\n{self.instance.name}_1S{input_tupel[0]}_wv{input_tupel[1]}_o{input_tupel[2]}: "+str(len(invalid_employees)) + f" - time for employee verification is {employee_verification_time-one_shift_time_end} - time for opt work_var after employee verification is {work_var_opt_time-employee_verification_time}\n-{str(len(invalid_employees))},{employee_verification_time-one_shift_time_end},{work_var_opt_time-employee_verification_time}"
+                file.write(invalid_employees_string)
+
+        if general_optimization_max_time > 0 and input_tupel[0]+input_tupel[1]-int(time.time()-start_time)>0:
+            general_optimization_max_time = general_optimization_max_time+input_tupel[0]+input_tupel[1]-int(time.time()-start_time)
 
         stop_after_first_solution=False
         while general_optimization_max_time > 0:
@@ -286,6 +292,8 @@ class solve_employee():
         #print(end_time - start_time)
         self.solution.solve_time = end_time - start_time
         #self.solution.to_json_file(self.instance.name + "methodex_till120")
+        if general_optimization_max_time == 0 and self.solution.solve_status in [cp_model.OPTIMAL]:
+            self.solution.solve_status = cp_model.FEASIBLE
         solution_copy = self.solution.model_copy()
         self.solution = Solution(self.instance)
 
