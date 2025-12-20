@@ -181,6 +181,7 @@ class solve_employee():
         return solution
     
     #TODO instead of using timers only, use instead callbacks
+    #TODO add more parameters (optimization, [percent1,percent2,percent3]where one say how much time should be spent on the first optimization (one shift type), 2 one the second optimization(set work days) and 3 for the over all optimization)
     def solve_instance_one_shift(self, soft_max_time_in_seconds:int=60):
         """
         The function get a simplified instance (containing only one shift type) of the main instance.
@@ -209,7 +210,7 @@ class solve_employee():
             count_ = count_ + 1
             print(count_)
             employee_uids.append(employee_uid)            
-            solution_temp = self.solve_employee_sub(employee_uid=employee_uid, soft_max_time_in_seconds=450)
+            solution_temp = self.solve_employee_with_work_var(employee_uid=employee_uid, soft_max_time_in_seconds=450)
             self.hint_solution.store_solution_vars(solution=solution_temp, employee_uid=employee_uid)
             self.hint_solution.store_solution_work_vars(solution=solution_temp, employee_uid=employee_uid)
             if solution_temp.solve_status not in [cp_model.INFEASIBLE]:
