@@ -292,9 +292,9 @@ class Solver:
                                     self.vars.get_var(day, type_uid, employee_uid), var_value
                                 )
                             self.vars.model.add(self.vars.get_var(day, type_uid, employee_uid) == var_value)
-                        elif employee_uid_ != employee_uid:
-                            employee_uid_ = employee_uid
-                            print(f"var not found in hard_constraint solution {employee_uid}")
+                        # elif employee_uid_ != employee_uid:
+                        #     employee_uid_ = employee_uid
+                        #     print(f"var not found in hard_constraint solution {employee_uid}")
             for employee_uid, _ in self.instance.employees.items():
                 for day in range(self.instance.number_of_days):
                     if (day, employee_uid) in hard_constraint_solution.work_vars.keys():
@@ -304,9 +304,9 @@ class Solver:
                                 self.vars.get_work_vars(day, employee_uid), var_value
                             )
                         self.vars.model.add(self.vars.get_work_vars(day, employee_uid) == var_value)
-                    elif employee_uid_ != employee_uid:
-                        employee_uid_ = employee_uid
-                        print(f"work var not found in hard_constraint solution {employee_uid}")
+                    # elif employee_uid_ != employee_uid:
+                    #     employee_uid_ = employee_uid
+                    #     print(f"work var not found in hard_constraint solution {employee_uid}")
 
         return self.solve_callback_with_solution(
             disabled_constraints=disabled_constraints,
@@ -340,9 +340,9 @@ class Solver:
                         )
                         self.vars.model.add(self.vars.get_var(day, type_uid, employee_uid) == var_value)
                         #print(f"{employee_uid}")
-                    elif employee_uid_ != employee_uid:
-                        employee_uid_ = employee_uid
-                        #print(f"{employee_uid}")
+                    # elif employee_uid_ != employee_uid:
+                    #     employee_uid_ = employee_uid
+                    #     print(f"{employee_uid}")
 
         for day in range(self.instance.number_of_days):
             for employee_uid in self.instance.employees:
@@ -352,9 +352,9 @@ class Solver:
                         self.vars.get_work_vars(day, employee_uid), var_value
                     )
                     self.vars.model.add(self.vars.get_work_vars(day, employee_uid) == var_value)
-                elif employee_uid_ != employee_uid:
-                    employee_uid_ = employee_uid
-                    #print(f"{employee_uid}")
+                # elif employee_uid_ != employee_uid:
+                #     employee_uid_ = employee_uid
+                #     print(f"{employee_uid}")
 
         return self.solve_callback_with_solution(
             disabled_constraints=disabled_constraints,

@@ -219,7 +219,7 @@ class solve_employee():
                 return solution
 
         end_time = time.time()
-        print(end_time - start_time)
+        #print(end_time - start_time)
         solution.solve_time = end_time - start_time
         #TODO remove
         #solution.to_json_file(instance.name)
@@ -234,7 +234,7 @@ class solve_employee():
         invalid_employees = []
         for employee_uid in self.instance.employees:
             count_ = count_ + 1
-            print(count_)
+            #print(count_)
             employee_uids.append(employee_uid)            
             solution_temp = self.solve_employee_with_work_var(employee_uid=employee_uid, soft_max_time_in_seconds=20)
             self.hint_solution.copy_solution(solution=solution_temp)
@@ -283,9 +283,9 @@ class solve_employee():
                 return solution_temp
 
         end_time = time.time()
-        print(end_time - start_time)
+        #print(end_time - start_time)
         self.solution.solve_time = end_time - start_time
-        self.solution.to_json_file(self.instance.name + "methodex_till120")
+        #self.solution.to_json_file(self.instance.name + "methodex_till120")
         solution_copy = self.solution.model_copy()
         self.solution = Solution(self.instance)
 
@@ -330,11 +330,11 @@ class solve_employee():
             )
             #TODO Unknown to check if an employee was bad (should find a better way in the feature)
             solution1.solve_status = cp_model.UNKNOWN
-            print(f"solution of {cp_model.UNKNOWN}")
+            #print(f"solution of {cp_model.UNKNOWN}")
             end_time=time.time()
-            print(end_time - start_time)
-            print(solution1.solve_status)
+            #print(end_time - start_time)
+            #print(solution1.solve_status)
             return solution1
         end_time=time.time()
-        print(end_time - start_time)
+        #print(end_time - start_time)
         return solution
