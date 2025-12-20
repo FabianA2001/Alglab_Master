@@ -17,7 +17,7 @@ class Solution(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __init__(self, instance: instace.Instance, **data):
-        super().__init__(instance=instance.model_copy(), **data)
+        super().__init__(instance=instance, **data)
 
     """Class to handle variable storage and management for shift scheduling."""
 

@@ -182,22 +182,47 @@ class solve_employee():
     
     #TODO instead of using timers only, use instead callbacks
     #TODO add more parameters (optimization, [percent1,percent2,percent3]where one say how much time should be spent on the first optimization (one shift type), 2 one the second optimization(set work days) and 3 for the over all optimization)
-    def solve_instance_one_shift(self, soft_max_time_in_seconds:int=60):
+    def solve_instance_one_shift(self, one_shift_max_time:int=0, fixed_work_var_opt_max_time:int=0, general_optimization_max_time:int=0, one_shift_callback: cp_model.CpSolverSolutionCallback | None=None, fixed_work_var_opt_callback: cp_model.CpSolverSolutionCallback | None=None):
         """
-        The function get a simplified instance (containing only one shift type) of the main instance.
+        The function get a simplified instance (containing only one shift type) of the main instance and solve it, which result in work_var solution. Because the result maybe invalid, the solution for the work_var is validated for each employee and fixed if needed. After ward an optimization with the work_var variable as hard constraints is preformed. At the very end general optimization is preformed.  
         
         :param self: Description
+        :param one_shift_max_time: The maximum time (seconds) that the one shift solver is allowed to run (if 0 the solver stop after first solution) (if no solution was found in the time the solver will rerun, until first solution)
+        :type one_shift_max_time: int 
+        :param fixed_work_var_opt_max_time: The maximum time (seconds) that the solver, with the work_var solution from one_shift solver as hard constraints, is allowed to run. (if 0 the solver stop after first solution) (if no solution was found in the time the solver will rerun, until first solution)
+        :type fixed_work_var_opt_max_time: int
+        :param general_optimization_max_time: The maximum time (seconds) that the optimization solver, with the solution from fixed_work_var solver as hint, is allowed to run. (if 0 no optimization of the fixed_work_var solution will be preformed) (if no solution was found in the time the solver will rerun, until first solution)
+        :type general_optimization_max_time: int
+        :param one_shift_callback: Callback to stop one shift solver
+        :type one_shift_callback: cp_model.CpSolverSolutionCallback | None
+        :param fixed_work_var_opt_callback: Callback to stop fixed_work_var solver
+        :type fixed_work_var_opt_callback: cp_model.CpSolverSolutionCallback | None
         """
-        instance = self.instance.instance_to_one_shift_type()
-        start_time = time.time()
-        solver = Solver(instance, shift_vars.Shift_vars(instance))
-        solution = solver.solve_callback_with_solution(log_search_progress=False, max_time_in_seconds=120, objective_function=solver.objective_value_new, stop_after_first_solution=True,disabled_constraints=[SolverConstraints.shift_assignment_single_day_validation, SolverConstraints.shift_rotation_constraint, SolverConstraints.limited_shifts_per_type_validation])
+        stop_after_first_solution=False
+        if one_shift_max_time <= 0:
+            one_shift_max_time=450
+            stop_after_first_solution=True
+        while True:
+            instance = self.instance.instance_to_one_shift_type()
+            start_time = time.time()
+            solver = Solver(instance, shift_vars.Shift_vars(instance))
+            solution = solver.solve_callback_with_solution(log_search_progress=False, max_time_in_seconds=one_shift_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution,disabled_constraints=[SolverConstraints.shift_assignment_single_day_validation, SolverConstraints.shift_rotation_constraint, SolverConstraints.limited_shifts_per_type_validation])
+            
+            if solution.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
+                break
+            elif solution.solve_status in [cp_model.UNKNOWN]:
+                one_shift_max_time=450
+                stop_after_first_solution=True
+            elif solution.solve_status in [cp_model.INFEASIBLE, cp_model.MODEL_INVALID]:
+                print("Something went wrong and the model is infeasible or invalid")
+                return solution
+
         end_time = time.time()
         print(end_time - start_time)
         solution.solve_time = end_time - start_time
         #TODO remove
-        solution.to_json_file(instance.name)
-        greedy_solution_name = instance.name
+        #solution.to_json_file(instance.name)
+        #greedy_solution_name = instance.name
         for employee_uid, employee_ in self.instance.employees.items():
             self.solution.store_solution_work_vars(solution=solution, employee_uid=employee_uid)
         
@@ -210,9 +235,8 @@ class solve_employee():
             count_ = count_ + 1
             print(count_)
             employee_uids.append(employee_uid)            
-            solution_temp = self.solve_employee_with_work_var(employee_uid=employee_uid, soft_max_time_in_seconds=450)
-            self.hint_solution.store_solution_vars(solution=solution_temp, employee_uid=employee_uid)
-            self.hint_solution.store_solution_work_vars(solution=solution_temp, employee_uid=employee_uid)
+            solution_temp = self.solve_employee_with_work_var(employee_uid=employee_uid, soft_max_time_in_seconds=20)
+            self.hint_solution.copy_solution(solution=solution_temp)
             if solution_temp.solve_status not in [cp_model.INFEASIBLE]:
                 if solution_temp.solve_status in [cp_model.UNKNOWN]:
                     invalid_employees.append(employee_uid)
@@ -220,28 +244,46 @@ class solve_employee():
                             self.solution.work_vars.pop((day, employee_uid))
             else:
                 print(f"Error solving for employee {employee_uid}: ")
-            
-            self.solution.copy_solution(solution=solution_temp)
-        end_time = time.time()
-        print(end_time - start_time)
-        self.solution.solve_time = end_time - start_time
-        self.solution.to_json_file(self.instance.name + "methodxx")
         
-        #
-        solver = Solver(self.instance, shift_vars.Shift_vars(self.instance))
-        self.solution = solver.warm_start_generalized(hard_constraint_solution=self.hint_solution, max_time_in_seconds=999, objective_function=solver.objective_value_new, stop_after_first_solution=True)
-        end_time = time.time()
-        print(end_time - start_time)
-        print(self.solution.solve_time)
-        self.solution.to_json_file(self.instance.name + "methodex_hard_constraints")
+        stop_after_first_solution=False
+        if fixed_work_var_opt_max_time <= 0:
+            fixed_work_var_opt_max_time=450
+            stop_after_first_solution=True
+        while True:
+            solver = Solver(self.instance, shift_vars.Shift_vars(self.instance))
+            solution_temp = solver.warm_start_generalized(hard_constraint_solution=self.solution ,hint_solution=self.hint_solution, max_time_in_seconds=fixed_work_var_opt_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution)
+            if solution_temp.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
+                self.solution=solution_temp
+                break
+            elif solution_temp.solve_status in [cp_model.UNKNOWN]:
+                fixed_work_var_opt_max_time=450
+                stop_after_first_solution=True
+            elif solution_temp.solve_status in [cp_model.INFEASIBLE, cp_model.MODEL_INVALID]:
+                print("Something went wrong and the model is infeasible or invalid")
+                return solution_temp
 
+        stop_after_first_solution=False
+        while general_optimization_max_time > 0:
+            solver = Solver(self.instance, shift_vars.Shift_vars(self.instance))
+            solution_temp = solver.warm_start_generalized(hint_solution=self.solution, max_time_in_seconds=general_optimization_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution)
+            if solution_temp.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
+                self.solution=solution_temp
+                break
+            elif solution_temp.solve_status in [cp_model.UNKNOWN]:
+                general_optimization_max_time=1200
+                stop_after_first_solution=True
+            elif solution_temp.solve_status in [cp_model.INFEASIBLE, cp_model.MODEL_INVALID]:
+                print("Something went wrong and the model is infeasible or invalid")
+                return solution_temp
 
-        solver = Solver(self.instance, shift_vars.Shift_vars(self.instance))
-        self.solution = solver.warm_start_generalized(hint_solution=self.solution, max_time_in_seconds=999, objective_function=solver.objective_value_new, stop_after_first_solution=True)
         end_time = time.time()
         print(end_time - start_time)
         self.solution.solve_time = end_time - start_time
         self.solution.to_json_file(self.instance.name + "methodex_till120")
+        solution_copy = self.solution.model_copy()
+        self.solution = Solution(self.instance)
+
+        return solution_copy
 
 
     def solve_employee_with_work_var(self, employee_uid, soft_max_time_in_seconds:int=60):
@@ -254,7 +296,7 @@ class solve_employee():
 
         # Create your ShiftVars and Solver as before
         solver = Solver(instance, Shift_vars(instance))
-        stop_after_first_solution = True
+        stop_after_first_solution = False
         if soft_max_time_in_seconds <= 8:
             soft_max_time_in_seconds = 450
             stop_after_first_solution = True
