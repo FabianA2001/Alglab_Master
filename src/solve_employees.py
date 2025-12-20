@@ -198,6 +198,7 @@ class solve_employee():
         :param fixed_work_var_opt_callback: Callback to stop fixed_work_var solver
         :type fixed_work_var_opt_callback: cp_model.CpSolverSolutionCallback | None
         """
+        input_tupel=(one_shift_max_time+0, fixed_work_var_opt_max_time+0, general_optimization_max_time+0)
         stop_after_first_solution=False
         if one_shift_max_time <= 0:
             one_shift_max_time=450
@@ -244,7 +245,12 @@ class solve_employee():
                             self.solution.work_vars.pop((day, employee_uid))
             else:
                 print(f"Error solving for employee {employee_uid}: ")
-        
+                
+        if len(invalid_employees)>0:
+            with open('invalid_employees_count.txt', 'a') as file:
+                invalid_employees_string=f"\n{self.instance.name}_1S{input_tupel[0]}_wv{input_tupel[1]}_o{input_tupel[2]}: "+str(len(invalid_employees))
+                file.write(invalid_employees_string)
+
         stop_after_first_solution=False
         if fixed_work_var_opt_max_time <= 0:
             fixed_work_var_opt_max_time=450
