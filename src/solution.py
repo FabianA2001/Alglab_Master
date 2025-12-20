@@ -17,7 +17,7 @@ class Solution(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __init__(self, instance: instace.Instance, **data):
-        super().__init__(instance=instance, **data)
+        super().__init__(instance=instance.model_copy(), **data)
 
     """Class to handle variable storage and management for shift scheduling."""
 
@@ -564,14 +564,13 @@ class Solution(BaseModel):
         else:
             print(f"somthing bad happend: shift type {shift_type_uid} is not in the instance")
             return
-
         for day_ in range(day_start, day_end):
             for employee_uid, employee_ in employees.items():
                 for shift_type_uid, shift_type in shifts_types.items():
                     if (day_, shift_type_uid, employee_uid) in solution.vars.keys():
                         self.set_var(day_, shift_type_uid, employee_uid, solution.vars[(day_, shift_type_uid, employee_uid)])
-                    else:
-                        print(f"key var {(day_, shift_type_uid, employee_uid)} is not a key in the to be copied solution")
+                    # else:
+                    #     print(f"key var {(day_, shift_type_uid, employee_uid)} is not a key in the to be copied solution")
 
 
     def store_solution_work_vars(self, solution: "Solution", day: int | None = None, employee_uid: employee.EmployeeUid | None = None):
@@ -589,13 +588,12 @@ class Solution(BaseModel):
         else:
             print(f"somthing bad happend: {employee_uid} is not in the instance")
             return
-
-        for day_ in range(day_start, day_end):
-            for employee_uid, employee_ in employees.items():
+        for employee_uid, employee_ in employees.items():
+            for day_ in range(day_start, day_end):
                 if (day_, employee_uid) in solution.work_vars.keys():
                     self.set_work_vars(day_, employee_uid, solution.work_vars[(day_, employee_uid)])
-                else:
-                    print(f"key work var {(day_, employee_uid)} is not a key in the to be copied solution")
+                # else:
+                #     print(f"key work var {(day_, employee_uid)} is not a key in the to be copied solution")
     
 
 

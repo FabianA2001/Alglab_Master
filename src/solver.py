@@ -259,8 +259,8 @@ class Solver:
         employee_uid_ = None
         if hint_solution is not None:
             """Warm starts the solver with a given solution."""
-            for day in range(self.instance.number_of_days):
-                for employee_uid in self.instance.employees.keys():
+            for employee_uid in self.instance.employees.keys():
+                for day in range(self.instance.number_of_days):
                     for type_uid, _ in self.instance.shifts[day].items():
                         if (day, type_uid, employee_uid) in hint_solution.vars.keys():
                             var_value = hint_solution.vars[(day, type_uid, employee_uid)] == 1
@@ -269,41 +269,44 @@ class Solver:
                             )
                         # elif employee_uid_ != employee_uid:
                         #     employee_uid_ = employee_uid
-                        #     print(f"var not found in hard_constraint solution {employee_uid}")
+                        #     print(f"var not found in hint solution solution {employee_uid}")
+                    if (day, employee_uid) in hint_solution.work_vars.keys():
+                        var_value = hint_solution.work_vars[(day, employee_uid)] == 1
+                        self.vars.model.AddHint(
+                            self.vars.get_work_vars(day, employee_uid), var_value
+                        )
+                    # elif employee_uid_ != employee_uid:
+                    #     employee_uid_ = employee_uid
+                    #     print(f"work var not found in hint solution solution {employee_uid}")
+
+
 
         if hard_constraint_solution is not None:
             for employee_uid in self.instance.employees.keys():
                 for day in range(self.instance.number_of_days):
-                
                     for type_uid, _ in self.instance.shifts[day].items():
                         if (day, type_uid, employee_uid) in hard_constraint_solution.vars.keys():
                             var_value = hard_constraint_solution.vars[(day, type_uid, employee_uid)] == 1
-                            if hint_solution is not None and (day, type_uid, employee_uid) not in hint_solution.vars.keys():
+                            if hint_solution is None or (day, type_uid, employee_uid) not in hint_solution.vars.keys():
                                 self.vars.model.AddHint(
                                     self.vars.get_var(day, type_uid, employee_uid), var_value
                                 )
                             self.vars.model.add(self.vars.get_var(day, type_uid, employee_uid) == var_value)
-                            # if employee_uid_ != employee_uid:
-                            #     employee_uid_ = employee_uid
-                            #     print(f"Everything worked var? {employee_uid}")
-                        # elif employee_uid_ != employee_uid:
-                        #     employee_uid_ = employee_uid
-                        #     print(f"var not found in hard_constraint solution {employee_uid}")
+                        elif employee_uid_ != employee_uid:
+                            employee_uid_ = employee_uid
+                            print(f"var not found in hard_constraint solution {employee_uid}")
             for employee_uid, _ in self.instance.employees.items():
                 for day in range(self.instance.number_of_days):
-                
                     if (day, employee_uid) in hard_constraint_solution.work_vars.keys():
                         var_value = hard_constraint_solution.work_vars[(day, employee_uid)] == 1
-                        self.vars.model.AddHint(
-                            self.vars.get_work_vars(day, employee_uid), var_value
-                        )
+                        if hint_solution is None or (day, employee_uid) not in hint_solution.work_vars.keys():
+                            self.vars.model.AddHint(
+                                self.vars.get_work_vars(day, employee_uid), var_value
+                            )
                         self.vars.model.add(self.vars.get_work_vars(day, employee_uid) == var_value)
-                    #     if employee_uid_ != employee_uid:
-                    #         employee_uid_ = employee_uid
-                    #         print(f"Everything worked work? {employee_uid}")
-                    # elif employee_uid_ != employee_uid:
-                    #     employee_uid_ = employee_uid
-                    #     print(f"work var not found in hard_constraint solution {employee_uid}")
+                    elif employee_uid_ != employee_uid:
+                        employee_uid_ = employee_uid
+                        print(f"work var not found in hard_constraint solution {employee_uid}")
 
         return self.solve_callback_with_solution(
             disabled_constraints=disabled_constraints,
