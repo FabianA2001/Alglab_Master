@@ -3,7 +3,7 @@ from collections import defaultdict
 from pydantic import BaseModel, Field, model_validator
 
 from . import employee, shift, shiftType
-
+from ..help_functions import hash_string
 
 # TODO testen das alle uId sind unique
 class Instance(BaseModel):
@@ -123,3 +123,90 @@ class Instance(BaseModel):
             if weekend + 1 in self.weekend_days:
                 raise ValueError("Weekend days cannot be consecutive.")
         return self
+    
+    # 4, 5, 6, 7, 8, 9, 10
+    #TODO I think i did not consider ban and other stuff
+    def instance_to_one_shift_type(self):
+        # number_of_days: int,
+        instance_copy = self.model_copy(deep=True)
+        number_of_days = instance_copy.number_of_days + 0
+
+        # shift_typs: list[shiftType.ShiftType],
+        counter = 0
+        length = 0
+        shift_name = "all"
+        for shift_type_uid, shift_type in instance_copy.shift_types.items():
+            counter = counter + 1
+            length = length + shift_type.length
+        shift_types_new = [shiftType.ShiftType(
+                    uid=hash_string(shift_name),
+                    length=int(length/counter),
+                    name=shift_name,
+                )]
+        
+        employees: list[employee.Employee] = []
+        for employee_uid, employee_ in instance_copy.employees.items():
+            employees.append(employee_.model_copy())
+
+        for employee_ in employees:
+            employee_.max_numbers_of_shifts = {hash_string("all"): 999999}
+        instance_name = instance_copy.name+""
+
+        shift_on_requests: dict[tuple[int, int], dict[int, int]] = defaultdict(dict)
+        shift_off_requests: dict[tuple[int, int], dict[int, int]] = defaultdict(dict)
+        for day in range(instance_copy.number_of_days):
+            for shift_type_uid, shift_type in instance_copy.shift_types.items():
+                for employee_uid, employee_ in instance_copy.employees.items():
+                    if employee_uid in instance_copy.shifts[day][shift_type_uid].penalty_assigned_day_employee.keys():
+                        # TODO this might be problimatic because one day might have bad and good shifts for an employee
+                        shift_on_requests[(day, hash_string("all"))][
+                            employee_uid
+                        ] = instance_copy.shifts[day][shift_type_uid].penalty_assigned_day_employee[employee_uid]
+                    if employee_uid in instance_copy.shifts[day][shift_type_uid].penalty_not_assigned_day_employee.keys():
+                        shift_off_requests[(day, hash_string("all"))][
+                            employee_uid
+                        ] = instance_copy.shifts[day][shift_type_uid].penalty_not_assigned_day_employee[employee_uid]
+
+        cover_requirements: dict[tuple[int, int], tuple[int, int, int]] = {}
+
+        for day in range(instance_copy.number_of_days):
+            for shift_type_uid, shift_type in instance_copy.shift_types.items():
+                if (day, hash_string("all")) in cover_requirements:
+                    cover_requirements[(day, hash_string("all"))] = (
+                        instance_copy.shifts[day][shift_type_uid].preffert_number_employees+cover_requirements[(day, hash_string("all"))][0],
+                        instance_copy.shifts[day][shift_type_uid].weight_below_preferred+cover_requirements[(day, hash_string("all"))][1],
+                        instance_copy.shifts[day][shift_type_uid].weight_above_preferred+cover_requirements[(day, hash_string("all"))][2]
+                    )
+                else:
+                    cover_requirements[(day, hash_string("all"))] = (
+                        instance_copy.shifts[day][shift_type_uid].preffert_number_employees,
+                        instance_copy.shifts[day][shift_type_uid].weight_below_preferred,
+                        instance_copy.shifts[day][shift_type_uid].weight_above_preferred
+                    )
+        #TODO another better way is to have multiple shifts, each shift correspond to its own employee group.
+        # shift_balance_dict: dict[shiftType.TypeUid, int] = {}
+        # for shift_uid, shift_type in self.shift_types.items():
+        #     shift_balance_dict[shift_uid]=0
+
+        # for employee_ in self.employees.values():
+        #     for shift_uid, number_of_shifts in employee_.max_numbers_of_shifts.items():
+        #         if number_of_shifts > 0:
+        #             shift_balance_dict[shift_uid]=shift_balance_dict[shift_uid]+1
+
+        # shift_length=0
+        # for shift_uid, shift_type in self.shift_types.items():
+        #     shift_length=shift_length+shift_balance_dict[shift_uid]*shift_type.length
+        # shift_length=shift_length/sum(shift_balance_dict.values())
+
+        # shift_types_new[0].length=int(shift_length)
+        # print(int(shift_length))
+
+        return Instance.create(
+            name=instance_name,
+            number_of_days=number_of_days,
+            shift_typs=shift_types_new,
+            emplyees=employees,
+            shift_on_requests=shift_on_requests,
+            shift_off_requests=shift_off_requests,
+            cover_requirements=cover_requirements,
+        )

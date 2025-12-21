@@ -61,3 +61,17 @@ https://d-krupke.github.io/cpsat-primer/test_driven_optimization.html#full-solve
 
 
 lns: https://d-krupke.github.io/cpsat-primer/09_lns.html
+
+
+# 12.12:
+* Greedy working for big instances (finding first solutions fast (less then 15 min)) (Ab instance 19)
+* Fest Anzahl von Änderungen von einer Solution. (Oder mehrere lösung speichern, die verschidene Änderungensanzahl haben)
+* Gültige lösung mit Greedy
+## GUI:
+* Zeigen von mehrere Lsungen
+* (noch mehr ...)
+
+
+# In Hinter kopf(ziehmlich weit):
+* (Änderungen solver, die hard cosntraint für die Änderungensanzahl hat (dann lässt man, mehrere solver mit verschiedene Anzahl laufen))
+* LNS über Instancen (Mehre Windows erstellen => lösen => mergen)
