@@ -257,7 +257,7 @@ class solve_employee():
                 print(f"Error solving for employee {employee_uid}: ")
 
         employee_verification_time=time.time()
-        print("verification time: " + employee_verification_time-one_shift_time_end) # type: ignore
+        print("verification time: " , employee_verification_time-one_shift_time_end) # type: ignore
         stop_after_first_solution=False
         if fixed_work_var_opt_max_time <= 0:
             fixed_work_var_opt_max_time=1200
@@ -276,6 +276,7 @@ class solve_employee():
                 return solution_temp
             
         work_var_opt_time = time.time()
+        print("work_var time", work_var_opt_time - employee_verification_time)
         if len(invalid_employees)>0 or True:
             with open('invalid_employees_count.txt', 'a') as file:
                 # constraints_info = ', '.join(
@@ -304,7 +305,7 @@ class solve_employee():
                 return solution_temp
 
         end_time = time.time()
-        #print(end_time - start_time)
+        print("optimization time", end_time - work_var_opt_time)
         self.solution.solve_time = end_time - start_time
         #self.solution.to_json_file(self.instance.name + "methodex_till120")
         if general_optimization_max_time == 0 and self.solution.solve_status in [cp_model.OPTIMAL]:
