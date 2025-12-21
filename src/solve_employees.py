@@ -229,7 +229,7 @@ class solve_employee():
                 return solution
         one_shift_time_end = time.time()
         end_time = time.time()
-        #print(end_time - start_time)
+        print("one shift time: ", (end_time - start_time))
         solution.solve_time = end_time - start_time
         #TODO remove
         #solution.to_json_file(instance.name)
@@ -257,7 +257,7 @@ class solve_employee():
                 print(f"Error solving for employee {employee_uid}: ")
 
         employee_verification_time=time.time()
-
+        print("verification time: " + employee_verification_time-one_shift_time_end) # type: ignore
         stop_after_first_solution=False
         if fixed_work_var_opt_max_time <= 0:
             fixed_work_var_opt_max_time=1200
