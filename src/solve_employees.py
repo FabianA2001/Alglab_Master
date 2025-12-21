@@ -27,6 +27,16 @@ class solve_employee():
         self.solve_time = 0
         self.solution = Solution(instance=instance)
         self.hint_solution = Solution(instance=instance)
+        # self.employee_broken_constraints={"Cover Requirements": 0,
+        #                                 "Days Off": 0,
+        #                                 "Limited Shifts per Type": 0,
+        #                                 "Max Consecutive Shifts": 0,
+        #                                 "Max Weekend Days": 0,
+        #                                 "Min Consecutive Days Off": 0,
+        #                                 "Min Consecutive Shifts": 0,
+        #                                 "Min/Max Worktime": 0,
+        #                                 "Single Day Assignment": 0,
+        #                                 "Shift Rotation": 0}
 
 
     def solve_all_employees(self, incrementally: bool = False, soft_max_time_in_seconds: int = 15*60, optimize_till_max_time: bool = False) -> Solution:
@@ -250,7 +260,7 @@ class solve_employee():
 
         stop_after_first_solution=False
         if fixed_work_var_opt_max_time <= 0:
-            fixed_work_var_opt_max_time=450
+            fixed_work_var_opt_max_time=1200
             stop_after_first_solution=True
         while True:
             solver = Solver(self.instance, shift_vars.Shift_vars(self.instance))
@@ -259,7 +269,7 @@ class solve_employee():
                 self.solution=solution_temp
                 break
             elif solution_temp.solve_status in [cp_model.UNKNOWN]:
-                fixed_work_var_opt_max_time=450
+                fixed_work_var_opt_max_time=1200
                 stop_after_first_solution=True
             elif solution_temp.solve_status in [cp_model.INFEASIBLE, cp_model.MODEL_INVALID]:
                 print("Something went wrong and the model is infeasible or invalid")
@@ -268,6 +278,11 @@ class solve_employee():
         work_var_opt_time = time.time()
         if len(invalid_employees)>0 or True:
             with open('invalid_employees_count.txt', 'a') as file:
+                # constraints_info = ', '.join(
+                #     f"{name}: {value}" for name, value in self.employee_broken_constraints.items()
+                # )
+                # # Prepare the values for constraints
+                # employee_values = ','.join(str(value) for value in self.employee_broken_constraints.values())
                 invalid_employees_string=f"\n{self.instance.name}_1S{input_tupel[0]}_wv{input_tupel[1]}_o{input_tupel[2]}: "+str(len(invalid_employees)) + f" - time for employee verification is {employee_verification_time-one_shift_time_end} - time for opt work_var after employee verification is {work_var_opt_time-employee_verification_time}\n-{str(len(invalid_employees))},{employee_verification_time-one_shift_time_end},{work_var_opt_time-employee_verification_time}"
                 file.write(invalid_employees_string)
 
@@ -328,6 +343,12 @@ class solve_employee():
             solve_normally = True
         
         if solve_normally:
+            # # Unpack the tuple from checkt_constraints
+            # success, constraints_dict = solution.checkt_constraints
+            # # Iterate over the items in the constraints_dict
+            # for name, (result, messages) in constraints_dict.items():
+            #     if not result:
+            #         self.employee_broken_constraints[name]=self.employee_broken_constraints[name]+1
             #TODO you should create new solvers for the others files and functions
             solver_x = Solver(instance, Shift_vars(instance))
             solution1 = solver_x.solve_callback_with_solution(
