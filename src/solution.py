@@ -534,6 +534,7 @@ class Solution(BaseModel):
         else:  # Even number of elements
             return (percentages[mid - 1] + percentages[mid]) / 2
 
+    #TODO instead of updating below_prefferd_vars and above_prefferd_vars calculating using the self and the extra solution
     def copy_solution(self, solution: "Solution"):
         self.vars.update(solution.vars)
         self.weekend_vars.update(solution.weekend_vars)

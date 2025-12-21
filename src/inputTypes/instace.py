@@ -183,6 +183,24 @@ class Instance(BaseModel):
                         instance_copy.shifts[day][shift_type_uid].weight_below_preferred,
                         instance_copy.shifts[day][shift_type_uid].weight_above_preferred
                     )
+        #TODO another better way is to have multiple shifts, each shift correspond to its own employee group.
+        # shift_balance_dict: dict[shiftType.TypeUid, int] = {}
+        # for shift_uid, shift_type in self.shift_types.items():
+        #     shift_balance_dict[shift_uid]=0
+
+        # for employee_ in self.employees.values():
+        #     for shift_uid, number_of_shifts in employee_.max_numbers_of_shifts.items():
+        #         if number_of_shifts > 0:
+        #             shift_balance_dict[shift_uid]=shift_balance_dict[shift_uid]+1
+
+        # shift_length=0
+        # for shift_uid, shift_type in self.shift_types.items():
+        #     shift_length=shift_length+shift_balance_dict[shift_uid]*shift_type.length
+        # shift_length=shift_length/sum(shift_balance_dict.values())
+
+        # shift_types_new[0].length=int(shift_length)
+        # print(int(shift_length))
+
         return Instance.create(
             name=instance_name,
             number_of_days=number_of_days,

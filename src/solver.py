@@ -279,7 +279,10 @@ class Solver:
                     #     employee_uid_ = employee_uid
                     #     print(f"work var not found in hint solution solution {employee_uid}")
 
-
+                # for weekend in range(round(self.instance.number_of_days / 7)):
+                #     if (weekend, employee_uid) in hint_solution.weekend_vars.keys():
+                #         weekend_value = hint_solution.weekend_vars.get((weekend, employee_uid)) == 1  # Assuming 0 means "not on weekend"
+                #         self.vars.model.AddHint(self.vars.get_weekend_var(weekend, employee_uid), weekend_value)
 
         if hard_constraint_solution is not None:
             for employee_uid in self.instance.employees.keys():
