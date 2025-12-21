@@ -284,7 +284,7 @@ class solve_employee():
                 # )
                 # # Prepare the values for constraints
                 # employee_values = ','.join(str(value) for value in self.employee_broken_constraints.values())
-                invalid_employees_string=f"\n{self.instance.name}_1S{input_tupel[0]}_wv{input_tupel[1]}_o{input_tupel[2]}: "+str(len(invalid_employees)) + f" - time for employee verification is {employee_verification_time-one_shift_time_end} - time for opt work_var after employee verification is {work_var_opt_time-employee_verification_time}\n-{str(len(invalid_employees))},{employee_verification_time-one_shift_time_end},{work_var_opt_time-employee_verification_time}"
+                invalid_employees_string=f"\n{self.instance.name}_1S{input_tupel[0]}_wv{input_tupel[1]}_o{input_tupel[2]}: "+str(len(invalid_employees))+"/" +str(len(self.instance.employees.keys())) + f" - time for employee verification is {employee_verification_time-one_shift_time_end} - time for opt work_var after employee verification is {work_var_opt_time-employee_verification_time}\n-{str(len(invalid_employees))},{employee_verification_time-one_shift_time_end},{work_var_opt_time-employee_verification_time}"
                 file.write(invalid_employees_string)
 
         if general_optimization_max_time > 0 and input_tupel[0]+input_tupel[1]-int(time.time()-start_time)>0:
