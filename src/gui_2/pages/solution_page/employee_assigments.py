@@ -26,21 +26,34 @@ def employee_assignments(solution: Solution) -> None:
         columns = _build_table_columns(days)
         rows, shift_mapping = _build_table_rows(solution, days, shift_types)
 
-        table = ui.table(columns=columns, rows=rows, row_key="row_key").classes(
-            "w-full"
+        table = (
+            ui.table(columns=columns, rows=rows, row_key="row_key")
+            .classes("w-full")
+            .props("flat hide-selected-banner")
         )
 
         # Add custom cell rendering with clickable elements
         table.add_slot(
             "body-cell",
             """
-            <q-td :props="props">
-                <div v-if="props.col.name === 'shift_type'">
+            <q-td :props="props" 
+                  :class="props.col.name !== 'shift_type' ? 'cursor-pointer hover:bg-blue-50' : ''">
+                <div v-if="props.col.name === 'shift_type'" class="text-weight-medium">
                     {{ props.value }}
                 </div>
-                <q-btn v-else flat dense :label="props.value" 
-                       @click="() => $parent.$emit('cell_click', props.row.row_key, props.col.name)"
-                       class="full-width" />
+                <div v-else-if="props.value === '-'" class="text-grey-5 text-center">
+                    —
+                </div>
+                <div v-else class="q-pa-xs" 
+                     @click="() => $parent.$emit('cell_click', props.row.row_key, props.col.name)">
+                    <q-badge v-for="(name, index) in props.value.split(', ')" 
+                             :key="index"
+                             color="primary" 
+                             text-color="white"
+                             class="q-ma-xs">
+                        {{ name }}
+                    </q-badge>
+                </div>
             </q-td>
         """,
         )
