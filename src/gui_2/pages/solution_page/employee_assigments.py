@@ -6,6 +6,12 @@ from nicegui import ui
 
 from ....solution import Solution
 
+# Color constants for cell background based on employee count
+COLOR_CORRECT_COUNT = "background-color: #d1fae5;"  # Green
+COLOR_TOO_FEW = "background-color: #fee2e2;"  # Red
+COLOR_TOO_MANY = "background-color: #fed7aa;"  # Orange
+COLOR_SEARCH_HIGHLIGHT = "#ff9800"  # Orange for search highlight
+
 
 def employee_assignments(solution: Solution) -> None:
     """
@@ -41,19 +47,19 @@ def employee_assignments(solution: Solution) -> None:
             .props("flat hide-selected-banner")
         )
 
-        # Add custom cell rendering with clickable elements and search highlighting
+        # Add custom cell rendering with clickable elements and color coding
         table.add_slot(
             "body-cell",
             """
-            <q-td :props="props" 
-                  :class="props.col.name !== 'shift_type' ? 'cursor-pointer hover:bg-blue-50' : ''">
+            <q-td :props="props"
+                  :style="props.row['_color_' + props.col.name] || ''">
                 <div v-if="props.col.name === 'shift_type'" class="text-weight-medium">
                     {{ props.value }}
                 </div>
                 <div v-else-if="props.value === '-'" class="text-grey-5 text-center">
                     —
                 </div>
-                <div v-else class="q-pa-xs" 
+                <div v-else class="q-pa-xs cursor-pointer" 
                      @click="() => $parent.$emit('cell_click', props.row.row_key, props.col.name)">
                     <q-badge v-for="(name, index) in props.value.split(', ')" 
                              :key="index"
@@ -67,33 +73,43 @@ def employee_assignments(solution: Solution) -> None:
         """,
         )
 
-        def update_highlights(e):
-            search_value["term"] = (
-                (e.args or "").lower() if isinstance(e.args, str) else ""
-            )
-            # Update badge colors via JavaScript - exact match only
+        def update_search_highlights(event) -> None:
+            """Update badge colors based on search term."""
+            search_term = event.args.lower() if isinstance(event.args, str) else ""
+            search_value["term"] = search_term
+
+            # Update badge colors via JavaScript for exact match highlighting
             ui.run_javascript(f"""
-                const searchTerm = '{search_value["term"]}';
+                const searchTerm = '{search_term}';
                 document.querySelectorAll('.q-badge').forEach(badge => {{
                     const name = badge.textContent.trim().toLowerCase();
                     if (searchTerm && name === searchTerm) {{
-                        badge.classList.remove('bg-primary');
-                        badge.classList.add('bg-orange');
-                        badge.style.backgroundColor = '#ff9800';
+                        badge.style.backgroundColor = '{COLOR_SEARCH_HIGHLIGHT}';
                     }} else {{
-                        badge.classList.remove('bg-orange');
-                        badge.classList.add('bg-primary');
                         badge.style.backgroundColor = '';
                     }}
                 }});
             """)
 
-        search_input.on("update:model-value", update_highlights)
+        search_input.on("update:model-value", update_search_highlights)
 
         table.on(
             "cell_click",
             lambda e: _handle_cell_click(e.args[0], e.args[1], solution, shift_mapping),
         )
+
+        # Color legend
+        with ui.row().classes("mt-4 gap-4"):
+            ui.label("Legende:").classes("font-semibold")
+            with ui.row().classes("gap-2 items-center"):
+                ui.element("div").classes("w-6 h-6 rounded").style(COLOR_CORRECT_COUNT)
+                ui.label("Korrekte Anzahl")
+            with ui.row().classes("gap-2 items-center"):
+                ui.element("div").classes("w-6 h-6 rounded").style(COLOR_TOO_FEW)
+                ui.label("Zu wenige Mitarbeiter")
+            with ui.row().classes("gap-2 items-center"):
+                ui.element("div").classes("w-6 h-6 rounded").style(COLOR_TOO_MANY)
+                ui.label("Zu viele Mitarbeiter")
 
 
 def _extract_days(solution: Solution) -> List[int]:
@@ -142,16 +158,22 @@ def _build_table_rows(
     solution: Solution, days: List[int], shift_types: List[Any]
 ) -> tuple[List[Dict[str, Any]], Dict[str, Any]]:
     """
-    Build table row data and shift mapping.
+    Build table row data and shift mapping with color coding.
+
+    Rows include cell background colors based on employee count vs. preferred count:
+    - Green: Correct number of employees
+    - Red: Too few employees
+    - Orange: Too many employees
 
     Args:
         solution: The Solution object containing shift assignments.
-        days: List of days.
-        shift_types: List of shift types.
+        days: List of days to include in the table.
+        shift_types: List of shift type IDs.
 
     Returns:
-        Tuple of (rows, shift_mapping) where rows is the table data and
-        shift_mapping maps row keys to shift type IDs.
+        Tuple of (rows, shift_mapping) where:
+        - rows: List of row dictionaries with data and color information
+        - shift_mapping: Maps row keys to shift type IDs
     """
     shift_mapping = {}
     rows = []
@@ -168,6 +190,20 @@ def _build_table_rows(
         for day in days:
             assigned = _get_assigned_employees(solution, day, shift_type)
             row[f"day_{day}"] = ", ".join(assigned) if assigned else "-"
+
+            # Add cell background color based on employee count vs. preferred
+            shift_obj = solution.instance.shifts.get(day, {}).get(shift_type)
+            if shift_obj:
+                preferred_count = shift_obj.preffert_number_employees
+                if preferred_count > 0:
+                    actual_count = len(assigned)
+
+                    if actual_count == preferred_count:
+                        row[f"_color_day_{day}"] = COLOR_CORRECT_COUNT
+                    elif actual_count < preferred_count:
+                        row[f"_color_day_{day}"] = COLOR_TOO_FEW
+                    else:
+                        row[f"_color_day_{day}"] = COLOR_TOO_MANY
 
         rows.append(row)
 
