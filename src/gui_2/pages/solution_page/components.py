@@ -3,7 +3,7 @@
 from nicegui import ui
 
 from ....solution import Solution
-from .employee_assigments import emplyee_Assigments
+from .employee_assigments import employee_assignments
 
 
 def render_basic_info(solution: Solution) -> None:
@@ -106,4 +106,4 @@ def render_employee_assignments(solution: Solution) -> None:
     Args:
         solution: Die Solution mit den Zuordnungen
     """
-    emplyee_Assigments(solution)
+    employee_assignments(solution)
