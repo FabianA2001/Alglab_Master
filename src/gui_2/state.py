@@ -4,7 +4,7 @@ Dieses Modul verwaltet den globalen Zustand der Anwendung,
 einschließlich aktueller Instance, Solution und Solver-Konfiguration.
 """
 
-from enum import Enum, auto
+from enum import Enum
 from typing import Optional
 
 from nicegui import app
@@ -13,10 +13,10 @@ from ..inputTypes.instace import Instance
 from ..solution import Solution
 
 
-class StateKey(str, Enum):
-    """Enum für State-Schlüssel."""
+class StateKey(Enum):
+    """Enum für State-Schlüssel mit Default-Werten."""
 
-    APP_STATE = auto()
+    APP_STATE = None
     CURRENT_INSTANCE = None
     CURRENT_SOLUTION = None
     SOLVER_RUNNING = False

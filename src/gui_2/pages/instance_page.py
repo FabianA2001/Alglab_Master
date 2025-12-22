@@ -2,6 +2,7 @@ from pathlib import Path
 
 from nicegui import ui
 
+from ...inputTypes.instace import Instance
 from ...parseData import parseTXT
 from .. import state
 
@@ -31,7 +32,7 @@ def render_instance_info() -> None:
     with ui.card().classes("w-full mb-4"):
         ui.label("Aktuelle Instance").classes("text-xl font-bold mb-2")
 
-        instance = state.get_instance()
+        instance: Instance | None = state.get_instance()
         if instance is None:
             ui.label("Keine Instance geladen").classes("text-gray-500 italic")
             return
