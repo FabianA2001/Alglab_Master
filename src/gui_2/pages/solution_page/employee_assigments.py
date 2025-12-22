@@ -251,11 +251,15 @@ def _handle_cell_click(
 
     assigned_employees = _get_assigned_employees(solution, day, shift_type_id)
 
-    _display_details_dialog(day, shift_name, assigned_employees)
+    # Get preferred employee count
+    shift_obj = solution.instance.shifts.get(day, {}).get(shift_type_id)
+    preferred_count = shift_obj.preffert_number_employees if shift_obj else 0
+
+    _display_details_dialog(day, shift_name, assigned_employees, preferred_count)
 
 
 def _display_details_dialog(
-    day: int, shift_name: str, assigned_employees: List[str]
+    day: int, shift_name: str, assigned_employees: List[str], preferred_count: int = 0
 ) -> None:
     """
     Display a dialog with shift assignment details.
@@ -264,11 +268,25 @@ def _display_details_dialog(
         day: The day number.
         shift_name: The name of the shift.
         assigned_employees: List of assigned employee names.
+        preferred_count: Preferred number of employees for this shift.
     """
+    actual_count = len(assigned_employees)
+
     with ui.dialog() as dialog, ui.card():
         ui.label(f"Details: Tag {day}, Schicht {shift_name}").classes(
             "text-lg font-bold"
         )
+
+        # Show employee count ratio if preferred count is set
+        if preferred_count > 0:
+            ratio_text = f"Belegung: {actual_count}/{preferred_count}"
+            if actual_count == preferred_count:
+                ui.label(ratio_text).classes("text-green-600 font-semibold")
+            elif actual_count < preferred_count:
+                ui.label(ratio_text).classes("text-red-600 font-semibold")
+            else:
+                ui.label(ratio_text).classes("text-orange-600 font-semibold")
+
         ui.separator()
 
         if assigned_employees:
