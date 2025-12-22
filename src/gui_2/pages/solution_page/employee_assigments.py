@@ -8,20 +8,43 @@ def emplyee_Assigments(solution: Solution):
         ui.label("Mitarbeiter-Zuordnung").classes("text-xl font-bold mb-2")
 
         days = sorted({day for (day, _, _) in solution.vars.keys()})
+        shift_types = sorted({shift for (_, shift, _) in solution.vars.keys()})
 
-        with ui.expansion("Zuordnung pro Tag", icon="calendar_today").classes("w-full"):
+        # Erstelle Spalten: Schichttyp + alle Tage
+        columns = [
+            {
+                "name": "shift_type",
+                "label": "Schichttyp",
+                "field": "shift_type",
+                "align": "left",
+            }
+        ]
+        for day in days:
+            columns.append(
+                {
+                    "name": f"day_{day}",
+                    "label": f"Tag {day}",
+                    "field": f"day_{day}",
+                    "align": "left",
+                }
+            )
+
+        # Erstelle Zeilen: eine Zeile pro Schichttyp
+        rows = []
+        for shift_type in shift_types:
+            row = {
+                "shift_type": f"Schicht {solution.instance.shift_types[shift_type].name}"
+            }
+
             for day in days:
                 assigned = [
                     solution.instance.employees[emp_uid].name
-                    for (d, _, emp_uid), value in solution.vars.items()
-                    if d == day and value == 1
+                    for emp_uid in solution.instance.employees.keys()
+                    if solution.is_employee_assigned(day, shift_type, emp_uid)
                 ]
 
-                with ui.expansion(
-                    f"Tag {day} ({len(assigned)} Mitarbeiter)", icon="schedule"
-                ):
-                    if assigned:
-                        for emp_name in assigned:
-                            ui.label(f"• {emp_name}")
-                    else:
-                        ui.label("Niemand eingeteilt").classes("text-gray-500 italic")
+                row[f"day_{day}"] = ", ".join(assigned) if assigned else "-"
+
+            rows.append(row)
+
+        ui.table(columns=columns, rows=rows, row_key="shift_type").classes("w-full")

@@ -59,6 +59,7 @@ def instance_page():
 
             # Setze Instance im globalen State
             state.set_instance(loaded_instance)
+            state.set_solution(None)  # Lösung zurücksetzen
 
             update_instance_display()
             ui.notify(

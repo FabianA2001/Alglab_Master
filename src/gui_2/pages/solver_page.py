@@ -32,7 +32,7 @@ def solver_page():
                     f"✓ Solution vorhanden (Objective: {current_solution.objective_value:.2f})"
                 ).classes("text-blue-600")
             else:
-                ui.label("○ Keine Solution vorhanden").classes("text-gray-500")
+                ui.label("✗ Keine Solution vorhanden").classes("text-gray-500")
 
     with ui.card().classes("w-full mb-4"):
         ui.label("Solver").classes("text-2xl font-bold mb-4")
