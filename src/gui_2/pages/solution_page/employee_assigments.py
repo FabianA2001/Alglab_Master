@@ -26,13 +26,22 @@ def employee_assignments(solution: Solution) -> None:
         columns = _build_table_columns(days)
         rows, shift_mapping = _build_table_rows(solution, days, shift_types)
 
+        # Search input for employee highlighting
+        search_value = {"term": ""}
+
+        search_input = (
+            ui.input(label="Mitarbeiter suchen", placeholder="Name eingeben...")
+            .classes("w-64 mb-4")
+            .props("clearable outlined dense")
+        )
+
         table = (
             ui.table(columns=columns, rows=rows, row_key="row_key")
             .classes("w-full")
             .props("flat hide-selected-banner")
         )
 
-        # Add custom cell rendering with clickable elements
+        # Add custom cell rendering with clickable elements and search highlighting
         table.add_slot(
             "body-cell",
             """
@@ -57,6 +66,29 @@ def employee_assignments(solution: Solution) -> None:
             </q-td>
         """,
         )
+
+        def update_highlights(e):
+            search_value["term"] = (
+                (e.args or "").lower() if isinstance(e.args, str) else ""
+            )
+            # Update badge colors via JavaScript - exact match only
+            ui.run_javascript(f"""
+                const searchTerm = '{search_value["term"]}';
+                document.querySelectorAll('.q-badge').forEach(badge => {{
+                    const name = badge.textContent.trim().toLowerCase();
+                    if (searchTerm && name === searchTerm) {{
+                        badge.classList.remove('bg-primary');
+                        badge.classList.add('bg-orange');
+                        badge.style.backgroundColor = '#ff9800';
+                    }} else {{
+                        badge.classList.remove('bg-orange');
+                        badge.classList.add('bg-primary');
+                        badge.style.backgroundColor = '';
+                    }}
+                }});
+            """)
+
+        search_input.on("update:model-value", update_highlights)
 
         table.on(
             "cell_click",
