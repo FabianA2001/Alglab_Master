@@ -42,7 +42,6 @@ def solver_page():
             instance_info = ui.column()
             solution_info = ui.column()
 
-        # Initial anzeigen
         update_instance_info()
         update_solution_info()
 
@@ -54,9 +53,3 @@ def solver_page():
             icon="play_arrow",
             on_click=lambda: ui.notify("Solver würde hier starten", type="info"),
         ).props("color=positive" if state.get_instance() else "disable")
-
-        ui.button(
-            "State aktualisieren",
-            icon="refresh",
-            on_click=lambda: [update_instance_info(), update_solution_info()],
-        ).props("flat")

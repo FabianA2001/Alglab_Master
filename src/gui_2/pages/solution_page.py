@@ -161,6 +161,7 @@ def solution_page():
             solution = Solution.from_json_file(solution_name)
             # Setze Solution im globalen State (verfügbar für alle Seiten)
             state.set_solution(solution)
+            state.set_instance(solution.instance)
             update_solution_display()
             ui.notify(
                 f"Solution '{solution_name}' erfolgreich geladen", type="positive"
