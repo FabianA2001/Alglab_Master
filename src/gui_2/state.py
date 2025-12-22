@@ -4,12 +4,22 @@ Dieses Modul verwaltet den globalen Zustand der Anwendung,
 einschließlich aktueller Instance, Solution und Solver-Konfiguration.
 """
 
+from enum import Enum, auto
 from typing import Optional
 
-from nicegui import app, ui
+from nicegui import app
 
 from ..inputTypes.instace import Instance
 from ..solution import Solution
+
+
+class StateKey(str, Enum):
+    """Enum für State-Schlüssel."""
+
+    APP_STATE = auto()
+    CURRENT_INSTANCE = None
+    CURRENT_SOLUTION = None
+    SOLVER_RUNNING = False
 
 
 def get_app_state():
@@ -18,13 +28,11 @@ def get_app_state():
     Returns:
         dict: Der globale Anwendungszustand
     """
-    if "app_state" not in app.storage.general:
-        app.storage.general["app_state"] = {
-            "current_instance": None,
-            "current_solution": None,
-            "solver_running": False,
+    if StateKey.APP_STATE not in app.storage.general:
+        app.storage.general[StateKey.APP_STATE] = {
+            key: key.value for key in StateKey if key != StateKey.APP_STATE
         }
-    return app.storage.general["app_state"]
+    return app.storage.general[StateKey.APP_STATE]
 
 
 def set_instance(instance: Optional[Instance]) -> None:
@@ -34,8 +42,7 @@ def set_instance(instance: Optional[Instance]) -> None:
         instance: Die neue Instance oder None
     """
     state = get_app_state()
-    state["current_instance"] = instance
-    ui.notify(f"Instance im State gesetzt: {instance is not None}", type="info")
+    state[StateKey.CURRENT_INSTANCE] = instance
 
 
 def get_instance() -> Optional[Instance]:
@@ -45,7 +52,7 @@ def get_instance() -> Optional[Instance]:
         Optional[Instance]: Die aktuelle Instance oder None
     """
     state = get_app_state()
-    return state.get("current_instance")
+    return state.get(StateKey.CURRENT_INSTANCE, StateKey.CURRENT_INSTANCE.value)
 
 
 def set_solution(solution: Optional[Solution]) -> None:
@@ -55,7 +62,7 @@ def set_solution(solution: Optional[Solution]) -> None:
         solution: Die neue Solution oder None
     """
     state = get_app_state()
-    state["current_solution"] = solution
+    state[StateKey.CURRENT_SOLUTION] = solution
 
 
 def get_solution() -> Optional[Solution]:
@@ -65,7 +72,7 @@ def get_solution() -> Optional[Solution]:
         Optional[Solution]: Die aktuelle Solution oder None
     """
     state = get_app_state()
-    return state.get("current_solution")
+    return state.get(StateKey.CURRENT_SOLUTION, StateKey.CURRENT_SOLUTION.value)
 
 
 def set_solver_running(running: bool) -> None:
@@ -75,7 +82,7 @@ def set_solver_running(running: bool) -> None:
         running: True wenn Solver läuft, sonst False
     """
     state = get_app_state()
-    state["solver_running"] = running
+    state[StateKey.SOLVER_RUNNING] = running
 
 
 def is_solver_running() -> bool:
@@ -85,4 +92,4 @@ def is_solver_running() -> bool:
         bool: True wenn Solver läuft
     """
     state = get_app_state()
-    return state.get("solver_running", False)
+    return state.get(StateKey.SOLVER_RUNNING, StateKey.SOLVER_RUNNING.value)
