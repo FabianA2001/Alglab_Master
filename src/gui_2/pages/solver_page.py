@@ -476,6 +476,7 @@ def solver_page() -> None:
         state.set_solver_status("ERROR")
         state.update_solver_statistics("error", str(error))
         add_log_message(f"❌ Fehler: {str(error)}")
+        update_log_content()
 
     def _cleanup_solver_thread(old_stdout) -> None:
         """Räumt nach Beendigung des Solver-Threads auf.
