@@ -38,9 +38,179 @@ def render_instance_info() -> None:
             return
 
         # Grundlegende Informationen
-        ui.label(f"Anzahl Schichttypen: {len(instance.shift_types)}")
-        ui.label(f"Anzahl Mitarbeiter: {len(instance.employees)}")
-        ui.label(f"Anzahl Tage: {instance.number_of_days}")
+        ui.label(f"Name: {instance.name}").classes("text-lg mb-2")
+        with ui.row().classes("gap-4"):
+            ui.label(f"Anzahl Tage: {instance.number_of_days}")
+            ui.label(f"Anzahl Schichttypen: {len(instance.shift_types)}")
+            ui.label(f"Anzahl Mitarbeiter: {len(instance.employees)}")
+            ui.label(f"Wochenendtage: {len(instance.weekend_days)}")
+
+
+def render_shift_type_details() -> None:
+    """Rendert Details zu Schichttypen mit Dropdown."""
+    instance: Instance | None = state.get_instance()
+    if instance is None or not instance.shift_types:
+        return
+
+    with ui.card().classes("w-full mb-4"):
+        ui.label("Schichttypen Details").classes("text-xl font-bold mb-2")
+
+        # Dropdown für Schichttypen
+        shift_type_options = {
+            st.uid: f"{st.name} (Start: {st.start_time}, {st.length} min)"
+            for st in instance.shift_types.values()
+        }
+
+        # Wähle standardmäßig den ersten Schichttyp
+        first_shift_type_uid = next(iter(instance.shift_types.keys()))
+
+        # Container für die Details
+        detail_container = ui.column().classes("w-full mt-2")
+
+        def show_shift_type_details(shift_type_uid: int | None) -> None:
+            """Zeigt Details für den ausgewählten Schichttyp."""
+            detail_container.clear()
+
+            if shift_type_uid is None:
+                return
+
+            shift_type = instance.shift_types[shift_type_uid]
+
+            with detail_container:
+                ui.label(f"Schichttyp: {shift_type.name}").classes(
+                    "text-lg font-semibold mb-2"
+                )
+
+                with ui.grid(columns=2).classes("gap-2"):
+                    ui.label("UID:").classes("font-semibold")
+                    ui.label(f"...{str(shift_type.uid)[-6:]}")
+
+                    ui.label("Startzeit:").classes("font-semibold")
+                    ui.label(str(shift_type.start_time))
+
+                    ui.label("Länge:").classes("font-semibold")
+                    ui.label(
+                        f"{shift_type.length} Minuten ({shift_type.length / 60:.1f} Stunden)"
+                    )
+
+                    ui.label("Blockierte Schichten danach:").classes("font-semibold")
+                    if shift_type.blocked_shifts_after:
+                        blocked_names = [
+                            instance.shift_types[uid].name
+                            for uid in shift_type.blocked_shifts_after
+                            if uid in instance.shift_types
+                        ]
+                        ui.label(", ".join(blocked_names) if blocked_names else "Keine")
+                    else:
+                        ui.label("Keine")
+
+        shift_select = ui.select(
+            options=shift_type_options,
+            label="Schichttyp auswählen",
+            value=first_shift_type_uid,
+            on_change=lambda e: show_shift_type_details(e.value),
+        ).classes("w-full")
+
+        # Zeige initial den ersten Schichttyp
+        show_shift_type_details(first_shift_type_uid)
+
+
+def render_employee_details() -> None:
+    """Rendert Details zu Mitarbeitern mit Dropdown."""
+    instance: Instance | None = state.get_instance()
+    if instance is None or not instance.employees:
+        return
+
+    with ui.card().classes("w-full mb-4"):
+        ui.label("Mitarbeiter Details").classes("text-xl font-bold mb-2")
+
+        # Dropdown für Mitarbeiter
+        employee_options = {emp.uid: emp.name for emp in instance.employees.values()}
+
+        # Wähle standardmäßig den ersten Mitarbeiter
+        first_employee_uid = next(iter(instance.employees.keys()))
+
+        # Container für die Details
+        detail_container = ui.column().classes("w-full mt-2")
+
+        def show_employee_details(employee_uid: int | None) -> None:
+            """Zeigt Details für den ausgewählten Mitarbeiter."""
+            detail_container.clear()
+
+            if employee_uid is None:
+                return
+
+            employee = instance.employees[employee_uid]
+
+            with detail_container:
+                ui.label(f"Mitarbeiter: {employee.name}").classes(
+                    "text-lg font-semibold mb-2"
+                )
+
+                with ui.grid(columns=2).classes("gap-2"):
+                    ui.label("UID:").classes("font-semibold")
+                    ui.label(f"...{str(employee.uid)[-6:]}")
+
+                    ui.label("Arbeitszeit:").classes("font-semibold")
+                    min_hours = employee.min_minutes_assigned / 60
+                    max_hours = employee.max_minutes_assigned / 60
+                    if employee.max_minutes_assigned >= 1000000:
+                        ui.label(f"Min: {min_hours:.1f}h, Max: unbegrenzt")
+                    else:
+                        ui.label(f"Min: {min_hours:.1f}h, Max: {max_hours:.1f}h")
+
+                    ui.label("Konsekutive Schichten:").classes("font-semibold")
+                    if employee.max_number_consecutive_shifts >= 1000000:
+                        ui.label(
+                            f"Min: {employee.min_number_consecutive_shifts}, Max: unbegrenzt"
+                        )
+                    else:
+                        ui.label(
+                            f"Min: {employee.min_number_consecutive_shifts}, Max: {employee.max_number_consecutive_shifts}"
+                        )
+
+                    ui.label("Min. aufeinander folgende freie Tage:").classes(
+                        "font-semibold"
+                    )
+                    ui.label(str(employee.min_number_consecutive_days_off))
+
+                    ui.label("Max. Wochenenden:").classes("font-semibold")
+                    if employee.max_number_weekends >= 1000000:
+                        ui.label("Unbegrenzt")
+                    else:
+                        ui.label(str(employee.max_number_weekends))
+
+                    ui.label("Blockierte Tage:").classes("font-semibold")
+                    if employee.blocked_shifts:
+                        ui.label(
+                            ", ".join(str(d) for d in sorted(employee.blocked_shifts))
+                        )
+                    else:
+                        ui.label("Keine")
+
+                # Max Schichten pro Schichttyp
+                if employee.max_numbers_of_shifts:
+                    ui.label("Maximale Anzahl Schichten pro Typ:").classes(
+                        "font-semibold mt-3"
+                    )
+                    with ui.column().classes("ml-4"):
+                        for (
+                            type_uid,
+                            max_count,
+                        ) in employee.max_numbers_of_shifts.items():
+                            type_name = instance.shift_types.get(type_uid, None)
+                            if type_name:
+                                ui.label(f"• {type_name.name}: {max_count}")
+
+        employee_select = ui.select(
+            options=employee_options,
+            label="Mitarbeiter auswählen",
+            value=first_employee_uid,
+            on_change=lambda e: show_employee_details(e.value),
+        ).classes("w-full")
+
+        # Zeige initial den ersten Mitarbeiter
+        show_employee_details(first_employee_uid)
 
 
 # Main Page Function
@@ -74,6 +244,8 @@ def instance_page():
 
         with instance_container:
             render_instance_info()
+            render_shift_type_details()
+            render_employee_details()
 
     # UI Layout
     with ui.card().classes("w-full mb-4"):
