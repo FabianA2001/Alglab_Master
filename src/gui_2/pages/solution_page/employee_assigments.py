@@ -471,7 +471,7 @@ def _render_employee_modification_section(
                 "outline color=orange"
             )
             ui.button("Hard", on_click=add_hard).classes("w-full").props(
-                "outline color=green"
+                "outline color=red"
             )
 
 
