@@ -11,6 +11,13 @@ from typing import Optional
 from ..inputTypes.instace import Instance
 from ..solution import Solution
 
+#####
+"""
+WICHTIGER HINWEIS:
+varibalen in der reseter funktion hinzufügen, damit diese zurückgesetzt werden können.
+"""
+#####
+
 # Globale Variablen für den Application State
 _current_instance: Optional[Instance] = None
 _current_solution: Optional[Solution] = None
@@ -21,6 +28,11 @@ _solver_logs: list[str] = []
 _solver_statistics: dict = {}
 _last_objective_value: Optional[float] = None
 _solver_status: Optional[str] = None
+
+# UI-Referenzen (für Background-Updates)
+solver_log_html_element = None
+solver_log_scroll_area = None
+solver_runtime_task = None
 
 
 def set_instance(instance: Optional[Instance]) -> None:
@@ -136,11 +148,16 @@ def get_solver_elapsed_time() -> Optional[float]:
 def add_solver_log(log_message: str) -> None:
     """Fügt eine Log-Nachricht hinzu.
 
+    Speichert maximal die letzten 1000 Log-Einträge.
+
     Args:
         log_message: Die Log-Nachricht
     """
     global _solver_logs
     _solver_logs.append(log_message)
+    # Behalte nur die letzten 1000 Einträge
+    if len(_solver_logs) > 1000:
+        _solver_logs = _solver_logs[-1000:]
 
 
 def get_solver_logs() -> list[str]:
@@ -230,6 +247,7 @@ def reset_solver_state() -> None:
     """Setzt alle Solver-bezogenen State-Variablen zurück."""
     global _solver_running, _solver_start_time, _solver_end_time
     global _solver_logs, _solver_statistics, _last_objective_value, _solver_status
+    global solver_log_html_element, solver_log_scroll_area, solver_runtime_task
 
     _solver_running = False
     _solver_start_time = None
@@ -238,3 +256,15 @@ def reset_solver_state() -> None:
     _solver_statistics = {}
     _last_objective_value = None
     _solver_status = None
+
+    # Stoppe Runtime-Task falls vorhanden
+    if solver_runtime_task is not None:
+        try:
+            solver_runtime_task.cancel()
+        except:
+            print("Fehler beim Abbrechen der Solver-Runtime-Task.")
+            pass
+
+    solver_log_html_element = None
+    solver_log_scroll_area = None
+    solver_runtime_task = None

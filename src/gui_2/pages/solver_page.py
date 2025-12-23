@@ -5,11 +5,11 @@ verschiedener Solver-Methoden mit Echtzeit-Logging und Laufzeitanzeige.
 """
 
 import asyncio
+import os
 import sys
 import threading
 import time
 from datetime import datetime
-from io import StringIO
 from typing import Any
 
 from nicegui import ui
@@ -20,7 +20,8 @@ from .. import state
 
 # Konstanten
 LOG_SEPARATOR = "─" * 60
-MAX_LOG_LINES = 50
+MAX_LOG_STORAGE = 1000  # Maximale Anzahl gespeicherter Log-Zeilen
+MAX_LOG_DISPLAY = 50  # Anzahl angezeigter Zeilen (Rest ist scrollbar)
 DEFAULT_TIMEOUT_SECONDS = 300.0
 RUNTIME_UPDATE_INTERVAL = 0.1
 
@@ -34,6 +35,10 @@ def solver_page() -> None:
     start_time: float | None = None
     is_running: bool = False
 
+    # Log-HTML Element und Scroll Area (werden später initialisiert)
+    log_html_element = None
+    log_scroll_area = None
+
     # Konfiguration der verfügbaren Solver-Methoden
     solver_methods = [
         {
@@ -43,7 +48,7 @@ def solver_page() -> None:
             "method": "solve",
             "color": "positive",
             "params": {
-                "log_search_progress": False,
+                "log_search_progress": True,
                 "max_time_in_seconds": DEFAULT_TIMEOUT_SECONDS,
             },
         },
@@ -54,7 +59,7 @@ def solver_page() -> None:
             "method": "solve_with_early_stop",
             "color": "primary",
             "params": {
-                "log_search_progress": False,
+                "log_search_progress": True,
                 "max_time_in_seconds": DEFAULT_TIMEOUT_SECONDS,
             },
         },
@@ -65,7 +70,7 @@ def solver_page() -> None:
             "method": "solve",
             "color": "secondary",
             "params": {
-                "log_search_progress": False,
+                "log_search_progress": True,
                 "max_time_in_seconds": 60.0,
                 "stop_after_first_solution": True,
             },
@@ -114,11 +119,44 @@ def solver_page() -> None:
 
     @ui.refreshable
     def log_display() -> None:
-        """Zeigt die Solver-Logs an."""
-        logs = state.get_solver_logs()
-        recent_logs = logs[-MAX_LOG_LINES:]
-        with ui.scroll_area().classes("w-full h-96 bg-gray-100 p-4 font-mono text-sm"):
-            ui.html("<pre>" + "\n".join(recent_logs) + "</pre>", sanitize=False)
+        """Zeigt die Solver-Logs an (bis zu 1000 Zeilen, scrollbar verfügbar)."""
+        nonlocal log_html_element, log_scroll_area
+
+        with ui.scroll_area().classes(
+            "w-full h-96 bg-gray-100 p-4 font-mono text-sm"
+        ) as scroll:
+            log_html_element = ui.html("", sanitize=False)
+            log_scroll_area = scroll
+            # Speichere im State für Background-Updates
+            state.solver_log_html_element = log_html_element
+            state.solver_log_scroll_area = log_scroll_area
+            update_log_content()
+
+    def update_log_content() -> None:
+        """Aktualisiert nur den Log-Inhalt ohne die gesamte Komponente neu zu laden."""
+        # Versuche zuerst lokale Referenz, dann State-Referenz
+        html_element = (
+            log_html_element
+            if log_html_element is not None
+            else getattr(state, "solver_log_html_element", None)
+        )
+        scroll_element = (
+            log_scroll_area
+            if log_scroll_area is not None
+            else getattr(state, "solver_log_scroll_area", None)
+        )
+
+        if html_element is not None:
+            logs = state.get_solver_logs()
+            recent_logs = logs[-MAX_LOG_STORAGE:]
+            try:
+                html_element.content = "<pre>" + "\n".join(recent_logs) + "</pre>"
+                # Auto-Scroll nach unten (nur wenn scroll_area noch gültig ist)
+                if scroll_element is not None:
+                    scroll_element.scroll_to(percent=1.1)
+            except (RuntimeError, AttributeError):
+                # Element wurde gelöscht oder ist nicht mehr gültig
+                pass
 
     @ui.refreshable
     def control_buttons() -> None:
@@ -160,12 +198,17 @@ def solver_page() -> None:
         log_entry = f"[{timestamp}] {message}"
         log_buffer.append(log_entry)
         state.add_solver_log(log_entry)
-        log_display.refresh()
+        # Refresh wird durch runtime_updater gesteuert
 
     async def runtime_updater() -> None:
         """Aktualisiert die Laufzeitanzeige kontinuierlich."""
-        while is_running:
-            runtime_display.refresh()
+        while state.is_solver_running():
+            try:
+                runtime_display.refresh()
+                update_log_content()  # Aktualisiere nur den Log-Inhalt, nicht die ganze Komponente
+            except (RuntimeError, AttributeError):
+                # UI-Elemente nicht mehr verfügbar (Seitenwechsel)
+                pass
             await asyncio.sleep(RUNTIME_UPDATE_INTERVAL)
 
     class TeeOutput:
@@ -175,31 +218,39 @@ def solver_page() -> None:
         die normale Konsolenausgabe zu unterdrücken.
         """
 
-        def __init__(self, original_stdout, buffer: StringIO) -> None:
+        def __init__(self, original_stdout) -> None:
             """Initialisiert den TeeOutput.
 
             Args:
                 original_stdout: Der ursprüngliche stdout-Stream
-                buffer: StringIO-Buffer für erfassten Output
             """
             self.original_stdout = original_stdout
-            self.buffer = buffer
+            self.captured = []
 
-        def write(self, text: str) -> None:
+        def write(self, text: str) -> int:
             """Schreibt Text in beide Streams.
 
             Args:
                 text: Der zu schreibende Text
             """
             self.original_stdout.write(text)
-            self.buffer.write(text)
+            self.original_stdout.flush()
             if text.strip():
-                add_log_message(text.rstrip())
+                # Speichere jede Zeile einzeln
+                lines = text.rstrip().split("\n")
+                for line in lines:
+                    if line.strip():
+                        self.captured.append(line)
+                        add_log_message(line)
+            return len(text)
 
         def flush(self) -> None:
             """Flusht beide Streams."""
             self.original_stdout.flush()
-            self.buffer.flush()
+
+        def fileno(self):
+            """Gibt File-Descriptor zurück."""
+            return self.original_stdout.fileno()
 
     def solve_in_thread(method_config: dict[str, Any]) -> None:
         """Führt den Solver in einem separaten Thread aus.
@@ -212,9 +263,11 @@ def solver_page() -> None:
         """
         nonlocal is_running, start_time
 
-        # Erstelle stdout-Umleitung
-        stdout_buffer = StringIO()
+        # Sichere Original stdout/stderr
         old_stdout = sys.stdout
+        old_stderr = sys.stderr
+        old_stdout_fd = os.dup(1)
+        old_stderr_fd = os.dup(2)
 
         try:
             instance = state.get_instance()
@@ -241,15 +294,42 @@ def solver_page() -> None:
             add_log_message(f"🔍 Suche nach Lösung mit: {method_config['method']}...")
             add_log_message(LOG_SEPARATOR)
 
-            # Leite stdout um für Solver-Logs
-            sys.stdout = TeeOutput(old_stdout, stdout_buffer)
+            # Erstelle Pipes für stdout/stderr Umleitung
+            read_pipe, write_pipe = os.pipe()
+
+            # Leite stdout und stderr auf OS-Ebene um
+            os.dup2(write_pipe, 1)
+            os.dup2(write_pipe, 2)
+
+            # Erstelle neuen Python stdout/stderr
+            sys.stdout = TeeOutput(os.fdopen(old_stdout_fd, "w"))
+            sys.stderr = sys.stdout
+
+            # Starte Thread zum Lesen der Pipe
+            def read_output():
+                with os.fdopen(read_pipe, "r") as pipe_reader:
+                    for line in pipe_reader:
+                        if line.strip():
+                            add_log_message(line.rstrip())
+
+            reader_thread = threading.Thread(target=read_output, daemon=True)
+            reader_thread.start()
 
             # Führe Solver-Methode aus
             solver_method = getattr(solver, method_config["method"])
             solution = solver_method(**method_config["params"])
 
-            # Stelle stdout wieder her
+            # Schließe Write-Ende der Pipe
+            os.close(write_pipe)
+
+            # Warte kurz auf Reader-Thread
+            reader_thread.join(timeout=1.0)
+
+            # Stelle stdout/stderr wieder her
+            os.dup2(old_stdout_fd, 1)
+            os.dup2(old_stderr_fd, 2)
             sys.stdout = old_stdout
+            sys.stderr = old_stderr
 
             # Speichere Ergebnisse (start_time ist garantiert nicht None hier)
             assert start_time is not None
@@ -262,12 +342,27 @@ def solver_page() -> None:
             add_log_message(f"Status: {solution.solve_status}")
             add_log_message(f"Objective Value: {solution.objective_value:.2f}")
 
-            # Aktualisiere UI
+            # Aktualisiere UI - finale Refresh für Logs und Solution
+            update_log_content()
             solution_info.refresh()
 
         except Exception as e:
+            # Stelle stdout/stderr wieder her
+            try:
+                os.dup2(old_stdout_fd, 1)
+                os.dup2(old_stderr_fd, 2)
+                sys.stdout = old_stdout
+                sys.stderr = old_stderr
+            except:
+                pass
             _handle_solver_error(e, old_stdout)
         finally:
+            # Cleanup
+            try:
+                os.close(old_stdout_fd)
+                os.close(old_stderr_fd)
+            except:
+                pass
             _cleanup_solver_thread(old_stdout)
 
     def _save_instance_statistics(instance, method_config: dict[str, Any]) -> None:
@@ -366,15 +461,83 @@ def solver_page() -> None:
         )
         solver_thread.start()
 
-        # Starte Runtime-Updater
-        asyncio.create_task(runtime_updater())
+        # Starte Runtime-Updater (nur wenn noch keiner läuft)
+        if (
+            not hasattr(state, "solver_runtime_task")
+            or state.solver_runtime_task is None
+            or state.solver_runtime_task.done()
+        ):
+            state.solver_runtime_task = asyncio.create_task(runtime_updater())
 
-    def stop_solver() -> None:
-        """Stoppt den Solver (nur UI-Update, Thread läuft weiter aus)."""
-        nonlocal is_running
-        if is_running:
-            add_log_message("⚠️ Solver-Stop angefordert...")
-            ui.notify("Solver wird gestoppt (kann einen Moment dauern)", type="info")
+    async def stop_solver() -> None:
+        """Stoppt den Solver mit Bestätigung und beendet den Thread sauber."""
+        nonlocal is_running, solver_thread
+
+        if not is_running and not state.is_solver_running():
+            ui.notify("Kein Solver läuft gerade", type="info")
+            return
+
+        with ui.dialog() as dialog, ui.card():
+            ui.label("Solver wirklich stoppen?").classes("text-lg font-bold mb-4")
+            ui.label(
+                "Der Solver-Thread wird beendet. Dies kann zu unvollständigen Ergebnissen führen."
+            ).classes("mb-4")
+            ui.label(
+                "⚠️ Warnung: Der aktuelle Lösungsfortschritt geht verloren!"
+            ).classes("text-orange-600 mb-4")
+
+            with ui.row().classes("w-full justify-end gap-2"):
+                ui.button("Abbrechen", on_click=dialog.close).props("flat")
+                ui.button(
+                    "Ja, stoppen",
+                    on_click=lambda: dialog.submit(True),
+                ).props("color=negative")
+
+        result = await dialog
+
+        if not result:
+            return
+
+        # Bestätigt - Solver stoppen
+        add_log_message("⚠️ Solver-Stop durch Benutzer angefordert...")
+        add_log_message("🛑 Beende Solver-Thread...")
+
+        # Setze Flags
+        is_running = False
+        state.set_solver_running(False)
+        state.set_solver_end_time(time.time())
+        state.set_solver_status("STOPPED_BY_USER")
+
+        # Stoppe Runtime-Updater
+        if (
+            hasattr(state, "solver_runtime_task")
+            and state.solver_runtime_task is not None
+        ):
+            try:
+                state.solver_runtime_task.cancel()
+                state.solver_runtime_task = None
+            except:
+                pass
+
+        # Versuche Thread zu beenden (Python Threads können nicht direkt gekillt werden)
+        # Der Thread wird beim nächsten Python-Statement oder IO-Operation beendet
+        if solver_thread is not None and solver_thread.is_alive():
+            add_log_message(
+                "⏳ Warte auf Thread-Beendigung (kann einen Moment dauern)..."
+            )
+            # Hinweis: Python Threads können nicht zwangsweise beendet werden
+            # Sie müssen auf natürliche Weise enden (z.B. wenn der Solver zurückkehrt)
+            add_log_message("ℹ️ Hinweis: Der Solver-Prozess läuft noch zu Ende")
+
+        add_log_message(LOG_SEPARATOR)
+        add_log_message("🛑 Solver wurde gestoppt")
+
+        # Update UI
+        update_log_content()
+        control_buttons.refresh()
+        runtime_display.refresh()
+
+        ui.notify("Solver wurde gestoppt", type="warning")
 
     # UI-Aufbau
     with ui.card().classes("w-full mb-4"):
@@ -400,3 +563,18 @@ def solver_page() -> None:
         with ui.column().classes("w-full"):
             ui.label("Solver Log").classes("text-lg font-bold mb-2")
             log_display()
+
+    # Initialisierung: Wenn Solver bereits läuft, starte Updater
+    # (muss nach UI-Aufbau sein, da runtime_display.refresh() aufgerufen wird)
+    if state.is_solver_running():
+        # Stoppe alte Runtime-Tasks
+        if (
+            hasattr(state, "solver_runtime_task")
+            and state.solver_runtime_task is not None
+        ):
+            try:
+                state.solver_runtime_task.cancel()
+            except:
+                pass
+        # Starte neuen Runtime-Updater
+        state.solver_runtime_task = asyncio.create_task(runtime_updater())
