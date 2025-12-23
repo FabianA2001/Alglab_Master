@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any, Dict, List
 
 from nicegui import ui
 
@@ -213,6 +214,228 @@ def render_employee_details() -> None:
         show_employee_details(first_employee_uid)
 
 
+def render_shifts_table() -> None:
+    """Rendert eine Tabelle mit allen Shifts."""
+    instance: Instance | None = state.get_instance()
+    if instance is None or not instance.shifts:
+        return
+
+    with ui.card().classes("w-full mb-4"):
+        ui.label("Schichten Übersicht").classes("text-xl font-bold mb-2")
+
+        days = sorted(instance.shifts.keys())
+        shift_types = sorted(instance.shift_types.keys())
+
+        columns = _build_shifts_table_columns(days)
+        rows, shift_cell_mapping = _build_shifts_table_rows(instance, days, shift_types)
+
+        table = (
+            ui.table(columns=columns, rows=rows, row_key="row_key")
+            .classes("w-full")
+            .props("flat hide-selected-banner dense")
+        )
+
+        # Custom cell rendering with clickable elements
+        table.add_slot(
+            "body-cell",
+            """
+            <q-td :props="props">
+                <div v-if="props.col.name === 'shift_type'" class="text-weight-medium">
+                    {{ props.value }}
+                </div>
+                <div v-else class="q-pa-xs cursor-pointer hover:bg-gray-100" 
+                     @click="() => $parent.$emit('cell_click', props.row.row_key, props.col.name)">
+                    <div class="text-xs text-gray-600">{{ props.value }}</div>
+                </div>
+            </q-td>
+        """,
+        )
+
+        table.on(
+            "cell_click",
+            lambda e: _display_shift_details_dialog(
+                e.args[0], e.args[1], instance, shift_cell_mapping
+            ),
+        )
+
+
+def _build_shifts_table_columns(days: List[int]) -> List[Dict[str, str]]:
+    """Build table column definitions for shifts."""
+    columns = [
+        {
+            "name": "shift_type",
+            "label": "Schichttyp",
+            "field": "shift_type",
+            "align": "left",
+        }
+    ]
+
+    for day in days:
+        columns.append(
+            {
+                "name": f"day_{day}",
+                "label": f"Tag {day}",
+                "field": f"day_{day}",
+                "align": "center",
+            }
+        )
+
+    return columns
+
+
+def _build_shifts_table_rows(
+    instance: Instance, days: List[int], shift_types: List[Any]
+) -> tuple[List[Dict[str, Any]], Dict[str, tuple[int, int]]]:
+    """Build table row data for shifts."""
+    shift_cell_mapping = {}
+    rows = []
+
+    for idx, shift_type_uid in enumerate(shift_types):
+        row_key = f"shift_{idx}"
+        shift_type = instance.shift_types[shift_type_uid]
+
+        row = {
+            "shift_type": shift_type.name,
+            "row_key": row_key,
+        }
+
+        for day in days:
+            shift = instance.shifts.get(day, {}).get(shift_type_uid)
+            if shift:
+                cell_key = f"{row_key}_day_{day}"
+                shift_cell_mapping[cell_key] = (day, shift_type_uid)
+
+                # Show preferred employee count as summary
+                if shift.preffert_number_employees > 0:
+                    row[f"day_{day}"] = f"👥 {shift.preffert_number_employees}"
+                else:
+                    row[f"day_{day}"] = "—"
+            else:
+                row[f"day_{day}"] = "—"
+
+        rows.append(row)
+
+    return rows, shift_cell_mapping
+
+
+def _display_shift_details_dialog(
+    row_key: str,
+    col_name: str,
+    instance: Instance,
+    shift_cell_mapping: Dict[str, tuple[int, int]],
+) -> None:
+    """Display detailed information about a shift in a dialog."""
+    if col_name == "shift_type":
+        return
+
+    cell_key = f"{row_key}_{col_name}"
+    if cell_key not in shift_cell_mapping:
+        return
+
+    day, shift_type_uid = shift_cell_mapping[cell_key]
+    shift = instance.shifts[day][shift_type_uid]
+    shift_type = instance.shift_types[shift_type_uid]
+
+    with ui.dialog() as dialog, ui.card().classes("min-w-[600px]"):
+        ui.label(f"Schicht Details: Tag {day}, {shift_type.name}").classes(
+            "text-xl font-bold mb-4"
+        )
+
+        # Basic Information
+        with ui.card().classes("w-full mb-3 bg-gray-50"):
+            ui.label("Grundinformationen").classes("font-semibold mb-2")
+            with ui.grid(columns=2).classes("gap-2"):
+                ui.label("Schicht UID:").classes("font-semibold")
+                ui.label(f"...{str(shift.uid)[-6:]}")
+
+                ui.label("Schichttyp UID:").classes("font-semibold")
+                ui.label(f"...{str(shift_type_uid)[-6:]}")
+
+                ui.label("Wochenende:").classes("font-semibold")
+                ui.label("Ja" if shift.is_weekend else "Nein")
+
+                ui.label("Startzeit:").classes("font-semibold")
+                ui.label(str(shift_type.start_time))
+
+                ui.label("Länge:").classes("font-semibold")
+                ui.label(f"{shift_type.length} min ({shift_type.length / 60:.1f}h)")
+
+        # Coverage Requirements
+        with ui.card().classes("w-full mb-3 bg-blue-50"):
+            ui.label("Besetzungsanforderungen").classes("font-semibold mb-2")
+            with ui.grid(columns=2).classes("gap-2"):
+                ui.label("Bevorzugte Anzahl:").classes("font-semibold")
+                ui.label(str(shift.preffert_number_employees))
+
+                ui.label("Gewicht Unterbesetzung:").classes("font-semibold")
+                ui.label(str(shift.weight_below_preferred))
+
+                ui.label("Gewicht Überbesetzung:").classes("font-semibold")
+                ui.label(str(shift.weight_above_preferred))
+
+        # Employee Assignments/Bans
+        if shift.assign_employee_day_shift or shift.ban_employee_day_shift:
+            with ui.card().classes("w-full mb-3 bg-green-50"):
+                ui.label("Mitarbeiter Zuweisungen").classes("font-semibold mb-2")
+
+                if shift.assign_employee_day_shift:
+                    ui.label("Zugewiesene Mitarbeiter:").classes(
+                        "text-sm font-semibold mt-2"
+                    )
+                    for emp_uid in shift.assign_employee_day_shift:
+                        emp = instance.employees.get(emp_uid)
+                        if emp:
+                            ui.label(f"• {emp.name} (...{str(emp_uid)[-6:]})")
+
+                if shift.ban_employee_day_shift:
+                    ui.label("Gesperrte Mitarbeiter:").classes(
+                        "text-sm font-semibold mt-2"
+                    )
+                    for emp_uid in shift.ban_employee_day_shift:
+                        emp = instance.employees.get(emp_uid)
+                        if emp:
+                            ui.label(f"• {emp.name} (...{str(emp_uid)[-6:]})")
+
+        # Penalty Information
+        if (
+            shift.penalty_assigned_day_employee
+            or shift.penalty_not_assigned_day_employee
+        ):
+            with ui.card().classes("w-full mb-3 bg-yellow-50"):
+                ui.label("Strafpunkte").classes("font-semibold mb-2")
+
+                if shift.penalty_assigned_day_employee:
+                    ui.label("Strafpunkte bei Zuweisung:").classes(
+                        "text-sm font-semibold mt-2"
+                    )
+                    for emp_uid, penalty in shift.penalty_assigned_day_employee.items():
+                        if penalty > 0:
+                            emp = instance.employees.get(emp_uid)
+                            if emp:
+                                ui.label(
+                                    f"• {emp.name} (...{str(emp_uid)[-6:]}): {penalty}"
+                                )
+
+                if shift.penalty_not_assigned_day_employee:
+                    ui.label("Strafpunkte bei Nicht-Zuweisung:").classes(
+                        "text-sm font-semibold mt-2"
+                    )
+                    for (
+                        emp_uid,
+                        penalty,
+                    ) in shift.penalty_not_assigned_day_employee.items():
+                        if penalty > 0:
+                            emp = instance.employees.get(emp_uid)
+                            if emp:
+                                ui.label(
+                                    f"• {emp.name} (...{str(emp_uid)[-6:]}): {penalty}"
+                                )
+
+        ui.button("Schließen", on_click=dialog.close).classes("mt-4")
+
+    dialog.open()
+
+
 # Main Page Function
 def instance_page():
     """Seite für Instance-Verwaltung und -Laden."""
@@ -246,6 +469,7 @@ def instance_page():
             render_instance_info()
             render_shift_type_details()
             render_employee_details()
+            render_shifts_table()
 
     # UI Layout
     with ui.card().classes("w-full mb-4"):
