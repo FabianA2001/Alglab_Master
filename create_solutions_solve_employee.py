@@ -53,6 +53,33 @@ def main():
         'Instance9': 2002.0
     }
 
+    dict_objective_values = {
+        'Instance1': 607.0,
+        'Instance10': 5361.0,
+        'Instance11': 3730.5,
+        'Instance12': 5333.5,
+        'Instance13': 14198.5,
+        'Instance14': 1974.5,
+        'Instance15': 5537.0,
+        'Instance16': 4573.5,
+        'Instance17': 6796.5,
+        'Instance18': 6160.0,
+        'Instance19': 4311.0,
+        'Instance1ExtraLong': 607.0,
+        'Instance2': 1331.0,
+        'Instance20': 4529.5,
+        'Instance21': 24061.0,
+        'Instance22': 46524.5,
+        'Instance23': 473532.5,
+        'Instance3': 1105.0,
+        'Instance4': 2725.0,
+        'Instance5': 1302.0,
+        'Instance6': 2416.0,
+        'Instance7': 1184.5,
+        'Instance8': 2015.5,
+        'Instance9': 1952.5
+    }
+
     dict_constraint = {
         # 0:"original"
         # ,1:"new"
