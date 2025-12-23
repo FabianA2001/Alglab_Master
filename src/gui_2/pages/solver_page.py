@@ -14,6 +14,7 @@ from typing import Any
 
 from nicegui import ui
 
+from ...LNS import lns, minimal_change_lns
 from ...shift_vars import Shift_vars
 from ...solver import Solver
 from .. import state
@@ -74,6 +75,29 @@ def solver_page() -> None:
                 "max_time_in_seconds": 60.0,
                 "stop_after_first_solution": True,
             },
+        },
+        {
+            "name": "Large Neighborhood Search",
+            "description": "LNS-Solver für große Nachbarschaftssuche",
+            "icon": "explore",
+            "method": "lns",
+            "color": "info",
+            "params": {
+                "timeout_seconds": DEFAULT_TIMEOUT_SECONDS,
+            },
+            "requires_solution": True,
+        },
+        {
+            "name": "Minimal Changes LNS",
+            "description": "LNS mit minimalen Änderungen an bestehender Lösung",
+            "icon": "build",
+            "method": "minimal_change_lns",
+            "color": "warning",
+            "params": {
+                "max_solve_time": DEFAULT_TIMEOUT_SECONDS,
+                "log_search_progress": False,
+            },
+            "requires_solution": True,
         },
     ]
 
@@ -163,21 +187,31 @@ def solver_page() -> None:
         """Zeigt die Steuerungs-Buttons an."""
         can_start = state.get_instance() is not None and not state.is_solver_running()
         is_solver_active = state.is_solver_running()
+        has_solution = state.get_solution() is not None
 
         with ui.column().classes("w-full gap-4"):
             # Solver-Methoden Buttons
             ui.label("Solver-Methoden").classes("text-lg font-bold")
             with ui.grid(columns=3).classes("w-full gap-2"):
                 for method_config in solver_methods:
+                    # Prüfe ob Methode eine Lösung benötigt
+                    requires_solution = method_config.get("requires_solution", False)
+                    can_use = can_start and (not requires_solution or has_solution)
+
                     button = ui.button(
                         method_config["name"],
                         icon=method_config["icon"],
                         on_click=lambda e, m=method_config: start_solver(m),
                     )
-                    if can_start:
+                    if can_use:
                         button.props(f"color={method_config['color']}")
-                    button.set_enabled(can_start)
-                    button.tooltip(method_config["description"])
+                    button.set_enabled(can_use)
+
+                    # Tooltip mit zusätzlicher Info für solution-abhängige Methoden
+                    tooltip_text = method_config["description"]
+                    if requires_solution and not has_solution:
+                        tooltip_text += " (Benötigt existierende Lösung)"
+                    button.tooltip(tooltip_text)
 
             # Stop Button separat
             ui.separator()
@@ -286,10 +320,6 @@ def solver_page() -> None:
             # Speichere Instance-Statistiken
             _save_instance_statistics(instance, method_config)
 
-            # Erstelle Variablen und Solver
-            vars = Shift_vars(instance)
-            solver = Solver(instance, vars)
-
             add_log_message("⚙️ Solver initialisiert")
             add_log_message(f"🔍 Suche nach Lösung mit: {method_config['method']}...")
             add_log_message(LOG_SEPARATOR)
@@ -316,8 +346,36 @@ def solver_page() -> None:
             reader_thread.start()
 
             # Führe Solver-Methode aus
-            solver_method = getattr(solver, method_config["method"])
-            solution = solver_method(**method_config["params"])
+            method_name = method_config["method"]
+
+            if method_name == "lns":
+                # LNS-Solver
+                inst_sol = state.get_solution()
+                if inst_sol is None:
+                    inst_sol = instance
+                lns_solver = lns.LNS(inst_sol, **method_config["params"])
+                solution = lns_solver.solve()
+            elif method_name == "minimal_change_lns":
+                # Minimal Changes LNS - benötigt existierende Lösung
+                old_solution = state.get_solution()
+                if not old_solution:
+                    raise ValueError(
+                        "Minimal Changes LNS benötigt eine existierende Lösung!"
+                    )
+                # TODO: days_with_change Parameter hinzufügen (momentan alle Tage)
+                days_with_change = list(range(instance.number_of_days))
+                solution = minimal_change_lns.solve_changes(
+                    old_solution=old_solution,
+                    new_instanc=instance,
+                    days_with_change=days_with_change,
+                    **method_config["params"],
+                )
+            else:
+                # Standard Solver-Methoden
+                vars = Shift_vars(instance)
+                solver = Solver(instance, vars)
+                solver_method = getattr(solver, method_name)
+                solution = solver_method(**method_config["params"])
 
             # Schließe Write-Ende der Pipe
             os.close(write_pipe)
