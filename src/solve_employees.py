@@ -192,7 +192,8 @@ class solve_employee():
     
     #TODO instead of using timers only, use instead callbacks
     #TODO add more parameters (optimization, [percent1,percent2,percent3]where one say how much time should be spent on the first optimization (one shift type), 2 one the second optimization(set work days) and 3 for the over all optimization)
-    def solve_instance_one_shift(self, one_shift_max_time:int=0, fixed_work_var_opt_max_time:int=0, general_optimization_max_time:int=0, one_shift_callback: cp_model.CpSolverSolutionCallback | None=None, fixed_work_var_opt_callback: cp_model.CpSolverSolutionCallback | None=None):
+    #TODO maybe optimization is just as fast with CP, see how fast normal CP reach a solution similar to what this method offer.(callback that stop when reach a certin objective value)
+    def solve_instance_one_shift(self, one_shift_max_time:int=0, fixed_work_var_opt_max_time:int=0, general_optimization_max_time:int=0, one_shift_callback: cp_model.CpSolverSolutionCallback | None=None, fixed_work_var_opt_callback: cp_model.CpSolverSolutionCallback | None=None, optimization_callback: cp_model.CpSolverSolutionCallback | None=None):
         """
         The function get a simplified instance (containing only one shift type) of the main instance and solve it, which result in work_var solution. Because the result maybe invalid, the solution for the work_var is validated for each employee and fixed if needed. After ward an optimization with the work_var variable as hard constraints is preformed. At the very end general optimization is preformed.  
         
@@ -217,7 +218,7 @@ class solve_employee():
             instance = self.instance.instance_to_one_shift_type()
             start_time = time.time()
             solver = Solver(instance, shift_vars.Shift_vars(instance))
-            solution = solver.solve_callback_with_solution(log_search_progress=False, max_time_in_seconds=one_shift_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution,disabled_constraints=[SolverConstraints.shift_assignment_single_day_validation, SolverConstraints.shift_rotation_constraint, SolverConstraints.limited_shifts_per_type_validation])
+            solution = solver.solve_callback_with_solution(log_search_progress=False, max_time_in_seconds=one_shift_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution,disabled_constraints=[SolverConstraints.shift_assignment_single_day_validation, SolverConstraints.shift_rotation_constraint, SolverConstraints.limited_shifts_per_type_validation], callback=one_shift_callback)
             
             if solution.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
                 break
@@ -264,7 +265,7 @@ class solve_employee():
             stop_after_first_solution=True
         while True:
             solver = Solver(self.instance, shift_vars.Shift_vars(self.instance))
-            solution_temp = solver.warm_start_generalized(hard_constraint_solution=self.solution ,hint_solution=self.hint_solution, max_time_in_seconds=fixed_work_var_opt_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution)
+            solution_temp = solver.warm_start_generalized(hard_constraint_solution=self.solution ,hint_solution=self.hint_solution, max_time_in_seconds=fixed_work_var_opt_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution, callback=fixed_work_var_opt_callback)
             if solution_temp.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
                 self.solution=solution_temp
                 break
@@ -293,7 +294,7 @@ class solve_employee():
         stop_after_first_solution=False
         while general_optimization_max_time > 0:
             solver = Solver(self.instance, shift_vars.Shift_vars(self.instance))
-            solution_temp = solver.warm_start_generalized(hint_solution=self.solution, max_time_in_seconds=general_optimization_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution)
+            solution_temp = solver.warm_start_generalized(hint_solution=self.solution, max_time_in_seconds=general_optimization_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution, callback=optimization_callback)
             if solution_temp.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
                 self.solution=solution_temp
                 break

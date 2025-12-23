@@ -569,7 +569,7 @@ class Solution(BaseModel):
             for employee_uid, employee_ in employees.items():
                 for shift_type_uid, shift_type in shifts_types.items():
                     if (day_, shift_type_uid, employee_uid) in solution.vars.keys():
-                        self.set_var(day_, shift_type_uid, employee_uid, solution.vars[(day_, shift_type_uid, employee_uid)])
+                        self.set_var(day_, shift_type_uid, employee_uid, solution.vars[(day_, shift_type_uid, employee_uid)] == 1)
                     # else:
                     #     print(f"key var {(day_, shift_type_uid, employee_uid)} is not a key in the to be copied solution")
 
@@ -592,7 +592,7 @@ class Solution(BaseModel):
         for employee_uid, employee_ in employees.items():
             for day_ in range(day_start, day_end):
                 if (day_, employee_uid) in solution.work_vars.keys():
-                    self.set_work_vars(day_, employee_uid, solution.work_vars[(day_, employee_uid)])
+                    self.set_work_vars(day_, employee_uid, solution.work_vars[(day_, employee_uid)] == 1)
                 # else:
                 #     print(f"key work var {(day_, employee_uid)} is not a key in the to be copied solution")
     

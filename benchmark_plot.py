@@ -5,6 +5,8 @@ from pathlib import Path
 import json
 from src.solution import Solution
 import os
+from src.solver import Solver
+from src import shift_vars
 
 def gather_sol_times(data_dir):
     sol_times = []
@@ -19,6 +21,15 @@ def gather_sol_times(data_dir):
         ,7:"Alternative_exact_original"
         ,9:"incrementallyTrue"
         ,10:"incrementallyFalse"
+        ,
+        11:"1S5_wv5_o0"
+        ,12:"1S10_wv10_o0"
+        ,13:"1S1_wv1_o0"
+        ,14:"1S0_wv0_o0"
+        ,15:"1S2.5_wv2.5_o0"
+        ,16:"1S1_wv1_o28"
+        ,17:"1S2.5_wv2.5_o25"
+        ,18:"1S5_wv2.5_o0"
         }
     # Gathering files for optimal solutions
     for key in dict_constraint.values():  # Modify keys as per your dictionary
@@ -30,6 +41,8 @@ def gather_sol_times(data_dir):
             for file in file_pattern:
                 solution = Solution.from_json_file(file.stem)  # Load using the base filename
                 instance_name = file.stem.split('_')[0]  # Get instance name from filename
+                # solve_=Solver(instance=solution.instance, vars=shift_vars.Shift_vars(instance=solution.instance))
+                # solution_copy = solve_.warm_start_generalized(hard_constraint_solution=solution, hint_solution=solution, objective_function=solve_.objevtive_value, max_time_in_seconds=300, stop_after_first_solution=True)
                 sol_times.append({
                     'instance': instance_name,
                     'key': key,
@@ -42,6 +55,8 @@ def gather_sol_times(data_dir):
             for file in file_pattern:
                 solution = Solution.from_json_file(file.stem)  # Load using the base filename
                 instance_name = file.stem.split('_')[0]
+                # solve_=Solver(instance=solution.instance, vars=shift_vars.Shift_vars(instance=solution.instance))
+                # solution_copy = solve_.warm_start_generalized(hard_constraint_solution=solution, hint_solution=solution, objective_function=solve_.objevtive_value, max_time_in_seconds=300, stop_after_first_solution=True)
                 sol_times.append({
                     'instance': instance_name,
                     'key': key,
@@ -56,6 +71,8 @@ def gather_sol_times(data_dir):
             for file in file_pattern:
                 solution = Solution.from_json_file(file.stem)  # Load using the base filename
                 instance_name = file.stem.split('_')[0]
+                # solve_=Solver(instance=solution.instance, vars=shift_vars.Shift_vars(instance=solution.instance))
+                # solution_copy = solve_.warm_start_generalized(hard_constraint_solution=solution, hint_solution=solution, objective_function=solve_.objevtive_value, max_time_in_seconds=300, stop_after_first_solution=True)
                 sol_times.append({
                     'instance': instance_name,
                     'key': key,
@@ -91,29 +108,28 @@ def gather_sol_times(data_dir):
             for file in file_pattern:
                 solution = Solution.from_json_file(file.stem)  # Load using the base filename
                 instance_name = file.stem.split('_')[0]
+                # solve_=Solver(instance=solution.instance, vars=shift_vars.Shift_vars(instance=solution.instance))
+                # solution_copy = solve_.warm_start_generalized(hard_constraint_solution=solution, hint_solution=solution, objective_function=solve_.objevtive_value, max_time_in_seconds=300, stop_after_first_solution=True)
                 sol_times.append({
                     'instance': instance_name,
                     'key': key,
                     'type': 'immediate_first',
                     'value': 'solve_time',
+                    'solve_time': solution.solve_time,
+                    'objective_value': solution.objective_value
+                })
+                
+                # solve_=Solver(instance=solution.instance, vars=shift_vars.Shift_vars(instance=solution.instance))
+                # solution_copy = solve_.warm_start_generalized(hard_constraint_solution=solution, hint_solution=solution, objective_function=solve_.objevtive_value, max_time_in_seconds=300, stop_after_first_solution=True)
+                sol_times.append({
+                    'instance': instance_name,
+                    'key': key,
+                    'type': 'immediate_first',
+                    'value': 'objective_value',
                     'solve_time': solution.solve_time,
                     'objective_value': solution.objective_value
                 })
 
-            file_pattern = data_dir.glob(f"*_{key}_immediate_{try_num}.json")
-            
-            
-            for file in file_pattern:
-                solution = Solution.from_json_file(file.stem)  # Load using the base filename
-                instance_name = file.stem.split('_')[0]
-                sol_times.append({
-                    'instance': instance_name,
-                    'key': key,
-                    'type': 'immediate_first',
-                    'value': 'solve_time',
-                    'solve_time': solution.solve_time,
-                    'objective_value': solution.objective_value
-                })
 
     if os.path.exists('no_immediate_solution_found_new.txt'):
         with open('no_immediate_solution_found_new.txt', 'r') as file:
@@ -141,6 +157,8 @@ def gather_sol_times(data_dir):
             for file in file_pattern:
                 solution = Solution.from_json_file(file.stem)  # Load using the base filename
                 instance_name = file.stem.split('_')[0]
+                # solve_=Solver(instance=solution.instance, vars=shift_vars.Shift_vars(instance=solution.instance))
+                # solution_copy = solve_.warm_start_generalized(hard_constraint_solution=solution, hint_solution=solution, objective_function=solve_.objevtive_value, max_time_in_seconds=300, stop_after_first_solution=True)
                 sol_times.append({
                     'instance': instance_name,
                     'key': key,
@@ -160,6 +178,8 @@ def gather_sol_times(data_dir):
                     print(f"{file.stem} Contains 'seed' twice or more.")
                     continue
                 solution = Solution.from_json_file(file.stem)  # Load using the base filename
+                # solve_=Solver(instance=solution.instance, vars=shift_vars.Shift_vars(instance=solution.instance))
+                # solution_copy = solve_.warm_start_generalized(hard_constraint_solution=solution, hint_solution=solution, objective_function=solve_.objevtive_value, max_time_in_seconds=300, stop_after_first_solution=True)
                 if solution.solve_time >= 1800 or True:
                     instance_name = file.stem.split('_')[0]
                     sol_times.append({
@@ -220,7 +240,7 @@ def plot_sol_times_lines(df, solution_type, value_type):
 
         plt.title(f'Solve {measure.capitalize()} for {solution_type.capitalize()} {value_type.capitalize()} Solutions')
         plt.xlabel('Instance Name')
-        plt.ylabel('Solve Time (seconds)')
+        plt.ylabel(value_type)
         plt.xticks(rotation=45)
         plt.legend()
         plt.tight_layout()
@@ -276,7 +296,7 @@ def plot_sol_times_barchart(df, solution_type, value_type):
             ax.bar_label(rects, padding=3)
 
         # Adding details
-        ax.set_ylabel('Solve Time (seconds)')
+        ax.set_ylabel(value_type)
         ax.set_title(f'Solve {measure.capitalize()} for {solution_type.capitalize()} {value_type.capitalize()} Solutions')
 
         # Set x-axis ticks and labels
@@ -403,15 +423,17 @@ def main():
     
     # Filter the data for different solution types
     for solution_type in ['optimal', 'immediate_first', 'first_good', 'timed_out']:
-        if len(df_sol_times) > 0:
-            filtered_df = df_sol_times[df_sol_times['type'] == solution_type]
-            #filtered_df = filtered_df[filtered_df['key'].isin(['Alternative_exact_Enforce', 'new'])]
-            if len(filtered_df) > 0:
-                # print(solution_type, df_sol_times.iloc[0]['value'])
-                # print(get_top_methods(aggregate_scores(filtered_df, filtered_df.iloc[0]['value'], solution_type), n=10))
-                # print_top_methods(aggregate_scores_(filtered_df, filtered_df.iloc[0]['value'], solution_type), n=10)
-                plot_sol_times_lines(filtered_df, solution_type= solution_type, value_type=filtered_df.iloc[0]['value'])
-                plot_sol_times_barchart(filtered_df, solution_type= solution_type, value_type=filtered_df.iloc[0]['value'])
+        for type in ['objective_value', 'solve_time']:
+            if len(df_sol_times) > 0:
+                filtered_df = df_sol_times[df_sol_times['type'] == solution_type]
+                filtered_df = filtered_df[filtered_df['value'] == type]
+                #filtered_df = filtered_df[filtered_df['key'].isin(['Alternative_exact_Enforce', 'new'])]
+                if len(filtered_df) > 0:
+                    # print(solution_type, df_sol_times.iloc[0]['value'])
+                    # print(get_top_methods(aggregate_scores(filtered_df, filtered_df.iloc[0]['value'], solution_type), n=10))
+                    # print_top_methods(aggregate_scores_(filtered_df, filtered_df.iloc[0]['value'], solution_type), n=10)
+                    plot_sol_times_lines(filtered_df, solution_type= solution_type, value_type=type)
+                    plot_sol_times_barchart(filtered_df, solution_type= solution_type, value_type=type)
 
 if __name__ == "__main__":
     main()
