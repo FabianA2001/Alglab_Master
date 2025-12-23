@@ -12,6 +12,9 @@ COLOR_TOO_FEW = "background-color: #fee2e2;"  # Red
 COLOR_TOO_MANY = "background-color: #fed7aa;"  # Orange
 COLOR_SEARCH_HIGHLIGHT = "#ff9800"  # Orange for search highlight
 
+# Weight adjustment constant for soft buttons
+SOFT_WEIGHT_ADJUSTMENT = 10
+
 
 def employee_assignments(solution: Solution) -> None:
     """
@@ -271,6 +274,12 @@ def _display_details_dialog(
         ui.separator()
         _render_employee_list(assigned_employees)
 
+        # Employee add/remove section
+        ui.separator().classes("my-4")
+        _render_employee_modification_section(
+            solution, shift_obj, day, shift_type_id, shift_name, dialog
+        )
+
         # Weight adjustment section
         if preferred_count > 0:
             ui.separator().classes("my-4")
@@ -310,6 +319,160 @@ def _render_employee_list(assigned_employees: List[str]) -> None:
             ui.label(f"• {emp_name}")
     else:
         ui.label("Keine Mitarbeiter zugewiesen").classes("text-gray-500")
+
+
+def _render_employee_modification_section(
+    solution: Solution,
+    shift_obj: Any,
+    day: int,
+    shift_type_id: Any,
+    shift_name: str,
+    dialog: Any,
+) -> None:
+    """
+    Render the employee add/remove section with dropdowns and soft/hard buttons.
+
+    Layout:
+    Löschen | Hinzufügen
+    dropdown | dropdown
+    button(soft) | button(soft)
+    button(hard) | button(hard)
+    """
+    ui.label("Mitarbeiter verwalten").classes("font-semibold")
+
+    # Get all employees
+    all_employees = {
+        emp_uid: emp.name for emp_uid, emp in solution.instance.employees.items()
+    }
+
+    # Get currently assigned employees for the remove dropdown
+    assigned_emp_uids = [
+        emp_uid
+        for emp_uid in solution.instance.employees.keys()
+        if solution.is_employee_assigned(day, shift_type_id, emp_uid)
+    ]
+
+    # Get unassigned employees for the add dropdown
+    unassigned_emp_uids = [
+        emp_uid
+        for emp_uid in solution.instance.employees.keys()
+        if not solution.is_employee_assigned(day, shift_type_id, emp_uid)
+    ]
+
+    with ui.grid(columns=2).classes("w-full gap-4 mt-2"):
+        # Left column: Remove employee
+        with ui.column().classes("gap-2"):
+            ui.label("Löschen").classes("font-medium")
+
+            remove_dropdown = (
+                ui.select(
+                    options={uid: all_employees[uid] for uid in assigned_emp_uids},
+                    label="Mitarbeiter auswählen",
+                    with_input=True,
+                )
+                .classes("w-full")
+                .props("outlined dense")
+            )
+
+            def remove_soft() -> None:
+                """Soft remove: Increase penalty for assigning this employee."""
+                selected_uid = remove_dropdown.value
+                if selected_uid is None:
+                    ui.notify("Bitte wählen Sie einen Mitarbeiter aus", type="warning")
+                    return
+
+                # Increase penalty_assigned_day_employee
+                current_penalty = shift_obj.penalty_assigned_day_employee.get(
+                    selected_uid, 0
+                )
+                shift_obj.penalty_assigned_day_employee[selected_uid] = (
+                    current_penalty + SOFT_WEIGHT_ADJUSTMENT
+                )
+
+                emp_name = all_employees[selected_uid]
+                ui.notify(
+                    f"Soft: Strafe für {emp_name} erhöht auf {current_penalty + SOFT_WEIGHT_ADJUSTMENT}",
+                    type="positive",
+                )
+
+            def remove_hard() -> None:
+                """Hard remove: Add employee to ban list."""
+                selected_uid = remove_dropdown.value
+                if selected_uid is None:
+                    ui.notify("Bitte wählen Sie einen Mitarbeiter aus", type="warning")
+                    return
+
+                shift_obj.ban_employee_day_shift.add(selected_uid)
+                emp_name = all_employees[selected_uid]
+                ui.notify(
+                    f"Hard: {emp_name} wurde zur Sperrliste hinzugefügt",
+                    type="positive",
+                )
+                dialog.close()
+
+            ui.button("Soft", on_click=remove_soft).classes("w-full").props(
+                "outline color=orange"
+            )
+            ui.button("Hard", on_click=remove_hard).classes("w-full").props(
+                "outline color=red"
+            )
+
+        # Right column: Add employee
+        with ui.column().classes("gap-2"):
+            ui.label("Hinzufügen").classes("font-medium")
+
+            add_dropdown = (
+                ui.select(
+                    options={uid: all_employees[uid] for uid in unassigned_emp_uids},
+                    label="Mitarbeiter auswählen",
+                    with_input=True,
+                )
+                .classes("w-full")
+                .props("outlined dense")
+            )
+
+            def add_soft() -> None:
+                """Soft add: Decrease penalty for not assigning this employee."""
+                selected_uid = add_dropdown.value
+                if selected_uid is None:
+                    ui.notify("Bitte wählen Sie einen Mitarbeiter aus", type="warning")
+                    return
+
+                # Increase penalty_not_assigned_day_employee
+                current_penalty = shift_obj.penalty_not_assigned_day_employee.get(
+                    selected_uid, 0
+                )
+                shift_obj.penalty_not_assigned_day_employee[selected_uid] = (
+                    current_penalty + SOFT_WEIGHT_ADJUSTMENT
+                )
+
+                emp_name = all_employees[selected_uid]
+                ui.notify(
+                    f"Soft: Strafe für Nicht-Zuweisung von {emp_name} erhöht auf {current_penalty + SOFT_WEIGHT_ADJUSTMENT}",
+                    type="positive",
+                )
+
+            def add_hard() -> None:
+                """Hard add: Add employee to assignment list."""
+                selected_uid = add_dropdown.value
+                if selected_uid is None:
+                    ui.notify("Bitte wählen Sie einen Mitarbeiter aus", type="warning")
+                    return
+
+                shift_obj.assign_employee_day_shift.add(selected_uid)
+                emp_name = all_employees[selected_uid]
+                ui.notify(
+                    f"Hard: {emp_name} wurde zur Zuweisungsliste hinzugefügt",
+                    type="positive",
+                )
+                dialog.close()
+
+            ui.button("Soft", on_click=add_soft).classes("w-full").props(
+                "outline color=orange"
+            )
+            ui.button("Hard", on_click=add_hard).classes("w-full").props(
+                "outline color=green"
+            )
 
 
 def _render_weight_adjustment_section(
