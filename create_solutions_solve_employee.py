@@ -110,7 +110,7 @@ def main():
         # ,  (2.5, 0, 0), (1, 0, 0),  (5, 2.5, 0), (5, 5, 0),  (10, 5, 0), (5, 10, 0),  (10, 10, 0), (0, 0, 30), (0, 2.5, 27.5), (2.5, 0, 27.5), (2.5, 2.5, 25), (2.5, 5, 22.5), (5, 2.5, 22.5), (5, 5, 20), (5, 10, 15), (10, 10, 10), (10, 5, 15)
         for json_file in json_files_best_till_time:
             for x in range(0, 3):
-                for percentual_improvement_shift, time_between_checks_in_seconds_shift, percentual_improvement_work_var, time_between_checks_in_seconds_work_var in [(0.1,30,0.05,30), (0.05,15,0.025,15)]:
+                for percentual_improvement_shift, time_between_checks_in_seconds_shift, percentual_improvement_work_var, time_between_checks_in_seconds_work_var in [(0.1,30,0.05,30), (0.05,15,0.025,15), (0.025,7,0.012,7)]:
                     percentual_improvement_shift=0.1
                     time_between_checks_in_seconds_shift=30
                     percentual_improvement_work_var=0.05
