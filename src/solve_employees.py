@@ -263,6 +263,7 @@ class solve_employee():
         if fixed_work_var_opt_max_time <= 0:
             fixed_work_var_opt_max_time=1200
             stop_after_first_solution=True
+        instance_name_=self.instance.name+""
         while True:
             solver = Solver(self.instance, shift_vars.Shift_vars(self.instance))
             solution_temp = solver.warm_start_generalized(hard_constraint_solution=self.solution ,hint_solution=self.hint_solution, max_time_in_seconds=fixed_work_var_opt_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution, callback=fixed_work_var_opt_callback)
@@ -278,21 +279,13 @@ class solve_employee():
             
         work_var_opt_time = time.time()
         print("work_var time", work_var_opt_time - employee_verification_time)
-        if len(invalid_employees)>0 or True:
-            with open('invalid_employees_count.txt', 'a') as file:
-                # constraints_info = ', '.join(
-                #     f"{name}: {value}" for name, value in self.employee_broken_constraints.items()
-                # )
-                # # Prepare the values for constraints
-                # employee_values = ','.join(str(value) for value in self.employee_broken_constraints.values())
-                invalid_employees_string=f"\n{self.instance.name}_1S{input_tupel[0]}_wv{input_tupel[1]}_o{input_tupel[2]}: "+str(len(invalid_employees))+"/" +str(len(self.instance.employees.keys())) + f": {str(invalid_employees)} - time for employee verification is {employee_verification_time-one_shift_time_end} - time for opt work_var after employee verification is {work_var_opt_time-employee_verification_time}\n-{str(len(invalid_employees))},{employee_verification_time-one_shift_time_end},{work_var_opt_time-employee_verification_time}"
-                file.write(invalid_employees_string)
 
         if general_optimization_max_time > 0 and input_tupel[0]+input_tupel[1]-int(time.time()-start_time)>0:
             general_optimization_max_time = general_optimization_max_time+input_tupel[0]+input_tupel[1]-int(time.time()-start_time)
 
         stop_after_first_solution=False
         while general_optimization_max_time > 0:
+            self.instance.name = instance_name_
             solver = Solver(self.instance, shift_vars.Shift_vars(self.instance))
             solution_temp = solver.warm_start_generalized(hint_solution=self.solution, max_time_in_seconds=general_optimization_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution, callback=optimization_callback)
             if solution_temp.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
@@ -304,6 +297,16 @@ class solve_employee():
             elif solution_temp.solve_status in [cp_model.INFEASIBLE, cp_model.MODEL_INVALID]:
                 print("Something went wrong and the model is infeasible or invalid")
                 return solution_temp
+        if len(invalid_employees)>0 or True:
+            with open('invalid_employees_count.txt', 'a') as file:
+                # constraints_info = ', '.join(
+                #     f"{name}: {value}" for name, value in self.employee_broken_constraints.items()
+                # )
+                # # Prepare the values for constraints
+                # employee_values = ','.join(str(value) for value in self.employee_broken_constraints.values())
+                invalid_employees_string=f"\n{self.instance.name}_1S{input_tupel[0]}_wv{input_tupel[1]}_o{input_tupel[2]}: "+str(len(invalid_employees))+"/" +str(len(self.instance.employees.keys())) + f": {str(invalid_employees)} - time for employee verification is {employee_verification_time-one_shift_time_end} - time for opt work_var after employee verification is {work_var_opt_time-employee_verification_time}\n-{str(len(invalid_employees))},{employee_verification_time-one_shift_time_end},{work_var_opt_time-employee_verification_time}, {one_shift_time_end-start_time}, {time.time()-work_var_opt_time}"
+                file.write(invalid_employees_string)
+
 
         end_time = time.time()
         print("optimization time", end_time - work_var_opt_time)
