@@ -95,7 +95,9 @@ def employee_assignments(solution: Solution) -> None:
 
         table.on(
             "cell_click",
-            lambda e: _handle_cell_click(e.args[0], e.args[1], solution, shift_mapping),
+            lambda e: _display_details_dialog(
+                e.args[0], e.args[1], solution, shift_mapping
+            ),
         )
 
         # Color legend
@@ -229,11 +231,14 @@ def _get_assigned_employees(solution: Solution, day: int, shift_type: Any) -> Li
     ]
 
 
-def _handle_cell_click(
-    row_key: str, col_name: str, solution: Solution, shift_mapping: Dict[str, Any]
+def _display_details_dialog(
+    row_key: str,
+    col_name: str,
+    solution: Solution,
+    shift_mapping: Dict[str, Any],
 ) -> None:
     """
-    Handle cell click events from the table.
+    Handle cell click events and display a dialog with shift assignment details.
 
     Args:
         row_key: The key identifying the row (shift type).
@@ -250,52 +255,95 @@ def _handle_cell_click(
     shift_name = solution.instance.shift_types[shift_type_id].name
 
     assigned_employees = _get_assigned_employees(solution, day, shift_type_id)
-
-    # Get preferred employee count
-    shift_obj = solution.instance.shifts.get(day, {}).get(shift_type_id)
-    preferred_count = shift_obj.preffert_number_employees if shift_obj else 0
-
-    _display_details_dialog(day, shift_name, assigned_employees, preferred_count)
-
-
-def _display_details_dialog(
-    day: int, shift_name: str, assigned_employees: List[str], preferred_count: int = 0
-) -> None:
-    """
-    Display a dialog with shift assignment details.
-
-    Args:
-        day: The day number.
-        shift_name: The name of the shift.
-        assigned_employees: List of assigned employee names.
-        preferred_count: Preferred number of employees for this shift.
-    """
     actual_count = len(assigned_employees)
 
-    with ui.dialog() as dialog, ui.card():
-        ui.label(f"Details: Tag {day}, Schicht {shift_name}").classes(
-            "text-lg font-bold"
-        )
+    # Get shift object for preferred count and weight
+    shift_obj = solution.instance.shifts.get(day, {}).get(shift_type_id)
+    if not shift_obj:
+        ui.notify("Schichtdaten nicht gefunden.", type="negative")
+        return
 
-        # Show employee count ratio if preferred count is set
-        if preferred_count > 0:
-            ratio_text = f"Belegung: {actual_count}/{preferred_count}"
-            if actual_count == preferred_count:
-                ui.label(ratio_text).classes("text-green-600 font-semibold")
-            elif actual_count < preferred_count:
-                ui.label(ratio_text).classes("text-red-600 font-semibold")
-            else:
-                ui.label(ratio_text).classes("text-orange-600 font-semibold")
+    preferred_count = shift_obj.preffert_number_employees
+    weight_below = shift_obj.weight_below_preferred
 
+    with ui.dialog() as dialog, ui.card().classes("min-w-96"):
+        _render_dialog_header(day, shift_name, actual_count, preferred_count)
         ui.separator()
+        _render_employee_list(assigned_employees)
 
-        if assigned_employees:
-            ui.label("Zugewiesene Mitarbeiter:").classes("font-semibold mt-2")
-            for emp_name in assigned_employees:
-                ui.label(f"• {emp_name}")
-        else:
-            ui.label("Keine Mitarbeiter zugewiesen").classes("text-gray-500")
+        # Weight adjustment section
+        if preferred_count > 0:
+            ui.separator().classes("my-4")
+            _render_weight_adjustment_section(
+                shift_obj, day, shift_type_id, shift_name, weight_below, dialog
+            )
 
         ui.button("Schließen", on_click=dialog.close).classes("mt-4")
 
     dialog.open()
+
+
+def _render_dialog_header(
+    day: int, shift_name: str, actual_count: int, preferred_count: int
+) -> None:
+    """Render the dialog header with shift details and employee count."""
+    ui.label(f"Details: Tag {day}, Schicht {shift_name}").classes("text-lg font-bold")
+
+    # Show employee count ratio if preferred count is set
+    if preferred_count > 0:
+        ratio_text = f"Belegung: {actual_count}/{preferred_count}"
+        color_class = (
+            "text-green-600"
+            if actual_count == preferred_count
+            else "text-red-600"
+            if actual_count < preferred_count
+            else "text-orange-600"
+        )
+        ui.label(ratio_text).classes(f"{color_class} font-semibold")
+
+
+def _render_employee_list(assigned_employees: List[str]) -> None:
+    """Render the list of assigned employees."""
+    if assigned_employees:
+        ui.label("Zugewiesene Mitarbeiter:").classes("font-semibold mt-2")
+        for emp_name in assigned_employees:
+            ui.label(f"• {emp_name}")
+    else:
+        ui.label("Keine Mitarbeiter zugewiesen").classes("text-gray-500")
+
+
+def _render_weight_adjustment_section(
+    shift_obj: Any,
+    day: int,
+    shift_type_id: Any,
+    shift_name: str,
+    weight_below: int,
+    dialog: Any,
+) -> None:
+    """Render the weight adjustment section with input and update button."""
+    ui.label("Instanz-Anpassungen").classes("font-semibold")
+
+    weight_input = (
+        ui.number(
+            label="Gewicht bei Unterbesetzung",
+            value=weight_below,
+            min=0,
+            step=1,
+        )
+        .classes("w-full mt-2")
+        .props("outlined dense")
+    )
+
+    def update_weight() -> None:
+        """Update the weight_below_preferred value in the instance."""
+        new_weight = int(weight_input.value)
+        shift_obj.weight_below_preferred = new_weight
+        ui.notify(
+            f"Gewicht für Tag {day}, Schicht {shift_name} aktualisiert: {new_weight}",
+            type="positive",
+        )
+        dialog.close()
+
+    ui.button("Gewicht aktualisieren", on_click=update_weight).classes("mt-2").props(
+        "color=primary"
+    )
