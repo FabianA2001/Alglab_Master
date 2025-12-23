@@ -130,7 +130,8 @@ def main():
                     solution = solver_employee.solve_instance_one_shift(one_shift_max_time=one_shift_time*60, fixed_work_var_opt_max_time=work_var_time*60, general_optimization_max_time=opt_time*60, optimization_callback=callback_opt)
 
                     
-                    filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_{dict_objective_values[json_file.stem]}_immediate_first_{x}"
+                    filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_till_median_immediate_first_{x}"
+
                     solution.to_json_file(filename)
 
     for one_shift_time, work_var_time, opt_time in [(10,10,10), (0,0,30), (10,10,0)]:
