@@ -284,6 +284,7 @@ class solve_employee():
             general_optimization_max_time = general_optimization_max_time+input_tupel[0]+input_tupel[1]-int(time.time()-start_time)
 
         stop_after_first_solution=False
+        print(general_optimization_max_time)
         while general_optimization_max_time > 0:
             self.instance.name = instance_name_
             solver = Solver(self.instance, shift_vars.Shift_vars(self.instance))
