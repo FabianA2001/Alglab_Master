@@ -27,6 +27,7 @@ def solution_page():
             # Setze Solution im globalen State (verfügbar für alle Seiten)
             state.set_solution(solution)
             state.set_instance(solution.instance)
+            state.clear_changed_days()  # Zurücksetzen bei neuer Solution
             update_solution_display()
             ui.notify(
                 f"Solution '{solution_name}' erfolgreich geladen", type="positive"

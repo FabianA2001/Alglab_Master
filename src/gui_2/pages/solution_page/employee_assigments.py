@@ -5,6 +5,8 @@ from typing import Any, Dict, List
 from nicegui import ui
 
 from ....solution import Solution
+from ... import state
+from . import components
 
 # Color constants for cell background based on employee count
 COLOR_CORRECT_COUNT = "background-color: #d1fae5;"  # Green
@@ -284,7 +286,13 @@ def _display_details_dialog(
         if preferred_count > 0:
             ui.separator().classes("my-4")
             _render_weight_adjustment_section(
-                shift_obj, day, shift_type_id, shift_name, weight_below, dialog
+                solution,
+                shift_obj,
+                day,
+                shift_type_id,
+                shift_name,
+                weight_below,
+                dialog,
             )
 
         ui.button("Schließen", on_click=dialog.close).classes("mt-4")
@@ -389,6 +397,13 @@ def _render_employee_modification_section(
                     current_penalty + SOFT_WEIGHT_ADJUSTMENT
                 )
 
+                # Markiere Tag als geändert
+                state.add_changed_day(day)
+                components.refresh_changed_days()
+
+                # Aktualisiere Instance im State
+                state.set_instance(solution.instance)
+
                 emp_name = all_employees[selected_uid]
                 ui.notify(
                     f"Soft: Strafe für {emp_name} erhöht auf {current_penalty + SOFT_WEIGHT_ADJUSTMENT}",
@@ -403,6 +418,14 @@ def _render_employee_modification_section(
                     return
 
                 shift_obj.ban_employee_day_shift.add(selected_uid)
+
+                # Markiere Tag als geändert
+                state.add_changed_day(day)
+                components.refresh_changed_days()
+
+                # Aktualisiere Instance im State
+                state.set_instance(solution.instance)
+
                 emp_name = all_employees[selected_uid]
                 ui.notify(
                     f"Hard: {emp_name} wurde zur Sperrliste hinzugefügt",
@@ -446,6 +469,13 @@ def _render_employee_modification_section(
                     current_penalty + SOFT_WEIGHT_ADJUSTMENT
                 )
 
+                # Markiere Tag als geändert
+                state.add_changed_day(day)
+                components.refresh_changed_days()
+
+                # Aktualisiere Instance im State
+                state.set_instance(solution.instance)
+
                 emp_name = all_employees[selected_uid]
                 ui.notify(
                     f"Soft: Strafe für Nicht-Zuweisung von {emp_name} erhöht auf {current_penalty + SOFT_WEIGHT_ADJUSTMENT}",
@@ -460,6 +490,14 @@ def _render_employee_modification_section(
                     return
 
                 shift_obj.assign_employee_day_shift.add(selected_uid)
+
+                # Markiere Tag als geändert
+                state.add_changed_day(day)
+                components.refresh_changed_days()
+
+                # Aktualisiere Instance im State
+                state.set_instance(solution.instance)
+
                 emp_name = all_employees[selected_uid]
                 ui.notify(
                     f"Hard: {emp_name} wurde zur Zuweisungsliste hinzugefügt",
@@ -476,6 +514,7 @@ def _render_employee_modification_section(
 
 
 def _render_weight_adjustment_section(
+    solution: Solution,
     shift_obj: Any,
     day: int,
     shift_type_id: Any,
@@ -501,6 +540,14 @@ def _render_weight_adjustment_section(
         """Update the weight_below_preferred value in the instance."""
         new_weight = int(weight_input.value)
         shift_obj.weight_below_preferred = new_weight
+
+        # Markiere Tag als geändert
+        state.add_changed_day(day)
+        components.refresh_changed_days()
+
+        # Aktualisiere Instance im State
+        state.set_instance(solution.instance)
+
         ui.notify(
             f"Gewicht für Tag {day}, Schicht {shift_name} aktualisiert: {new_weight}",
             type="positive",

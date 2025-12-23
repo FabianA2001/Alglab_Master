@@ -362,12 +362,23 @@ def solver_page() -> None:
                     raise ValueError(
                         "Minimal Changes LNS benötigt eine existierende Lösung!"
                     )
-                # TODO: days_with_change Parameter hinzufügen (momentan alle Tage)
-                days_with_change = list(range(instance.number_of_days))
+                # Verwende changed_days aus State, falls vorhanden
+                days_with_change = state.get_changed_days()
+                if len(days_with_change) == 0:
+                    # Fallback: alle Tage verwenden
+                    days_with_change = set(range(instance.number_of_days))
+                    add_log_message(
+                        "⚠️ Keine geänderten Tage angegeben - verwende alle Tage"
+                    )
+                else:
+                    add_log_message(
+                        f"ℹ️ Verwende {len(days_with_change)} geänderte Tage: {sorted(days_with_change)}"
+                    )
+
                 solution = minimal_change_lns.solve_changes(
                     old_solution=old_solution,
                     new_instanc=instance,
-                    days_with_change=days_with_change,
+                    days_with_change=list(days_with_change),
                     **method_config["params"],
                 )
             else:

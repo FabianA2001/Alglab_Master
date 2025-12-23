@@ -3,7 +3,26 @@
 from nicegui import ui
 
 from ....solution import Solution
+from ... import state
 from .employee_assigments import employee_assignments
+
+# Globale Variable für die Refresh-Funktion (lokal zu diesem Modul)
+_changed_days_refresh = None
+
+
+def set_refresh_function(refresh_func):
+    """Setzt die Refresh-Funktion für die changed_days Anzeige."""
+    global _changed_days_refresh
+    _changed_days_refresh = refresh_func
+
+
+def refresh_changed_days():
+    """Ruft die Refresh-Funktion auf, falls vorhanden."""
+    if _changed_days_refresh is not None:
+        try:
+            _changed_days_refresh()
+        except (RuntimeError, AttributeError):
+            pass
 
 
 def render_basic_info(solution: Solution) -> None:
@@ -12,6 +31,29 @@ def render_basic_info(solution: Solution) -> None:
     Args:
         solution: Die anzuzeigende Solution
     """
+
+    @ui.refreshable
+    def changed_days_display() -> None:
+        """Zeigt die geänderten Tage an (refreshable)."""
+        changed_days = state.get_changed_days()
+        if changed_days:
+            ui.separator().classes("my-2")
+            ui.label("Geänderte Tage").classes("font-semibold text-orange-600")
+            str_changes_days = ", ".join(str(day) for day in sorted(changed_days))
+            ui.label(f"{len(changed_days)} Tage: {str_changes_days}").classes("text-sm")
+            ui.button(
+                "Alle Änderungen zurücksetzen",
+                icon="clear_all",
+                on_click=lambda: [
+                    state.clear_changed_days(),
+                    ui.notify("Änderungen zurückgesetzt", type="info"),
+                    changed_days_display.refresh(),
+                ],
+            ).props("flat color=negative size=sm")
+
+    # Speichere die refresh-Funktion lokal in diesem Modul
+    set_refresh_function(changed_days_display.refresh)
+
     with ui.card().classes("w-full mb-4"):
         ui.label("Grundlegende Informationen").classes("text-xl font-bold mb-2")
         ui.label(f"Timestamp: {solution.timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
@@ -23,6 +65,9 @@ def render_basic_info(solution: Solution) -> None:
             ui.label(
                 f"Deaktivierte Constraints: {', '.join(c.name for c in solution.disabled_constraints)}"
             )
+
+        # Zeige geänderte Tage (refreshable)
+        changed_days_display()
 
 
 def render_constraint_validation(solution: Solution) -> None:
