@@ -51,8 +51,7 @@ def employee_assignments(solution: Solution) -> None:
         table.add_slot(
             "body-cell",
             """
-            <q-td :props="props"
-                  :style="props.row['_color_' + props.col.name] || ''">
+            <q-td :props="props">
                 <div v-if="props.col.name === 'shift_type'" class="text-weight-medium">
                     {{ props.value }}
                 </div>
@@ -60,6 +59,7 @@ def employee_assignments(solution: Solution) -> None:
                     —
                 </div>
                 <div v-else class="q-pa-xs cursor-pointer" 
+                     :style="props.row['_color_' + props.col.name] || ''"
                      @click="() => $parent.$emit('cell_click', props.row.row_key, props.col.name)">
                     <q-badge v-for="(name, index) in props.value.split(', ')" 
                              :key="index"
