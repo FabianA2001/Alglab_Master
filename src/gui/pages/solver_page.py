@@ -23,7 +23,6 @@ def solve_warm_start(**kwargs) -> solution.Solution:
     )
     sol = sol.warm_start(
         old_solution,
-        instance,
         max_time_in_seconds=kwargs["timeout_seconds"],
     )
     if sol.solve_status == 4 or sol.solve_status == 2:
