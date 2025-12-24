@@ -3,7 +3,7 @@ from collections import defaultdict
 from pydantic import BaseModel, Field, model_validator
 
 from . import employee, shift, shiftType
-from ..help_functions import hash_string
+
 
 # TODO testen das alle uId sind unique
 class Instance(BaseModel):
@@ -128,6 +128,7 @@ class Instance(BaseModel):
     # 4, 5, 6, 7, 8, 9, 10
     #TODO I think i did not consider ban and other stuff
     def instance_to_one_shift_type(self):
+        from ..help_functions import hash_string
         # number_of_days: int,
         instance_copy = self.model_copy(deep=True)
         number_of_days = instance_copy.number_of_days + 0

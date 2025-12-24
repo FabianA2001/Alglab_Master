@@ -83,7 +83,7 @@ class Solver:
         log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
         disabled_constraints: list[SolverConstraints] = [],
-        constraint_set = 0,
+        constraint_set = 1,
         **solver_params,
     ):
         callback = Callback_Early_Stop_immediate(self.instance, self.vars)
