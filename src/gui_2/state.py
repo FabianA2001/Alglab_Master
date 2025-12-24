@@ -283,7 +283,6 @@ def reset_solver_state() -> None:
     """Setzt alle Solver-bezogenen State-Variablen zurück."""
     global _solver_running, _solver_start_time, _solver_end_time
     global _solver_logs, _solver_statistics, _last_objective_value, _solver_status
-    global _changed_days
     global solver_log_html_element, solver_log_scroll_area, solver_runtime_task
 
     _solver_running = False
@@ -293,7 +292,6 @@ def reset_solver_state() -> None:
     _solver_statistics = {}
     _last_objective_value = None
     _solver_status = None
-    _changed_days = set()
 
     # Stoppe Runtime-Task falls vorhanden
     if solver_runtime_task is not None:
@@ -306,3 +304,9 @@ def reset_solver_state() -> None:
     solver_log_html_element = None
     solver_log_scroll_area = None
     solver_runtime_task = None
+
+
+def reset_all() -> None:
+    reset_solver_state()
+    global _changed_days
+    _changed_days = set()
