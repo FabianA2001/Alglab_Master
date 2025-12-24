@@ -1,10 +1,12 @@
 import logging
+import random
 import time
 
 from ortools.sat.python import cp_model
 
 from .. import solution, solver
 from ..inputTypes import instace
+from . import lns_helper, slice_instance
 
 
 class StopAfterMinTimeAndFirstSolution(cp_model.CpSolverSolutionCallback):
@@ -22,16 +24,17 @@ class StopAfterMinTimeAndFirstSolution(cp_model.CpSolverSolutionCallback):
             self.StopSearch()
 
 
+# TODO disabled_constraints erlauben
 class LNS:
     MIN_SMALL_SEARCH_TIME: float = 2.0  # sec
 
     def __init__(
         self,
         sol_or_instance: solution.Solution | instace.Instance,
-        disabled_constraints=None,
         percent_search_time_first_solution: float = 0.1,
         timeout_seconds: float = 180,
         small_runtime_base: float = 0.01,  # * number_of_days * (number_of_shift_types + number_of_employees)
+        ####################
         start_search_window_size: int = 7,
         search_window_size_min: int = 3,
         window_increase_factor: float = 1.3,
@@ -66,11 +69,23 @@ class LNS:
         self.strong_improvement_threshold = strong_improvement_threshold
 
         self.MIN_DAY: int = 0
-        self.start_day: int = self.MIN_DAY
         self.MAX_DAY: int = self.old_solution.instance.number_of_days - 1
-        self.end_day: int = self.MAX_DAY
         self.start_search_window_size: int = start_search_window_size
         self.search_window_size_min = search_window_size_min
+        self.start_day: int = random.randint(
+            self.MIN_DAY,
+            max(
+                self.MIN_DAY,
+                self.MAX_DAY - self.start_search_window_size,
+            ),
+        )
+
+        # HACK
+        # self.start_day = 11
+        # self.start_search_window_size = 3
+        ################
+
+        self.end_day: int = self.start_day + self.start_search_window_size
 
         # time parameters
         self.timeout_seconds: float = timeout_seconds
@@ -78,14 +93,7 @@ class LNS:
         self.timeout_seconds: float = max(
             0.0, timeout_seconds - create_time_first_solution
         )
-
-        # disabled constraints
-        self.disabled_constraints = (
-            disabled_constraints
-            if disabled_constraints is not None
-            else self.old_solution.disabled_constraints
-        )
-
+        self.disabled_for_window = []
         # logging info
         self.logger.info(
             f"LNS initialized with search_window_size={self.start_search_window_size}, "
@@ -102,6 +110,7 @@ class LNS:
         timeout_seconds: float,
     ) -> tuple[solution.Solution, float]:
         if isinstance(sol_or_instance, solution.Solution):
+            # TODO calc objective value
             return sol_or_instance, 0.0
         elif isinstance(sol_or_instance, instace.Instance):
             start_time = time.time()
@@ -121,57 +130,6 @@ class LNS:
         else:
             raise ValueError("Input must be a Solution or an Instance")
 
-    def fix_outside_window(
-        self, start_day: int, end_day: int, solver_instance: solver.Solver
-    ):
-        """Fixiert die Zuweisungen außerhalb des Suchfensters in der Solver-Instanz."""
-
-        for day in range(solver_instance.instance.number_of_days):
-            if day < start_day or day > end_day:
-                for shift_type_uid in solver_instance.instance.shift_types:
-                    for emp_id in solver_instance.instance.employees:
-                        assigned = self.old_solution.is_employee_assigned(
-                            day, shift_type_uid, emp_id
-                        )
-                        var = solver_instance.vars.vars[(day, shift_type_uid, emp_id)]
-                        if assigned:
-                            solver_instance.vars.model.Add(var == 1)
-                        else:
-                            solver_instance.vars.model.Add(var == 0)
-
-    def fix_first_and_last_day(
-        self, extended_start: int, extended_end: int, solver_instance: solver.Solver
-    ):
-        """Fixiert die Zuweisungen des ersten und letzten Tages des erweiterten Fensters mit den Werten der gegebenen Lösung."""
-
-        # Fixiere den ersten Tag (extended_start)
-        for shift_type_uid in solver_instance.instance.shift_types:
-            for emp_id in solver_instance.instance.employees:
-                assigned = self.old_solution.is_employee_assigned(
-                    extended_start, shift_type_uid, emp_id
-                )
-                # Tag 0 in der window_instance entspricht extended_start in der alten Instanz
-                var = solver_instance.vars.vars[(0, shift_type_uid, emp_id)]
-                if assigned:
-                    solver_instance.vars.model.Add(var == 1)
-                else:
-                    solver_instance.vars.model.Add(var == 0)
-
-        # Fixiere den letzten Tag (extended_end)
-        last_day_in_window = extended_end - extended_start
-        for shift_type_uid in solver_instance.instance.shift_types:
-            for emp_id in solver_instance.instance.employees:
-                assigned = self.old_solution.is_employee_assigned(
-                    extended_end, shift_type_uid, emp_id
-                )
-                var = solver_instance.vars.vars[
-                    (last_day_in_window, shift_type_uid, emp_id)
-                ]
-                if assigned:
-                    solver_instance.vars.model.Add(var == 1)
-                else:
-                    solver_instance.vars.model.Add(var == 0)
-
     def update_search_window(self, improvement: float):
         """
         Passt die Größe des Suchfensters basierend auf der Verbesserung an.
@@ -180,6 +138,8 @@ class LNS:
         Args:
             improvement: Die Verbesserung des Objective-Werts (positiv wenn besser)
         """
+
+        # TODO change random window start
 
         def __calculate_new_window_size():
             old_window_size = self.end_day - self.start_day
@@ -205,14 +165,13 @@ class LNS:
             else:
                 # Keine Verbesserung -> Fenster vergrößern
                 new_window_size = min(
-                    self.MAX_DAY, int(old_window_size * self.window_increase_factor)
+                    self.MAX_DAY,
+                    round(old_window_size * self.window_increase_factor),
                 )
                 self.logger.debug(
                     f"No improvement: Increasing window size from {old_window_size} to {new_window_size}"
                 )
             return new_window_size
-
-        import random
 
         new_window_size = __calculate_new_window_size()
 
@@ -241,51 +200,14 @@ class LNS:
         assert self.start_day >= self.MIN_DAY
         assert self.end_day <= self.MAX_DAY
 
-    def create_window_instance(self) -> instace.Instance:
-        """Erstellt eine Instanz, die das aktuelle Suchfenster plus einen Tag davor und danach umfasst."""
-        old_instance = self.old_solution.instance
-
-        # Erweitere Fenster um einen Tag vor und nach (falls möglich)
-        extended_start = max(self.MIN_DAY, self.start_day - 1)
-        extended_end = min(self.MAX_DAY, self.end_day + 1)
-        days_in_window = extended_end - extended_start + 1
-
-        # Kopiere employees (Referenz auf dieselben Employee-Objekte)
-        employees = old_instance.employees.copy()
-
-        # Kopiere shift_types (Referenz auf dieselben ShiftType-Objekte)
-        shift_types = old_instance.shift_types.copy()
-
-        # Erstelle neue shifts für das erweiterte Fenster
-        from collections import defaultdict
-
-        shifts = defaultdict(dict)
-        for day_offset in range(days_in_window):
-            old_day = extended_start + day_offset
-            for shift_type_uid in old_instance.shift_types:
-                # Kopiere den Shift vom alten Tag
-                shifts[day_offset][shift_type_uid] = old_instance.get_shift(
-                    old_day, shift_type_uid
-                )
-
-        # Berechne neue weekend_days (angepasst an neuen day-Index)
-        weekend_days = set()
-        for old_weekend_day in old_instance.weekend_days:
-            if extended_start <= old_weekend_day <= extended_end:
-                new_day = old_weekend_day - extended_start
-                weekend_days.add(new_day)
-
-        # Erstelle neue Instanz mit __init__
-        window_instance = instace.Instance(
-            name=f"{old_instance.name}_window_{extended_start}_{extended_end}",
-            employees=employees,
-            number_of_days=days_in_window,
-            weekend_days=weekend_days,
-            shifts=shifts,
-            shift_types=shift_types,
+    def merge_solutions(self, new_solution: solution.Solution) -> solution.Solution:
+        return lns_helper.merge_solutions(
+            old_solutions=self.old_solution,
+            new_solution=new_solution,
+            start_day=self.start_day,
+            end_day=self.end_day,
+            disabled_for_window=self.disabled_for_window,
         )
-
-        return window_instance
 
     def solve(self) -> solution.Solution:
         self.logger.info("Starting LNS solve process")
@@ -293,6 +215,7 @@ class LNS:
         iteration = 0
         improvements = 0
 
+        # TODO stop with erly stop
         while time.time() - start_time < self.timeout_seconds:
             assert self.end_day > self.start_day
             iteration += 1
@@ -308,47 +231,72 @@ class LNS:
                 f"for window days {self.start_day} to {self.end_day}"
             )
 
-            window_instance = self.create_window_instance()
-            solvr = solver.Solver(
-                window_instance, solver.shift_vars.Shift_vars(window_instance)
-            )
+            solvr = slice_instance.Slice_instance(
+                sol=self.old_solution,
+                start=self.start_day,
+                end=self.end_day,
+            ).get_solver()
 
-            # Fixiere den ersten und letzten Tag des erweiterten Fensters
-            extended_start = max(self.MIN_DAY, self.start_day - 1)
-            extended_end = min(self.MAX_DAY, self.end_day + 1)
-            self.fix_first_and_last_day(extended_start, extended_end, solvr)
-
-            solv = solvr.solve(
+            sol = solvr.solve_window(
                 log_search_progress=False,
                 max_time_in_seconds=small_max_solve_time,
-                disabled_constraints=self.disabled_constraints,
             )
 
             if not (
-                solv.solve_status == cp_model.OPTIMAL
-                or solv.solve_status == cp_model.FEASIBLE
+                sol.solve_status == cp_model.OPTIMAL
+                or sol.solve_status == cp_model.FEASIBLE
             ):
                 self.logger.debug(
-                    f"Iteration {iteration}: No feasible solution found (status: {solv.solve_status})"
+                    f"Iteration {iteration}: No feasible solution found (status: {sol.solve_status})"
+                )
+                self.old_solution.to_json_file(
+                    f"error_lns_infeasible_start_{self.start_day}_end_{self.end_day}"
+                )
+                # HACK
+                # import sys
+
+                # sys.exit(1)
+                #############
+                continue
+            old_sol_debugg = sol.model_copy()
+            sol = self.merge_solutions(sol)
+            if not sol.checkt_constraints[0]:
+                self.old_solution.to_json_file(
+                    f"error_lns_merge_old_start_{self.start_day}_end_{self.end_day}"
+                )
+                old_sol_debugg.to_json_file(
+                    f"error_lns_merge_bevor_start_{self.start_day}_end_{self.end_day}"
+                )
+                sol.to_json_file(
+                    f"error_lns_merge_after_start_{self.start_day}_end_{self.end_day}"
                 )
 
+                self.logger.debug(
+                    f"Iteration {iteration}: Merged solution violates constraints!"
+                )
+
+                # HACK
+                # import sys
+
+                # sys.exit(1)
+                ##########
                 continue
 
             self.logger.debug(
-                f"Iteration {iteration}: Found solution with objective {solv.objective_value}"
+                f"Iteration {iteration}: Found solution with objective {sol.objective_value}"
             )
 
             improvement = 0
-            if solv.objective_value < self.old_solution.objective_value:
+            if sol.objective_value < self.old_solution.objective_value:
                 improvements += 1
-                improvement = self.old_solution.objective_value - solv.objective_value
+                improvement = self.old_solution.objective_value - sol.objective_value
                 self.logger.info(
                     f"Iteration {iteration}: Found improvement! "
                     f"Old objective: {self.old_solution.objective_value}, "
-                    f"New objective: {solv.objective_value}, "
+                    f"New objective: {sol.objective_value}, "
                     f"Improvement: {improvement}"
                 )
-                self.old_solution = solv
+                self.old_solution = sol
             else:
                 self.logger.debug(
                     f"Iteration {iteration}: No improvement (current best: {self.old_solution.objective_value})"

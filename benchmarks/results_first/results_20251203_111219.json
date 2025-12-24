@@ -1,0 +1,65 @@
+[
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance1.txt",
+    "name": "Instance1",
+    "status": "OPTIMAL",
+    "is_success": true,
+    "solve_time": 0.055358,
+    "objective_value": 607.0,
+    "timestamp": "2025-12-03T11:10:31.780231"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance1ExtraLong.txt",
+    "name": "Instance1ExtraLong",
+    "status": "OPTIMAL",
+    "is_success": true,
+    "solve_time": 0.124167,
+    "objective_value": 607.0,
+    "timestamp": "2025-12-03T11:10:31.959154"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance2.txt",
+    "name": "Instance2",
+    "status": "OPTIMAL",
+    "is_success": true,
+    "solve_time": 2.081747,
+    "objective_value": 838.0,
+    "timestamp": "2025-12-03T11:10:34.096550"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance3.txt",
+    "name": "Instance3",
+    "status": "OPTIMAL",
+    "is_success": true,
+    "solve_time": 1.709158,
+    "objective_value": 1100.0,
+    "timestamp": "2025-12-03T11:10:35.901766"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance4.txt",
+    "name": "Instance4",
+    "status": "OPTIMAL",
+    "is_success": true,
+    "solve_time": 10.388563,
+    "objective_value": 2519.0,
+    "timestamp": "2025-12-03T11:10:46.376377"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance5.txt",
+    "name": "Instance5",
+    "status": "OPTIMAL",
+    "is_success": true,
+    "solve_time": 32.233279,
+    "objective_value": 1141.0,
+    "timestamp": "2025-12-03T11:11:18.755541"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance6.txt",
+    "name": "Instance6",
+    "status": "FEASIBLE",
+    "is_success": true,
+    "solve_time": 60.254538,
+    "objective_value": 2046.0,
+    "timestamp": "2025-12-03T11:12:19.217072"
+  }
+]

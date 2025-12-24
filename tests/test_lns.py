@@ -9,8 +9,10 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from src.inputTypes import employee, instace, shiftType
 from src.inputTypes.instace import Instance
 from src.LNS.lns import LNS
+from src.LNS.slice_instance import Slice_instance
 from src.solution import Solution
 
 
@@ -72,7 +74,7 @@ class TestUpdateSearchWindow:
             lns.end_day = 15  # Window size = 5
             return lns
 
-    def test_no_improvement_increases_window(self, lns_instance):
+    def test_no_improvement_increases_window(self, lns_instance: LNS):
         """
         Test: Bei keiner Verbesserung (improvement=0) wird das Fenster vergrößert.
 
@@ -81,17 +83,17 @@ class TestUpdateSearchWindow:
             - Fenster wird zufällig nach links/rechts erweitert
             - Grenzen (MIN_DAY, MAX_DAY) werden respektiert
         """
-        # Arrange: Initial window [10, 15], size=5
+        # Arrange: Initial window [10, 15], size=6
         initial_start = lns_instance.start_day
         initial_end = lns_instance.end_day
-        initial_size = initial_end - initial_start
+        initial_size = initial_end - initial_start + 1
 
         # Act: Keine Verbesserung
         with patch("random.randint", return_value=3):  # Deterministisch für Test
             lns_instance.update_search_window(improvement=0)
 
         # Assert: Fenster sollte größer sein
-        new_size = lns_instance.end_day - lns_instance.start_day
+        new_size = lns_instance.end_day - lns_instance.start_day + 1
         expected_size = int(initial_size * lns_instance.window_increase_factor)
         assert new_size >= initial_size, (
             "Fenster sollte bei keiner Verbesserung größer werden"
@@ -293,5 +295,314 @@ class TestUpdateSearchWindow:
         assert lns_instance.end_day > lns_instance.start_day
 
 
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+class Test_Module_Max_Weekends:
+    class Test_slice_instance_max_days:
+        @pytest.fixture(autouse=True)
+        def setup(self):
+            self.lokal_shift_types = shiftType.ShiftType()
+            self.lokal_employee = employee.Employee(max_number_weekends=2)
+            self.instance = instace.Instance.create(
+                number_of_days=18,
+                shift_typs=[self.lokal_shift_types],
+                emplyees=[self.lokal_employee],
+            )
+            self.solution = Solution(self.instance)
+
+        def get_slice_instance(self, start: int = 3, end: int = 5):
+            # Mock the solver and window instance creation to speed up tests
+            with patch.object(
+                Slice_instance, "__init__", lambda self, sol, start, end: None
+            ):
+                self.slice_instance = Slice_instance(
+                    self.solution, start=start, end=end
+                )
+                # Manually set only the attributes needed for counting methods
+                self.slice_instance.sol = self.solution
+                self.slice_instance.inst = self.instance
+                self.slice_instance.start_day = start
+                self.slice_instance.end_day = end
+            return self.slice_instance
+
+        def test_count_max_days_1(self):
+            for day in range(18):
+                if day in []:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
+                    )
+                else:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
+                    )
+            for day in self.instance.weekend_days:
+                if day in []:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 1)
+                else:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 0)
+
+            si = self.get_slice_instance(start=4, end=7)
+            window_instance = si.create_window_instance()
+            assert window_instance.weekend_days == {2}
+
+        def test_count_max_days_2(self):
+            for day in range(18):
+                if day in []:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
+                    )
+                else:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
+                    )
+            for day in self.instance.weekend_days:
+                if day in []:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 1)
+                else:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 0)
+
+            si = self.get_slice_instance(start=11, end=14)
+            window_instance = si.create_window_instance()
+            assert window_instance.weekend_days == {2}
+
+        def test_count_max_days_3(self):
+            for day in range(18):
+                if day in []:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
+                    )
+                else:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
+                    )
+            for day in self.instance.weekend_days:
+                if day in []:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 1)
+                else:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 0)
+
+            si = self.get_slice_instance(start=13, end=16)
+            window_instance = si.create_window_instance()
+            assert window_instance.weekend_days == {0}
+
+        def test_count_max_days_4(self):
+            for day in range(18):
+                if day in []:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
+                    )
+                else:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
+                    )
+            for day in self.instance.weekend_days:
+                if day in []:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 1)
+                else:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 0)
+
+            si = self.get_slice_instance(start=13, end=16)
+            window_instance = si.create_window_instance()
+            assert window_instance.weekend_days == {0}
+
+        def test_count_max_days_5(self):
+            for day in range(18):
+                if day in []:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
+                    )
+                else:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
+                    )
+            for day in self.instance.weekend_days:
+                if day in []:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 1)
+                else:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 0)
+
+            si = self.get_slice_instance(start=8, end=10)
+            window_instance = si.create_window_instance()
+            assert len(window_instance.weekend_days) == 0
+
+        def test_count_max_days_6(self):
+            for day in range(18):
+                if day in [6, 12, 13]:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
+                    )
+                else:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
+                    )
+            for day in self.instance.weekend_days:
+                if day in [6, 13]:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 1)
+                else:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 0)
+
+            si = self.get_slice_instance(start=11, end=14)
+            window_instance = si.create_window_instance()
+            assert (
+                window_instance.employees[self.lokal_employee.uid].max_number_weekends
+                == 1
+            )
+
+        def test_count_max_days_7(self):
+            for day in range(18):
+                if day in [6, 12, 13]:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
+                    )
+                else:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
+                    )
+            for day in self.instance.weekend_days:
+                if day in [6, 13]:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 1)
+                else:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 0)
+
+            si = self.get_slice_instance(start=13, end=16)
+            window_instance = si.create_window_instance()
+            assert (
+                window_instance.employees[self.lokal_employee.uid].max_number_weekends
+                == 1
+            )
+
+        def test_count_max_days_8(self):
+            for day in range(18):
+                if day in [6, 12]:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
+                    )
+                else:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
+                    )
+            for day in self.instance.weekend_days:
+                if day in [6, 13]:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 1)
+                else:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 0)
+
+            si = self.get_slice_instance(start=13, end=16)
+            window_instance = si.create_window_instance()
+            assert (
+                window_instance.employees[self.lokal_employee.uid].max_number_weekends
+                == 0
+            )
+
+        def test_count_max_days_9(self):
+            for day in range(18):
+                if day in [6, 13]:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
+                    )
+                else:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
+                    )
+            for day in self.instance.weekend_days:
+                if day in [6, 13]:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 1)
+                else:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 0)
+
+            si = self.get_slice_instance(start=13, end=16)
+            window_instance = si.create_window_instance()
+            assert (
+                window_instance.employees[self.lokal_employee.uid].max_number_weekends
+                == 1
+            )
+
+        def test_count_max_days_10(self):
+            for day in range(18):
+                if day in [6, 12, 13]:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
+                    )
+                else:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
+                    )
+            for day in self.instance.weekend_days:
+                if day in [6, 13]:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 1)
+                else:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 0)
+
+            si = self.get_slice_instance(start=9, end=12)
+            window_instance = si.create_window_instance()
+            assert (
+                window_instance.employees[self.lokal_employee.uid].max_number_weekends
+                == 0
+            )
+
+        def test_count_max_days_11(self):
+            for day in range(18):
+                if day in [6, 12]:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
+                    )
+                else:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
+                    )
+            for day in self.instance.weekend_days:
+                if day in [6, 13]:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 1)
+                else:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 0)
+
+            si = self.get_slice_instance(start=9, end=12)
+            window_instance = si.create_window_instance()
+            assert (
+                window_instance.employees[self.lokal_employee.uid].max_number_weekends
+                == 0
+            )
+
+        def test_count_max_days_12(self):
+            for day in range(18):
+                if day in [6, 13]:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
+                    )
+                else:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
+                    )
+            for day in self.instance.weekend_days:
+                if day in [6, 13]:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 1)
+                else:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 0)
+
+            si = self.get_slice_instance(start=9, end=12)
+            window_instance = si.create_window_instance()
+            assert (
+                window_instance.employees[self.lokal_employee.uid].max_number_weekends
+                == 0
+            )
+
+        def test_count_max_days_13(self):
+            for day in range(18):
+                if day in [6]:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 1
+                    )
+                else:
+                    self.solution.set_var(
+                        day, self.lokal_shift_types.uid, self.lokal_employee.uid, 0
+                    )
+            for day in self.instance.weekend_days:
+                if day in [6]:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 1)
+                else:
+                    self.solution.set_weekend_var(day, self.lokal_employee.uid, 0)
+
+            si = self.get_slice_instance(start=9, end=12)
+            window_instance = si.create_window_instance()
+            assert (
+                window_instance.employees[self.lokal_employee.uid].max_number_weekends
+                == 1
+            )
