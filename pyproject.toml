@@ -13,6 +13,7 @@ dependencies = [
     "pandas",
     "streamlit",
     "tqdm",
+    "nicegui",
     
 ]
 
@@ -25,6 +26,7 @@ dev = [
 
 [project.scripts]
 main = "src.main:main"
+gui = "src.gui_2.start:main"
 lns-find = "src.LNS.find_lns_parameter:main"
 lns-show = "src.LNS.show_parameter:main"
 

@@ -77,17 +77,16 @@ def test_max_cons_shifts_constraint(solution: Solution):
 def test_max_weekend_days_constraint(solution: Solution):
     for employee_uid in solution.instance.employees:
         assigned_weekends = []
-        for weekend in range(round(solution.instance.number_of_days / 7)):
+        for weekend in solution.instance.weekend_days:
             assigned_shifts = []
             for type_uid in solution.instance.shifts[weekend]:
-                assigned_shifts.append(
-                    # + 1 because of for range start with 0, - 1 because are weekends days are on 5 and 6
-                    # not 6 and 7
-                    solution.vars[((7 * (weekend + 1) - 1 - 1), type_uid, employee_uid)]
-                )
-                assigned_shifts.append(
-                    solution.vars[((7 * (weekend + 1) - 1), type_uid, employee_uid)]
-                )
+                if weekend > 0:
+                    assigned_shifts.append(
+                        # + 1 because of for range start with 0, - 1 because are weekends days are on 5 and 6
+                        # not 6 and 7
+                        solution.vars[((weekend - 1), type_uid, employee_uid)]
+                    )
+                assigned_shifts.append(solution.vars[(weekend, type_uid, employee_uid)])
 
             assert solution.weekend_vars[(weekend, employee_uid)] <= sum(
                 assigned_shifts

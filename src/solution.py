@@ -69,7 +69,9 @@ class Solution(BaseModel):
 
     @computed_field
     @property
-    def checkt_constraints(self) -> tuple[bool, dict[str, tuple[bool, list[str]]]]:
+    def checkt_constraints(
+        self,
+    ) -> tuple[bool, dict[str, tuple[bool, list[str]]]]:
         return _check_all_constraints(self)
 
     @field_validator("vars", mode="before")
@@ -154,8 +156,11 @@ class Solution(BaseModel):
         self, day: int, shift_type_uid: int, employee_uid: int
     ) -> bool:
         """Überprüft, ob ein Mitarbeiter einem bestimmten Schichttyp an einem bestimmten Tag zugewiesen ist."""
-
         return self.vars[(day, shift_type_uid, employee_uid)] == 1
+
+    def is_employee_assigned_ad_weekend(self, weekend: int, employee_uid: int) -> bool:
+        """Überprüft, ob ein Mitarbeiter an einem bestimmten Wochenende arbeitet."""
+        return self.weekend_vars[(weekend, employee_uid)] == 1
 
     # def print_assign(self):
     #     for day, type_uid, employee_uid in self.vars.keys():
@@ -308,26 +313,59 @@ class Solution(BaseModel):
         """Lädt eine Solution aus einer JSON-Datei mit Pydantic's model_validate_json().
 
         Args:
-            filepath: Pfad zur JSON-Datei
+            name: namde der JSON-Datei
 
         Returns:
             Solution: Die geladene Solution
         """
         path = DATA_DIR / f"{name}.json"
 
-        if not path.exists():
+        return Solution.from_json_path(path=str(path))
+
+    @classmethod
+    def from_json_path(cls, path: str | Path) -> "Solution":
+        """Lädt eine Solution aus einer JSON-Datei mit Pydantic's model_validate_json().
+
+        Args:
+            filepath: Pfad zur JSON-Datei
+
+        Returns:
+            Solution: Die geladene Solution
+        """
+        if isinstance(path, Path):
+            path_obj = path
+        elif isinstance(path, str):
+            path_obj = Path(path)
+        else:
+            raise TypeError(f"path muss ein str oder Path sein, ist {type(path)}")
+
+        if not path_obj.exists():
             raise FileNotFoundError(f"Datei nicht gefunden: {path}")
 
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path_obj, "r", encoding="utf-8") as f:
             json_str = f.read()
 
         # Nutze Pydantic's eingebaute JSON-Deserialisierung
         solution = cls.model_validate_json(json_str)
 
-        print(f"Solution geladen aus: {path}")
+        print(f"Solution geladen aus: {path_obj}")
 
         return solution
     
+    @classmethod
+    def delete_json_solution(cls, name: str) -> None:
+        """Delete a JSON file corresponding to the Solution.
+
+        Args:
+            name: Name of the Solution, without the .json extension.
+        """
+        path = DATA_DIR / f"{name}.json"
+
+        if path.exists():
+            path.unlink()  # Delete the file
+            print(f"Datei gelöscht: {path}")
+        else:
+            print(f"Datei nicht gefunden: {path}")
 
     @classmethod
     def delete_json_solution(cls, name: str) -> None:
@@ -601,7 +639,7 @@ class Solution(BaseModel):
 # Standalone constraint checking functions
 # (moved here to avoid circular imports)
 def _get_all_constraint_checks() -> list[
-    Tuple[str, Callable[["Solution"], Tuple[bool, list[str]]]]
+    Tuple[SolverConstraints, Callable[["Solution"], Tuple[bool, list[str]]]]
 ]:
     """Gibt eine Liste aller Constraint-Check-Funktionen zurück."""
     from .validation.basic_constraints import (
@@ -622,16 +660,28 @@ def _get_all_constraint_checks() -> list[
     )
 
     return [
-        ("Cover Requirements", check_cover_requirements_constraint),
-        ("Days Off", check_days_off_constraint),
-        ("Limited Shifts per Type", check_lim_shifts_type_constraint),
-        ("Max Consecutive Shifts", check_max_cons_shifts_constraint),
-        ("Max Weekend Days", check_max_weekend_days_constraint),
-        ("Min Consecutive Days Off", check_min_cons_days_constraint),
-        ("Min Consecutive Shifts", check_min_cons_shifts_constraint),
-        ("Min/Max Worktime", check_min_max_worktime_constraint),
-        ("Single Day Assignment", check_single_day_constraint),
-        ("Shift Rotation", check_shift_rotation_constraint),
+        (SolverConstraints.cover_requirements, check_cover_requirements_constraint),
+        (SolverConstraints.days_off, check_days_off_constraint),
+        (
+            SolverConstraints.limited_shifts_per_type_validation,
+            check_lim_shifts_type_constraint,
+        ),
+        (SolverConstraints.max_Cons_Shifts, check_max_cons_shifts_constraint),
+        (SolverConstraints.max_weekend_days, check_max_weekend_days_constraint),
+        (
+            SolverConstraints.minimum_consecutive_days_off,
+            check_min_cons_days_constraint,
+        ),
+        (
+            SolverConstraints.minimum_consecutive_shifts,
+            check_min_cons_shifts_constraint,
+        ),
+        (SolverConstraints.minMaxWorkTime, check_min_max_worktime_constraint),
+        (
+            SolverConstraints.shift_assignment_single_day_validation,
+            check_single_day_constraint,
+        ),
+        (SolverConstraints.shift_rotation_constraint, check_shift_rotation_constraint),
     ]
 
 
@@ -642,15 +692,21 @@ def _check_all_constraints(
     Prüft alle Constraints und gibt Ergebnisse zurück.
 
     Returns:
-        Tuple[bool, dict]: (alle_erfüllt, {constraint_name: (name,is_valid, violations)})
+        Tuple[bool, dict]: (alle_erfüllt, {constraint: (is_valid, violations)})
     """
     constraints = _get_all_constraint_checks()
     results: dict[str, tuple[bool, list[str]]] = {}
     all_valid = True
 
     for constraint_name, check_func in constraints:
+        if constraint_name in solution.disabled_constraints:
+            continue  # Überspringe deaktivierte Constraints
         is_valid, violations = check_func(solution)
-        results[constraint_name] = (is_valid, violations)
+        # if not is_valid:
+        # print(
+        #     f"Constraint '{constraint_name.name}' verletzt: {len(violations)} Verstöße gefunden."
+        # )
+        results[constraint_name.name] = (is_valid, violations)
         if not is_valid:
             all_valid = False
 

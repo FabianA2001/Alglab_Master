@@ -31,6 +31,8 @@ def start_gui():
         st.session_state[SSN.solutions.name] = []
     if SSN.allow_resolve.name not in st.session_state:
         st.session_state[SSN.allow_resolve.name] = True
+    if SSN.changes_days.name not in st.session_state:
+        st.session_state[SSN.changes_days.name] = set()
 
     # Navigation
     st.sidebar.title("Navigation")

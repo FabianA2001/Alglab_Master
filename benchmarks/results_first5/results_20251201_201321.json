@@ -1,0 +1,47 @@
+[
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance1.txt",
+    "name": "Instance1",
+    "status": "OPTIMAL",
+    "is_success": true,
+    "solve_time": 0.050477,
+    "objective_value": 607.0,
+    "timestamp": "2025-12-01T20:13:06.236448"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance1ExtraLong.txt",
+    "name": "Instance1ExtraLong",
+    "status": "OPTIMAL",
+    "is_success": true,
+    "solve_time": 0.127535,
+    "objective_value": 607.0,
+    "timestamp": "2025-12-01T20:13:06.404987"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance2.txt",
+    "name": "Instance2",
+    "status": "OPTIMAL",
+    "is_success": true,
+    "solve_time": 2.382457,
+    "objective_value": 838.0,
+    "timestamp": "2025-12-01T20:13:08.831465"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance3.txt",
+    "name": "Instance3",
+    "status": "OPTIMAL",
+    "is_success": true,
+    "solve_time": 1.886235,
+    "objective_value": 1100.0,
+    "timestamp": "2025-12-01T20:13:10.805520"
+  },
+  {
+    "file": "/Users/maccaroline/AlgLabMaster/Alglab_Master/data/instance_raw/Instance4.txt",
+    "name": "Instance4",
+    "status": "OPTIMAL",
+    "is_success": true,
+    "solve_time": 10.153315,
+    "objective_value": 2519.0,
+    "timestamp": "2025-12-01T20:13:21.031623"
+  }
+]

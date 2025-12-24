@@ -85,9 +85,10 @@ def check_min_cons_shifts_constraint(sol: "Solution") -> Tuple[bool, List[str]]:
                     + sum(assigned_shifts_interval_end)
                 )
 
+                # TODO : Überprüfen ob der Fix korrekt war hier +1 bei day_d
                 if result <= 0:
                     violations.append(
-                        f"Mitarbeiter {emp_name} hat nicht genug aufeinanderfolgende Schichten ab Tag {day_d}"
+                        f"Mitarbeiter {emp_name} hat nicht genug aufeinanderfolgende Schichten ab Tag {day_d + 1}, benötigt: {min_shifts}"
                     )
 
     return len(violations) == 0, violations
