@@ -115,26 +115,55 @@ def main():
     #             subprocess.run(["python3", "process_json_solve_employee.py", str(json_file), str(x), "True", incrementally, str(30*60), "True"])
 
 
+    # for one_shift_time, work_var_time, opt_time in [(0,0,30)]:
+    #     # ,  (2.5, 0, 0), (1, 0, 0),  (5, 2.5, 0), (5, 5, 0),  (10, 5, 0), (5, 10, 0),  (10, 10, 0), (0, 0, 30), (0, 2.5, 27.5), (2.5, 0, 27.5), (2.5, 2.5, 25), (2.5, 5, 22.5), (5, 2.5, 22.5), (5, 5, 20), (5, 10, 15), (10, 10, 10), (10, 5, 15)
+    #     for json_file in json_files_best_till_time:
+    #         for x in range(0, 3):
+    #             if json_file.stem in dict_objective_values.keys():
+    #                 callback_opt = callback_until_objective_value(desired_objective_value=dict_objective_values[json_file.stem])
+    #                 print(f"one_shift, work_var, opt times: {(one_shift_time, work_var_time, opt_time)}")
+    #                 print(f"Processing {json_file.name} with iteration {x} ...")
+    #                 # Call the secondary script with the current JSON file and iteration x
+    #                 instance = parseTXT.parse_txt(json_file)
+    #                 solver_employee = solve_employee(instance)
+
+    #                 solution = solver_employee.solve_instance_one_shift(one_shift_max_time=one_shift_time*60, fixed_work_var_opt_max_time=work_var_time*60, general_optimization_max_time=opt_time*60, optimization_callback=callback_opt)
+
+                    
+    #                 filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_till_median_immediate_first_{x}"
+
+    #                 solution.to_json_file(filename)
+
+
+
     for one_shift_time, work_var_time, opt_time in [(0,0,30)]:
         # ,  (2.5, 0, 0), (1, 0, 0),  (5, 2.5, 0), (5, 5, 0),  (10, 5, 0), (5, 10, 0),  (10, 10, 0), (0, 0, 30), (0, 2.5, 27.5), (2.5, 0, 27.5), (2.5, 2.5, 25), (2.5, 5, 22.5), (5, 2.5, 22.5), (5, 5, 20), (5, 10, 15), (10, 10, 10), (10, 5, 15)
         for json_file in json_files_best_till_time:
-            for x in range(0, 3):
-                if json_file.stem in dict_objective_values.keys():
-                    callback_opt = callback_until_objective_value(desired_objective_value=dict_objective_values[json_file.stem])
-                    print(f"one_shift, work_var, opt times: {(one_shift_time, work_var_time, opt_time)}")
-                    print(f"Processing {json_file.name} with iteration {x} ...")
-                    # Call the secondary script with the current JSON file and iteration x
-                    instance = parseTXT.parse_txt(json_file)
-                    solver_employee = solve_employee(instance)
+            for x in range(0, 2):
+                print(f"one_shift, work_var, opt times: {(one_shift_time, work_var_time, opt_time)}")
+                print(f"Processing {json_file.name} with iteration {x} ...")
+                # Call the secondary script with the current JSON file and iteration x
+                instance = parseTXT.parse_txt(json_file)
+                solver_employee = solve_employee(instance)
 
-                    solution = solver_employee.solve_instance_one_shift(one_shift_max_time=one_shift_time*60, fixed_work_var_opt_max_time=work_var_time*60, general_optimization_max_time=opt_time*60, optimization_callback=callback_opt)
+                solution = solver_employee.solve_instance_one_shift(one_shift_max_time=one_shift_time*60, fixed_work_var_opt_max_time=work_var_time*60, general_optimization_max_time=opt_time*60)
 
-                    
-                    filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_till_median_immediate_first_{x}"
-
+                if opt_time != 0:
+                    if solution.solve_status in [cp_model.OPTIMAL]:
+                        filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_opt_{x}"
+                        solution.to_json_file(filename)
+                    elif solution.solve_status in [cp_model.FEASIBLE]:
+                        filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_time_out_30_{x}"
+                        solution.to_json_file(filename)
+                    else:
+                        error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_{x}"
+                        with open('error_log.txt', 'a') as error_file:
+                            error_file.write(error_filename + '\n')
+                else:
+                    filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_immediate_first_{x}"
                     solution.to_json_file(filename)
-
-
+    
+   
 
 
     for one_shift_time, work_var_time, opt_time in [ (10,10,0), (10,10,10)]:
@@ -172,35 +201,7 @@ def main():
 
 
 
-
-    for one_shift_time, work_var_time, opt_time in [(0,0,30)]:
-        # ,  (2.5, 0, 0), (1, 0, 0),  (5, 2.5, 0), (5, 5, 0),  (10, 5, 0), (5, 10, 0),  (10, 10, 0), (0, 0, 30), (0, 2.5, 27.5), (2.5, 0, 27.5), (2.5, 2.5, 25), (2.5, 5, 22.5), (5, 2.5, 22.5), (5, 5, 20), (5, 10, 15), (10, 10, 10), (10, 5, 15)
-        for json_file in json_files_best_till_time:
-            for x in range(0, 2):
-                print(f"one_shift, work_var, opt times: {(one_shift_time, work_var_time, opt_time)}")
-                print(f"Processing {json_file.name} with iteration {x} ...")
-                # Call the secondary script with the current JSON file and iteration x
-                instance = parseTXT.parse_txt(json_file)
-                solver_employee = solve_employee(instance)
-
-                solution = solver_employee.solve_instance_one_shift(one_shift_max_time=one_shift_time*60, fixed_work_var_opt_max_time=work_var_time*60, general_optimization_max_time=opt_time*60)
-
-                if opt_time != 0:
-                    if solution.solve_status in [cp_model.OPTIMAL]:
-                        filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_opt_{x}"
-                        solution.to_json_file(filename)
-                    elif solution.solve_status in [cp_model.FEASIBLE]:
-                        filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_time_out_30_{x}"
-                        solution.to_json_file(filename)
-                    else:
-                        error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_{x}"
-                        with open('error_log.txt', 'a') as error_file:
-                            error_file.write(error_filename + '\n')
-                else:
-                    filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_immediate_first_{x}"
-                    solution.to_json_file(filename)
-    
-    
+ 
                     
 
 if __name__ == "__main__":
