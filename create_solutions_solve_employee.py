@@ -54,30 +54,30 @@ def main():
     }
 
     dict_objective_values = {
-        'Instance1': 607.0,
-        'Instance10': 5361.0,
-        'Instance11': 3730.5,
-        'Instance12': 5333.5,
-        'Instance13': 14198.5,
-        'Instance14': 1974.5,
-        'Instance15': 5537.0,
-        'Instance16': 4573.5,
-        'Instance17': 6796.5,
-        'Instance18': 6160.0,
-        'Instance19': 4311.0,
-        'Instance1ExtraLong': 607.0,
-        'Instance2': 1331.0,
-        'Instance20': 4529.5,
-        'Instance21': 24061.0,
-        'Instance22': 46524.5,
-        'Instance23': 473532.5,
-        'Instance3': 1105.0,
-        'Instance4': 2725.0,
-        'Instance5': 1302.0,
-        'Instance6': 2416.0,
-        'Instance7': 1184.5,
-        'Instance8': 2015.5,
-        'Instance9': 1952.5
+        "Instance1": 607.0,
+        "Instance10": 5356.0,
+        "Instance11": 3632.0,
+        "Instance12": 5293.0,
+        "Instance13": 14400.0,
+        "Instance14": 1874.0,
+        "Instance15": 5600.5,
+        "Instance16": 4973.0,
+        "Instance17": 6883.0,
+        "Instance18": 6648.0,
+        "Instance19": 4847.0,
+        "Instance1ExtraLong": 607.0,
+        "Instance2": 1233.0,
+        "Instance20": 4689.0,
+        "Instance21": 24260.0,
+        "Instance22": 45968.0,
+        "Instance23": 38976.0,
+        "Instance3": 1105.0,
+        "Instance4": 2725.0,
+        "Instance5": 1349.0,
+        "Instance6": 2365.0,
+        "Instance7": 1086.0,
+        "Instance8": 2067.0,
+        "Instance9": 1849.0
     }
 
     dict_constraint = {
@@ -115,31 +115,33 @@ def main():
     #             subprocess.run(["python3", "process_json_solve_employee.py", str(json_file), str(x), "True", incrementally, str(30*60), "True"])
 
 
-    # for one_shift_time, work_var_time, opt_time in [(0,0,120)]:
-    #     # ,  (2.5, 0, 0), (1, 0, 0),  (5, 2.5, 0), (5, 5, 0),  (10, 5, 0), (5, 10, 0),  (10, 10, 0), (0, 0, 30), (0, 2.5, 27.5), (2.5, 0, 27.5), (2.5, 2.5, 25), (2.5, 5, 22.5), (5, 2.5, 22.5), (5, 5, 20), (5, 10, 15), (10, 10, 10), (10, 5, 15)
-    #     for json_file in json_files_best_till_time:
-    #         for x in range(0, 3):
-    #             if json_file.stem in dict_objective_values.keys():
-    #                 callback_opt = callback_until_objective_value(desired_objective_value=dict_objective_values[json_file.stem])
-    #                 print(f"one_shift, work_var, opt times: {(one_shift_time, work_var_time, opt_time)}")
-    #                 print(f"Processing {json_file.name} with iteration {x} ...")
-    #                 # Call the secondary script with the current JSON file and iteration x
-    #                 instance = parseTXT.parse_txt(json_file)
-    #                 solver_employee = solve_employee(instance)
-
-    #                 solution = solver_employee.solve_instance_one_shift(one_shift_max_time=one_shift_time*60, fixed_work_var_opt_max_time=work_var_time*60, general_optimization_max_time=opt_time*60, optimization_callback=callback_opt)
-
-                    
-    #                 filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_till_median_immediate_first_{x}"
-
-    #                 solution.to_json_file(filename)
-
-    for one_shift_time, work_var_time, opt_time in [ (10,10,0), (10,10,10)]:
+    for one_shift_time, work_var_time, opt_time in [(0,0,30)]:
         # ,  (2.5, 0, 0), (1, 0, 0),  (5, 2.5, 0), (5, 5, 0),  (10, 5, 0), (5, 10, 0),  (10, 10, 0), (0, 0, 30), (0, 2.5, 27.5), (2.5, 0, 27.5), (2.5, 2.5, 25), (2.5, 5, 22.5), (5, 2.5, 22.5), (5, 5, 20), (5, 10, 15), (10, 10, 10), (10, 5, 15)
         for json_file in json_files_best_till_time:
             for x in range(0, 3):
-                for percentual_improvement_shift, time_between_checks_in_seconds_shift, percentual_improvement_work_var, time_between_checks_in_seconds_work_var in [(0.1,30,0.05,30), (0.05,15,0.025,15), (0.025,7,0.012,7)]:
-                    numerical_improvement_opt=1
+                if json_file.stem in dict_objective_values.keys():
+                    callback_opt = callback_until_objective_value(desired_objective_value=dict_objective_values[json_file.stem])
+                    print(f"one_shift, work_var, opt times: {(one_shift_time, work_var_time, opt_time)}")
+                    print(f"Processing {json_file.name} with iteration {x} ...")
+                    # Call the secondary script with the current JSON file and iteration x
+                    instance = parseTXT.parse_txt(json_file)
+                    solver_employee = solve_employee(instance)
+
+                    solution = solver_employee.solve_instance_one_shift(one_shift_max_time=one_shift_time*60, fixed_work_var_opt_max_time=work_var_time*60, general_optimization_max_time=opt_time*60, optimization_callback=callback_opt)
+
+                    
+                    filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_till_median_immediate_first_{x}"
+
+                    solution.to_json_file(filename)
+
+
+
+
+    for one_shift_time, work_var_time, opt_time in [ (10,10,0), (10,10,10)]:
+    #     # ,  (2.5, 0, 0), (1, 0, 0),  (5, 2.5, 0), (5, 5, 0),  (10, 5, 0), (5, 10, 0),  (10, 10, 0), (0, 0, 30), (0, 2.5, 27.5), (2.5, 0, 27.5), (2.5, 2.5, 25), (2.5, 5, 22.5), (5, 2.5, 22.5), (5, 5, 20), (5, 10, 15), (10, 10, 10), (10, 5, 15)
+        for json_file in json_files_best_till_time:
+            for x in range(0, 2):
+                for percentual_improvement_shift, time_between_checks_in_seconds_shift, percentual_improvement_work_var, time_between_checks_in_seconds_work_var, numerical_improvement_opt in [(0.025,8,0.015,10,0)]:
                     time_between_checks_in_seconds_opt=120
                     callback_one_shift = callback_improvement_slowed(percentual_improvement=percentual_improvement_shift, time_between_checks_in_seconds=time_between_checks_in_seconds_shift)
                     callback_opt_work_var = callback_improvement_slowed(percentual_improvement=percentual_improvement_work_var, time_between_checks_in_seconds=time_between_checks_in_seconds_work_var)
@@ -167,10 +169,14 @@ def main():
                         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_immediate_first_{x}"
                         solution.to_json_file(filename)
 
-    for one_shift_time, work_var_time, opt_time in [(0,0,30),(0,0,120)]:
+
+
+
+
+    for one_shift_time, work_var_time, opt_time in [(0,0,30)]:
         # ,  (2.5, 0, 0), (1, 0, 0),  (5, 2.5, 0), (5, 5, 0),  (10, 5, 0), (5, 10, 0),  (10, 10, 0), (0, 0, 30), (0, 2.5, 27.5), (2.5, 0, 27.5), (2.5, 2.5, 25), (2.5, 5, 22.5), (5, 2.5, 22.5), (5, 5, 20), (5, 10, 15), (10, 10, 10), (10, 5, 15)
         for json_file in json_files_best_till_time:
-            for x in range(0, 3):
+            for x in range(0, 2):
                 print(f"one_shift, work_var, opt times: {(one_shift_time, work_var_time, opt_time)}")
                 print(f"Processing {json_file.name} with iteration {x} ...")
                 # Call the secondary script with the current JSON file and iteration x
