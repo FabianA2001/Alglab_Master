@@ -29,7 +29,15 @@ def gather_sol_times(data_dir):
         ,15:"1S2.5_wv2.5_o0"
         ,16:"1S1_wv1_o28"
         ,17:"1S2.5_wv2.5_o25"
-        ,18:"1S5_wv2.5_o0"
+        ,18:"1S5_wv2.5_o0",
+        19:"1S10_wv10_o0_1Scp0.025_wvcp0.012_ocn1",
+        20:"1S10_wv10_o0_1Scp0.1_wvcp0.05_ocn1",
+        21:"1S10_wv10_o0_1Scp0.05_wvcp0.025_ocn1",
+        19:"1S10_wv10_o10_1Scp0.025_wvcp0.012_ocn1",
+        20:"1S10_wv10_o10_1Scp0.1_wvcp0.05_ocn1",
+        21:"1S10_wv10_o10_1Scp0.05_wvcp0.025_ocn1",
+        22:"1S0_wv0_o30",
+        23:"1S0_wv0_o30_till_median",
         }
     # Gathering files for optimal solutions
     for key in dict_constraint.values():  # Modify keys as per your dictionary
