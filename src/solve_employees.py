@@ -214,12 +214,13 @@ class solve_employee():
         if one_shift_max_time <= 0:
             one_shift_max_time=450
             stop_after_first_solution=True
-        while True:
+        counter = 0
+        start_time = time.time()
+        while counter <= 1:
             instance = self.instance.instance_to_one_shift_type()
-            start_time = time.time()
             solver = Solver(instance, shift_vars.Shift_vars(instance))
             solution = solver.solve_callback_with_solution(log_search_progress=False, max_time_in_seconds=one_shift_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution,disabled_constraints=[SolverConstraints.shift_assignment_single_day_validation, SolverConstraints.shift_rotation_constraint, SolverConstraints.limited_shifts_per_type_validation], callback=one_shift_callback)
-            
+            counter = counter + 1
             if solution.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
                 break
             elif solution.solve_status in [cp_model.UNKNOWN]:
@@ -228,6 +229,8 @@ class solve_employee():
             elif solution.solve_status in [cp_model.INFEASIBLE, cp_model.MODEL_INVALID]:
                 print("Something went wrong and the model is infeasible or invalid")
                 return solution
+            if counter == 2:
+                    return solution
         one_shift_time_end = time.time()
         end_time = time.time()
         print("one shift time: ", (end_time - start_time))
@@ -264,9 +267,11 @@ class solve_employee():
             fixed_work_var_opt_max_time=1200
             stop_after_first_solution=True
         instance_name_=self.instance.name+""
-        while True:
+        counter = 0
+        while counter <= 1:
             solver = Solver(self.instance, shift_vars.Shift_vars(self.instance))
             solution_temp = solver.warm_start_generalized(hard_constraint_solution=self.solution ,hint_solution=self.hint_solution, max_time_in_seconds=fixed_work_var_opt_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution, callback=fixed_work_var_opt_callback)
+            counter = counter + 1
             if solution_temp.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
                 self.solution=solution_temp
                 break
@@ -276,6 +281,8 @@ class solve_employee():
             elif solution_temp.solve_status in [cp_model.INFEASIBLE, cp_model.MODEL_INVALID]:
                 print("Something went wrong and the model is infeasible or invalid")
                 return solution_temp
+            if counter == 2:
+                    return solution_temp
             
         work_var_opt_time = time.time()
         print("work_var time", work_var_opt_time - employee_verification_time)
@@ -285,10 +292,12 @@ class solve_employee():
 
         stop_after_first_solution=False
         print(general_optimization_max_time)
-        while general_optimization_max_time > 0:
+        counter = 0
+        while general_optimization_max_time > 0 and counter <= 1:
             self.instance.name = instance_name_
             solver = Solver(self.instance, shift_vars.Shift_vars(self.instance))
             solution_temp = solver.warm_start_generalized(hint_solution=self.solution, max_time_in_seconds=general_optimization_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution, callback=optimization_callback)
+            counter = counter + 1
             if solution_temp.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
                 self.solution=solution_temp
                 break
@@ -298,6 +307,8 @@ class solve_employee():
             elif solution_temp.solve_status in [cp_model.INFEASIBLE, cp_model.MODEL_INVALID]:
                 print("Something went wrong and the model is infeasible or invalid")
                 return solution_temp
+            if counter == 2:
+                    return solution_temp
         if len(invalid_employees)>0 or True:
             with open('invalid_employees_count.txt', 'a') as file:
                 # constraints_info = ', '.join(
