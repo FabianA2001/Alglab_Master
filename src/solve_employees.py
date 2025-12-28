@@ -219,7 +219,7 @@ class solve_employee():
         while counter <= 1:
             instance = self.instance.instance_to_one_shift_type()
             solver = Solver(instance, shift_vars.Shift_vars(instance))
-            solution = solver.solve_callback_with_solution(log_search_progress=False, max_time_in_seconds=one_shift_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution,disabled_constraints=[SolverConstraints.shift_assignment_single_day_validation, SolverConstraints.shift_rotation_constraint, SolverConstraints.limited_shifts_per_type_validation], callback=one_shift_callback)
+            solution = solver.solve_callback_with_solution(log_search_progress=False, max_time_in_seconds=one_shift_max_time, objective_function=solver.objevtive_value, stop_after_first_solution=stop_after_first_solution,disabled_constraints=[SolverConstraints.shift_assignment_single_day_validation, SolverConstraints.shift_rotation_constraint, SolverConstraints.limited_shifts_per_type_validation], callback=one_shift_callback)
             counter = counter + 1
             if solution.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
                 break
@@ -270,7 +270,7 @@ class solve_employee():
         counter = 0
         while counter <= 1:
             solver = Solver(self.instance, shift_vars.Shift_vars(self.instance))
-            solution_temp = solver.warm_start_generalized(hard_constraint_solution=self.solution ,hint_solution=self.hint_solution, max_time_in_seconds=fixed_work_var_opt_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution, callback=fixed_work_var_opt_callback)
+            solution_temp = solver.warm_start_generalized(hard_constraint_solution=self.solution ,hint_solution=self.hint_solution, max_time_in_seconds=fixed_work_var_opt_max_time, objective_function=solver.objevtive_value, stop_after_first_solution=stop_after_first_solution, callback=fixed_work_var_opt_callback)
             counter = counter + 1
             if solution_temp.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
                 self.solution=solution_temp
@@ -296,7 +296,7 @@ class solve_employee():
         while general_optimization_max_time > 0 and counter <= 1:
             self.instance.name = instance_name_
             solver = Solver(self.instance, shift_vars.Shift_vars(self.instance))
-            solution_temp = solver.warm_start_generalized(hint_solution=self.solution, max_time_in_seconds=general_optimization_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution, callback=optimization_callback)
+            solution_temp = solver.warm_start_generalized(hint_solution=self.solution, max_time_in_seconds=general_optimization_max_time, objective_function=solver.objevtive_value, stop_after_first_solution=stop_after_first_solution, callback=optimization_callback)
             counter = counter + 1
             if solution_temp.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
                 self.solution=solution_temp

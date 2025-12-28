@@ -186,17 +186,17 @@ def main():
 
                     if opt_time != 0:
                         if solution.solve_status in [cp_model.OPTIMAL]:
-                            filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_alt_exc_enf_opt_{x}"
+                            filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_originalnew_opt_{x}"
                             solution.to_json_file(filename)
                         elif solution.solve_status in [cp_model.FEASIBLE]:
-                            filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_alt_exc_enf_time_out_30_{x}"
+                            filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_originalnew_time_out_30_{x}"
                             solution.to_json_file(filename)
                         else:
                             error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_{x}"
                             with open('error_log.txt', 'a') as error_file:
                                 error_file.write(error_filename + '\n')
                     else:
-                        filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_alt_exc_enf_immediate_first_{x}"
+                        filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_originalnew_immediate_first_{x}"
                         solution.to_json_file(filename)
 
 

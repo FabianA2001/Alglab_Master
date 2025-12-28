@@ -131,7 +131,7 @@ class Solver:
         stop_after_first_solution: bool = False,
         callback: cp_model.CpSolverSolutionCallback | None = None,
         objective_function: Callable[[], cp_model.ObjLinearExprT] | None = None,  # Accept a callable
-        constraint_set = 5,#5exact_alt,6automate,2alt
+        constraint_set = 1,#5exact_alt,6automate,2alt
         automaton: bool = False,
     ) -> Solution:
         """
