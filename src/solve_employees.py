@@ -219,7 +219,7 @@ class solve_employee():
         while counter <= 1:
             instance = self.instance.instance_to_one_shift_type()
             solver = Solver(instance, shift_vars.Shift_vars(instance))
-            solution = solver.solve_callback_with_solution(log_search_progress=False, max_time_in_seconds=one_shift_max_time, objective_function=solver.objevtive_value, stop_after_first_solution=stop_after_first_solution,disabled_constraints=[SolverConstraints.shift_assignment_single_day_validation, SolverConstraints.shift_rotation_constraint, SolverConstraints.limited_shifts_per_type_validation], callback=one_shift_callback)
+            solution = solver.solve_callback_with_solution(log_search_progress=False, max_time_in_seconds=one_shift_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution,disabled_constraints=[SolverConstraints.shift_assignment_single_day_validation, SolverConstraints.shift_rotation_constraint, SolverConstraints.limited_shifts_per_type_validation], callback=one_shift_callback)
             counter = counter + 1
             if solution.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
                 break
