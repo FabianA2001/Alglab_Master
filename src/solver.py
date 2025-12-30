@@ -131,7 +131,7 @@ class Solver:
         stop_after_first_solution: bool = False,
         callback: cp_model.CpSolverSolutionCallback | None = None,
         objective_function: Callable[[], cp_model.ObjLinearExprT] | None = None,  # Accept a callable
-        constraint_set = 2,#5exact_alt,6automate,2alt, 3_Alternative_Enforce_If
+        constraint_set = 1,#5exact_alt,6automate,2alt, 3_Alternative_Enforce_If
         automaton: bool = False,
     ) -> Solution:
         """
@@ -324,6 +324,7 @@ class Solver:
         log_search_progress: bool = False,
         stop_after_first_solution: bool = False,
         callback: cp_model.CpSolverSolutionCallback | None = None,
+        constraint_set: int = 1,
     ) -> Solution:
         """
         A function that allow to give a solution as hint and another solution as hard constraints (only work_var and var are considered)
@@ -409,7 +410,8 @@ class Solver:
             log_search_progress=log_search_progress,
             objective_function=objective_function,
             stop_after_first_solution=stop_after_first_solution,
-            callback=callback
+            callback=callback,
+            constraint_set=constraint_set
         )
     
     def objective_value_weight_changes(

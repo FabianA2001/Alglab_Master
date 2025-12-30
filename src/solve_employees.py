@@ -193,7 +193,7 @@ class solve_employee():
     #TODO instead of using timers only, use instead callbacks
     #TODO add more parameters (optimization, [percent1,percent2,percent3]where one say how much time should be spent on the first optimization (one shift type), 2 one the second optimization(set work days) and 3 for the over all optimization)
     #TODO maybe optimization is just as fast with CP, see how fast normal CP reach a solution similar to what this method offer.(callback that stop when reach a certin objective value)
-    def solve_instance_one_shift(self, one_shift_max_time:int=0, fixed_work_var_opt_max_time:int=0, general_optimization_max_time:int=0, one_shift_callback: cp_model.CpSolverSolutionCallback | None=None, fixed_work_var_opt_callback: cp_model.CpSolverSolutionCallback | None=None, optimization_callback: cp_model.CpSolverSolutionCallback | None=None):
+    def solve_instance_one_shift(self, one_shift_max_time:int=0, fixed_work_var_opt_max_time:int=0, general_optimization_max_time:int=0, one_shift_callback: cp_model.CpSolverSolutionCallback | None=None, fixed_work_var_opt_callback: cp_model.CpSolverSolutionCallback | None=None, optimization_callback: cp_model.CpSolverSolutionCallback | None=None, constraint_set_opt: int = 1):
         """
         The function get a simplified instance (containing only one shift type) of the main instance and solve it, which result in work_var solution. Because the result maybe invalid, the solution for the work_var is validated for each employee and fixed if needed. After ward an optimization with the work_var variable as hard constraints is preformed. At the very end general optimization is preformed.  
         
@@ -296,7 +296,7 @@ class solve_employee():
         while general_optimization_max_time > 0 and counter <= 1:
             self.instance.name = instance_name_
             solver = Solver(self.instance, shift_vars.Shift_vars(self.instance))
-            solution_temp = solver.warm_start_generalized(hint_solution=self.solution, max_time_in_seconds=general_optimization_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution, callback=optimization_callback)
+            solution_temp = solver.warm_start_generalized(hint_solution=self.solution, max_time_in_seconds=general_optimization_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution, callback=optimization_callback, constraint_set=constraint_set_opt)
             counter = counter + 1
             if solution_temp.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
                 self.solution=solution_temp
