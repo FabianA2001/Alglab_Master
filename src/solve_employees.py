@@ -193,7 +193,7 @@ class solve_employee():
     #TODO instead of using timers only, use instead callbacks
     #TODO add more parameters (optimization, [percent1,percent2,percent3]where one say how much time should be spent on the first optimization (one shift type), 2 one the second optimization(set work days) and 3 for the over all optimization)
     #TODO maybe optimization is just as fast with CP, see how fast normal CP reach a solution similar to what this method offer.(callback that stop when reach a certin objective value)
-    def solve_instance_one_shift(self, one_shift_max_time:int=0, fixed_work_var_opt_max_time:int=0, general_optimization_max_time:int=0, one_shift_callback: cp_model.CpSolverSolutionCallback | None=None, fixed_work_var_opt_callback: cp_model.CpSolverSolutionCallback | None=None, optimization_callback: cp_model.CpSolverSolutionCallback | None=None, constraint_set_opt: int = 3):
+    def solve_instance_one_shift(self, one_shift_max_time:int=0, fixed_work_var_opt_max_time:int=0, general_optimization_max_time:int=0, one_shift_callback: cp_model.CpSolverSolutionCallback | None=None, fixed_work_var_opt_callback: cp_model.CpSolverSolutionCallback | None=None, optimization_callback: cp_model.CpSolverSolutionCallback | None=None, constraint_set_opt: int = 1):
         """
         The function get a simplified instance (containing only one shift type) of the main instance and solve it, which result in work_var solution. Because the result maybe invalid, the solution for the work_var is validated for each employee and fixed if needed. After ward an optimization with the work_var variable as hard constraints is preformed. At the very end general optimization is preformed.  
         
