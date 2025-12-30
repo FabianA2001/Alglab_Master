@@ -183,7 +183,7 @@ def main():
                     instance = parseTXT.parse_txt(json_file)
                     solver_employee = solve_employee(instance)
 
-                    solution = solver_employee.solve_instance_one_shift(one_shift_max_time=one_shift_time*60, fixed_work_var_opt_max_time=work_var_time*60, general_optimization_max_time=opt_time*60, one_shift_callback=callback_one_shift,fixed_work_var_opt_callback=callback_opt_work_var)
+                    solution = solver_employee.solve_instance_one_shift(one_shift_max_time=one_shift_time*60, fixed_work_var_opt_max_time=work_var_time*60, general_optimization_max_time=opt_time*60, one_shift_callback=callback_one_shift,fixed_work_var_opt_callback=callback_opt_work_var, constraint_set_opt=6)
 
                     if opt_time != 0:
                         if solution.solve_status in [cp_model.OPTIMAL]:
