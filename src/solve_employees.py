@@ -19,6 +19,8 @@ from pathlib import Path
 from src.parseData import parseTXT
 from src.shift_vars import Shift_vars
 
+import gc
+
 #TODO Similarly to all this check for a not valid solution, which employees are causing the invalidity
 #TODO use the time or add a variable to let everything stop at first solution (to find first solution as fast as possible)
 class solve_employee():
@@ -239,7 +241,7 @@ class solve_employee():
         #solution.to_json_file(instance.name)
         #greedy_solution_name = instance.name
         for employee_uid, employee_ in self.instance.employees.items():
-            self.solution.store_solution_work_vars(solution=solution, employee_uid=employee_uid)
+            self.solution.store_solution_work_vars(solution=solution.model_copy(), employee_uid=employee_uid)
         
 
         # See if any employee does not have a solution with the given work days and repair their shifts if so.
@@ -250,13 +252,15 @@ class solve_employee():
             count_ = count_ + 1
             #print(count_)
             employee_uids.append(employee_uid)            
-            solution_temp = self.solve_employee_with_work_var(employee_uid=employee_uid, soft_max_time_in_seconds=20)
-            self.hint_solution.copy_solution(solution=solution_temp)
+            solution_temp = self.solve_employee_with_work_var(employee_uid=employee_uid, soft_max_time_in_seconds=30)
+            self.hint_solution.copy_solution(solution=solution_temp.model_copy())
             if solution_temp.solve_status not in [cp_model.INFEASIBLE]:
                 if solution_temp.solve_status in [cp_model.UNKNOWN]:
                     invalid_employees.append(self.instance.employees[employee_uid].name)
                     for day in range(self.instance.number_of_days):
                             self.solution.work_vars.pop((day, employee_uid))
+                del solution_temp 
+                print(gc.collect())
             else:
                 print(f"Error solving for employee {employee_uid}: ")
 
@@ -267,11 +271,13 @@ class solve_employee():
             fixed_work_var_opt_max_time=1200
             stop_after_first_solution=True
         instance_name_=self.instance.name+""
-        counter = 0
-        while counter <= 1:
+        del solver
+        del solution
+        print(gc.collect())
+        
+        for counter in range(3):
             solver = Solver(self.instance, shift_vars.Shift_vars(self.instance))
             solution_temp = solver.warm_start_generalized(hard_constraint_solution=self.solution ,hint_solution=self.hint_solution, max_time_in_seconds=fixed_work_var_opt_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution, callback=fixed_work_var_opt_callback)
-            counter = counter + 1
             if solution_temp.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
                 self.solution=solution_temp
                 break
@@ -282,7 +288,7 @@ class solve_employee():
                 print("Something went wrong and the model is infeasible or invalid")
                 return solution_temp
             if counter == 2:
-                    return solution_temp
+                return solution_temp
             
         work_var_opt_time = time.time()
         print("work_var time", work_var_opt_time - employee_verification_time)
@@ -308,7 +314,7 @@ class solve_employee():
                 print("Something went wrong and the model is infeasible or invalid")
                 return solution_temp
             if counter == 2:
-                    return solution_temp
+                return solution_temp
         if len(invalid_employees)>0 or True:
             with open('invalid_employees_count.txt', 'a') as file:
                 # constraints_info = ', '.join(
@@ -380,7 +386,11 @@ class solve_employee():
             end_time=time.time()
             #print(end_time - start_time)
             #print(solution1.solve_status)
+            del solver_x
+            gc.collect()
             return solution1
+        del solver
+        c = gc.collect()
         end_time=time.time()
         #print(end_time - start_time)
         return solution
