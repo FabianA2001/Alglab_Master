@@ -289,6 +289,8 @@ class solve_employee():
                 return solution_temp
             if counter == 2:
                 return solution_temp
+            del solver
+            print(gc.collect())
             
         work_var_opt_time = time.time()
         print("work_var time", work_var_opt_time - employee_verification_time)
