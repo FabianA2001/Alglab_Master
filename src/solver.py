@@ -76,12 +76,14 @@ class Solver:
         self,
         log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
+        stop_after_first_solution: bool = False,
     ):
         callback = Callback_Early_Stop(self.instance, self.vars)
         return self.solve(
             log_search_progress,
             max_time_in_seconds,
             callback=callback,
+            stop_after_first_solution=stop_after_first_solution,
         )
 
     def objevtive_value(self):
@@ -217,8 +219,12 @@ class Solver:
                 below_value = solver.Value(
                     self.vars.get_below_prefferd_var(day, type_uid)
                 )
+                below_threshold_value = solver.Value(
+                    self.vars.get_below_threshold_var(day, type_uid)
+                )
                 solution.set_above_prefferd_var(day, type_uid, above_value)
                 solution.set_below_prefferd_var(day, type_uid, below_value)
+                solution.set_below_threshold_var(day, type_uid, below_threshold_value)
 
     def process_infeasible_solution(self) -> None:
         """Handles the case when no feasible solution exists."""

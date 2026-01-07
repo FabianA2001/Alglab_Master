@@ -90,9 +90,11 @@ class LNS:
         # time parameters
         self.timeout_seconds: float = timeout_seconds
         self.small_runtime_milliseconds_base: float = small_runtime_base
-        self.timeout_seconds: float = max(
-            0.0, timeout_seconds - create_time_first_solution
-        )
+        # TODO test if this was important
+        # self.timeout_seconds: float = max(
+        #     0.0, timeout_seconds - create_time_first_solution
+        # )
+        self.timeout_seconds = timeout_seconds
         self.disabled_for_window = []
         # logging info
         self.logger.info(
@@ -110,8 +112,7 @@ class LNS:
         timeout_seconds: float,
     ) -> tuple[solution.Solution, float]:
         if isinstance(sol_or_instance, solution.Solution):
-            # TODO calc objective value
-            return sol_or_instance, 0.0
+            return sol_or_instance, sol_or_instance.objective_value
         elif isinstance(sol_or_instance, instace.Instance):
             start_time = time.time()
             vars = solver.shift_vars.Shift_vars(sol_or_instance)
@@ -215,7 +216,7 @@ class LNS:
         iteration = 0
         improvements = 0
 
-        # TODO stop with erly stop
+        # TODO early stop statt runtime im while loop hier
         while time.time() - start_time < self.timeout_seconds:
             assert self.end_day > self.start_day
             iteration += 1

@@ -18,6 +18,7 @@ class Shift_vars:
         self.__init_above_prefferd_vars(instance)
         self.__init_work_vars(instance)
         self.__init_below_threshold_vars(instance)
+
     def __init_vars(self, instance: instace.Instance):
         self.vars = {}
         for day in range(instance.number_of_days):
@@ -105,6 +106,9 @@ class Shift_vars:
 
     def get_below_prefferd_var(self, day: int, type_uid: int) -> cp_model.IntVar:
         return self.below_prefferd_vars[(day, type_uid)]
-    
+
+    def get_below_threshold_var(self, day: int, type_uid: int) -> cp_model.IntVar:
+        return self.below_threshold_vars[(day, type_uid)]
+
     def get_work_vars(self, day: int, employee_uid: int) -> cp_model.BoolVarT:
         return self.work_vars[(day, employee_uid)]
