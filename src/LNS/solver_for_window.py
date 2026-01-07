@@ -84,6 +84,19 @@ class Solver_for_window(solver.Solver):
                         f"prev_day_has_shift_before_max_cons_{employee_uid}"
                     )
 
+    # def solve_window(
+    #     self,
+    #     log_search_progress: bool = True,
+    #     max_time_in_seconds: float = 60.0,
+    #     stop_after_first_solution: bool = False,
+    #     callback: cp_model.CpSolverSolutionCallback | None = None,
+    # ) -> Solution:
+    #     return super().solve_with_early_stop(
+    #         log_search_progress=log_search_progress,
+    #         max_time_in_seconds=max_time_in_seconds,
+    #         stop_after_first_solution=stop_after_first_solution,
+    #     )
+
     def solve_window(
         self,
         log_search_progress: bool = True,
@@ -96,6 +109,26 @@ class Solver_for_window(solver.Solver):
             max_time_in_seconds=max_time_in_seconds,
             stop_after_first_solution=stop_after_first_solution,
         )
+
+    def solve_window_min_changes(
+        self,
+        solution: Solution,
+        log_search_progress: bool = True,
+        max_time_in_seconds: float = 60.0,
+        stop_after_first_solution: bool = False,
+        callback: cp_model.CpSolverSolutionCallback | None = None,
+    ) -> Solution:
+        print("Solving window with minimal changes...")
+        return super().solve_min_changes(
+            solution=solution,
+            log_search_progress=log_search_progress,
+            max_time_in_seconds=max_time_in_seconds,
+        )
+        # return super().solve_with_early_stop(
+        #     log_search_progress=log_search_progress,
+        #     max_time_in_seconds=max_time_in_seconds,
+        #     stop_after_first_solution=stop_after_first_solution,
+        # )
 
     def add_start_maximum_consecutive_shifts_constraints(
         self, employee_uid: employee.EmployeeUid

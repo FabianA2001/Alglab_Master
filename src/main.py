@@ -12,7 +12,7 @@ from src.help_functions import (
 from src.solution import Solution
 
 from .inputTypes import employee, instace, shiftType
-from .LNS import lns
+from .LNS import lns, minimal_change_lns
 from .parseData import parseTXT
 from .shift_vars import Shift_vars
 from .solver import Solver
@@ -92,6 +92,22 @@ def run_lns_example():
     improved_solution = lns_solver.solve()
     # improved_solution.print_all_variables_values()
     # print("Objective value before LNS:", old_sol.objective_value)
+    print("Objective value after LNS:", improved_solution.objective_value)
+
+
+def run_lns_minimal_change_example():
+    old_sol = Solution.from_json_file("Instance9")
+    inst = get_tes_data()
+    lns_solver = lns.LNS(
+        old_sol,
+        timeout_seconds=60,
+        start_search_window_size=5,
+    )
+    improved_solution = minimal_change_lns.solve_changes(
+        old_sol, inst, [0], max_solve_time=60
+    )
+    # improved_solution.print_all_variables_values()
+    print("Objective value before LNS:", old_sol.objective_value)
     print("Objective value after LNS:", improved_solution.objective_value)
 
 
@@ -219,6 +235,7 @@ def main() -> None:
     # get_test_solution_from_model()
     # try_compare_solutions()
     run_lns_example()
+    # run_lns_minimal_change_example()
     # run_one_instance()
     # run_lns_example()
     # try_compare_multiple_solutions()
