@@ -82,10 +82,18 @@ def t_single_day_validation():
 
 def run_lns_example():
     # old_sol = Solution.from_json_file("Instance9")
-    inst = get_tes_data()
+    test_file = Path.joinpath(
+        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance9.txt"
+    )
+    instance = parseTXT.parse_txt(test_file)
+    vars = Shift_vars(instance)
+    solv = Solver(instance, vars)
+    sol1 = solv.solve_with_early_stop(
+        max_time_in_seconds=500, log_search_progress=False
+    )
     sol = Solution.from_json_file("Instance9")
     lns_solver = lns.LNS(
-        sol,
+        sol1,
         timeout_seconds=60,
         start_search_window_size=5,
     )
