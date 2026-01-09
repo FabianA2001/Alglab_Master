@@ -106,7 +106,9 @@ def render_shift_type_details(refresh_callback=None) -> None:
                         "Bearbeiten",
                         icon="edit",
                         on_click=lambda uid=shift_type_uid: _show_edit_shift_type_dialog(
-                            instance, uid, refresh_callback
+                            instance,
+                            uid,  # type: ignore
+                            refresh_callback,
                         ),
                     ).props("flat dense color=primary")
 
@@ -130,7 +132,7 @@ def render_shift_type_details(refresh_callback=None) -> None:
                     else:
                         ui.label("Keine")
 
-        shift_select = ui.select(
+        ui.select(
             options=shift_type_options,
             label="Schichttyp auswählen",
             value=first_shift_type_uid,
@@ -141,14 +143,28 @@ def render_shift_type_details(refresh_callback=None) -> None:
         show_shift_type_details(first_shift_type_uid)
 
 
-def render_employee_details() -> None:
-    """Rendert Details zu Mitarbeitern mit Dropdown."""
+def render_employee_details(refresh_callback=None) -> None:
+    """Rendert Details zu Mitarbeitern mit Dropdown.
+
+    Args:
+        refresh_callback: Optional callback function to refresh the display after changes
+    """
     instance: Instance | None = state.get_instance()
-    if instance is None or not instance.employees:
+    if instance is None:
         return
 
     with ui.card().classes("w-full mb-4"):
-        ui.label("Mitarbeiter Details").classes("text-xl font-bold mb-2")
+        with ui.row().classes("w-full items-center justify-between mb-2"):
+            ui.label("Mitarbeiter Details").classes("text-xl font-bold")
+            ui.button(
+                "Neuer Mitarbeiter",
+                icon="add",
+                on_click=lambda: _show_add_employee_dialog(instance, refresh_callback),
+            ).props("color=primary")
+
+        if not instance.employees:
+            ui.label("Keine Mitarbeiter vorhanden").classes("text-gray-500 italic mt-2")
+            return
 
         # Dropdown für Mitarbeiter
         employee_options = {emp.uid: emp.name for emp in instance.employees.values()}
@@ -180,20 +196,12 @@ def render_employee_details() -> None:
                     ui.label("Arbeitszeit:").classes("font-semibold")
                     min_hours = employee.min_minutes_assigned / 60
                     max_hours = employee.max_minutes_assigned / 60
-                    if employee.max_minutes_assigned >= 1000000:
-                        ui.label(f"Min: {min_hours:.1f}h, Max: unbegrenzt")
-                    else:
-                        ui.label(f"Min: {min_hours:.1f}h, Max: {max_hours:.1f}h")
+                    ui.label(f"Min: {min_hours:.1f}h, Max: {max_hours:.1f}h")
 
                     ui.label("Konsekutive Schichten:").classes("font-semibold")
-                    if employee.max_number_consecutive_shifts >= 1000000:
-                        ui.label(
-                            f"Min: {employee.min_number_consecutive_shifts}, Max: unbegrenzt"
-                        )
-                    else:
-                        ui.label(
-                            f"Min: {employee.min_number_consecutive_shifts}, Max: {employee.max_number_consecutive_shifts}"
-                        )
+                    ui.label(
+                        f"Min: {employee.min_number_consecutive_shifts}, Max: {employee.max_number_consecutive_shifts}"
+                    )
 
                     ui.label("Min. aufeinander folgende freie Tage:").classes(
                         "font-semibold"
@@ -201,10 +209,7 @@ def render_employee_details() -> None:
                     ui.label(str(employee.min_number_consecutive_days_off))
 
                     ui.label("Max. Wochenenden:").classes("font-semibold")
-                    if employee.max_number_weekends >= 1000000:
-                        ui.label("Unbegrenzt")
-                    else:
-                        ui.label(str(employee.max_number_weekends))
+                    ui.label(str(employee.max_number_weekends))
 
                     ui.label("Blockierte Tage:").classes("font-semibold")
                     if employee.blocked_shifts:
@@ -228,7 +233,7 @@ def render_employee_details() -> None:
                             if type_name:
                                 ui.label(f"• {type_name.name}: {max_count}")
 
-        employee_select = ui.select(
+        ui.select(
             options=employee_options,
             label="Mitarbeiter auswählen",
             value=first_employee_uid,
@@ -341,6 +346,316 @@ def _build_shifts_table_rows(
         rows.append(row)
 
     return rows, shift_cell_mapping
+
+
+def _show_add_employee_dialog(instance: Instance, refresh_callback=None) -> None:
+    """Zeigt einen Dialog zum Hinzufügen eines neuen Mitarbeiters.
+
+    Args:
+        instance: Die aktuelle Instance
+        refresh_callback: Optional callback function to refresh the display
+    """
+    from ...inputTypes.employee import Employee
+
+    # Default Werte
+    form_data = {
+        "name": "",
+        "min_minutes_assigned": 0,
+        "max_minutes_assigned": 999999,
+        "min_number_consecutive_shifts": 0,
+        "max_number_consecutive_shifts": 999999,
+        "min_number_consecutive_days_off": 1,
+        "max_number_weekends": 999999,
+        "blocked_shifts": set(),
+        "max_numbers_of_shifts": {},
+    }
+
+    def add_new_employee():
+        """Fügt den neuen Mitarbeiter zur Instance hinzu."""
+        try:
+            # Validierung
+            if not form_data["name"] or not form_data["name"].strip():
+                ui.notify("Bitte geben Sie einen Namen ein", type="warning")
+                return
+
+            # Prüfe ob Name bereits existiert
+            if any(
+                emp.name.lower() == form_data["name"].strip().lower()
+                for emp in instance.employees.values()
+            ):
+                ui.notify(
+                    f"Ein Mitarbeiter mit dem Namen '{form_data['name']}' existiert bereits",
+                    type="warning",
+                )
+                return
+
+            # Validiere Wertebereiche
+            if form_data["min_minutes_assigned"] < 0:
+                ui.notify(
+                    "Minimale Arbeitszeit kann nicht negativ sein", type="warning"
+                )
+                return
+
+            if form_data["max_minutes_assigned"] < form_data["min_minutes_assigned"]:
+                ui.notify(
+                    "Maximale Arbeitszeit muss >= minimale Arbeitszeit sein",
+                    type="warning",
+                )
+                return
+
+            if (
+                form_data["max_number_consecutive_shifts"]
+                < form_data["min_number_consecutive_shifts"]
+            ):
+                ui.notify(
+                    "Maximale konsekutive Schichten muss >= minimale sein",
+                    type="warning",
+                )
+                return
+
+            # Generiere neue eindeutige UID basierend auf dem Namen
+            new_uid = hash_string(f"employee_{form_data['name'].strip()}")
+
+            # Erstelle neuen Mitarbeiter
+            new_employee = Employee(
+                uid=new_uid,
+                name=form_data["name"].strip(),
+                min_minutes_assigned=form_data["min_minutes_assigned"],
+                max_minutes_assigned=form_data["max_minutes_assigned"],
+                min_number_consecutive_shifts=form_data[
+                    "min_number_consecutive_shifts"
+                ],
+                max_number_consecutive_shifts=form_data[
+                    "max_number_consecutive_shifts"
+                ],
+                min_number_consecutive_days_off=form_data[
+                    "min_number_consecutive_days_off"
+                ],
+                max_number_weekends=form_data["max_number_weekends"],
+                blocked_shifts=form_data["blocked_shifts"].copy()
+                if form_data["blocked_shifts"]
+                else set(),
+                max_numbers_of_shifts=form_data["max_numbers_of_shifts"].copy()
+                if form_data["max_numbers_of_shifts"]
+                else {},
+            )
+
+            # Füge Mitarbeiter zur Instance hinzu
+            instance.employees[new_uid] = new_employee
+
+            # Speichere geänderte Instance
+            state.set_instance(instance)
+
+            ui.notify(
+                f"Mitarbeiter '{form_data['name']}' erfolgreich hinzugefügt",
+                type="positive",
+            )
+
+            # Aktualisiere Anzeige
+            if refresh_callback:
+                refresh_callback()
+
+            dialog.close()
+
+        except Exception as e:
+            ui.notify(f"Fehler beim Hinzufügen: {str(e)}", type="negative")
+
+    with ui.dialog() as dialog, ui.card().classes("min-w-[600px]"):
+        ui.label("Neuen Mitarbeiter hinzufügen").classes("text-xl font-bold mb-4")
+
+        with ui.column().classes("w-full gap-3"):
+            # Name
+            ui.input(label="Name", placeholder="z.B. Max Mustermann").classes(
+                "w-full"
+            ).bind_value(form_data, "name")
+
+            ui.separator()
+
+            # Arbeitszeit
+            ui.label("Arbeitszeit (in Minuten)").classes("font-semibold")
+
+            ui.number(label="Minimale Arbeitszeit", min=0, format="%d").classes(
+                "w-full"
+            ).bind_value(form_data, "min_minutes_assigned")
+
+            ui.number(label="Maximale Arbeitszeit", min=0, format="%d").classes(
+                "w-full"
+            ).bind_value(form_data, "max_minutes_assigned")
+
+            # Konsekutive Schichten
+            ui.label("Konsekutive Schichten").classes("font-semibold")
+            ui.number(label="Minimale Anzahl", min=0, format="%d").classes(
+                "w-full"
+            ).bind_value(form_data, "min_number_consecutive_shifts")
+
+            ui.number(label="Maximale Anzahl", min=0, format="%d").classes(
+                "w-full"
+            ).bind_value(form_data, "max_number_consecutive_shifts")
+
+            # Weitere Parameter
+            ui.label("Weitere Einstellungen").classes("font-semibold")
+
+            ui.number(
+                label="Min. aufeinander folgende freie Tage", min=0, format="%d"
+            ).classes("w-full").bind_value(form_data, "min_number_consecutive_days_off")
+
+            ui.number(label="Max. Wochenenden", min=0, format="%d").classes(
+                "w-full"
+            ).bind_value(form_data, "max_number_weekends")
+
+            # Blockierte Tage
+            ui.label("Blockierte Tage (optional)").classes("font-semibold")
+            ui.label(
+                f"Geben Sie Tage ein, an denen der Mitarbeiter nicht arbeiten kann (0 bis {instance.number_of_days - 1})"
+            ).classes("text-sm text-gray-600 mb-2")
+
+            blocked_days_input = ui.input(
+                label="Blockierte Tage (kommagetrennt)", placeholder="z.B. 0,5,10,15"
+            ).classes("w-full")
+
+            # Display der aktuell eingegebenen Tage
+            blocked_days_display = ui.label("").classes("text-sm text-gray-600 mt-1")
+
+            def update_blocked_days():
+                """Parst und validiert die blockierten Tage."""
+                input_value = blocked_days_input.value or ""
+                if not input_value.strip():
+                    form_data["blocked_shifts"] = set()
+                    blocked_days_display.text = ""
+                    return
+
+                try:
+                    # Parse kommagetrennte Werte
+                    days = [int(d.strip()) for d in input_value.split(",") if d.strip()]
+
+                    # Validiere jeden Tag (1 bis number_of_days)
+                    invalid_days = [
+                        d for d in days if d < 0 or d > instance.number_of_days - 1
+                    ]
+                    if invalid_days:
+                        blocked_days_display.text = (
+                            f"⚠️ Ungültige Tage: {', '.join(map(str, invalid_days))}"
+                        )
+                        blocked_days_display.classes(
+                            "text-sm text-orange-600 mt-1",
+                            remove="text-gray-600 text-green-600",
+                        )
+                        return
+
+                    form_data["blocked_shifts"] = set(days)
+                    if days:
+                        blocked_days_display.text = (
+                            f"✓ {len(days)} Tag(e) blockiert: {sorted(days)}"
+                        )
+                        blocked_days_display.classes(
+                            "text-sm text-green-600 mt-1",
+                            remove="text-gray-600 text-orange-600",
+                        )
+                    else:
+                        blocked_days_display.text = ""
+
+                except ValueError:
+                    blocked_days_display.text = (
+                        "⚠️ Bitte nur Zahlen eingeben (kommagetrennt)"
+                    )
+                    blocked_days_display.classes(
+                        "text-sm text-orange-600 mt-1",
+                        remove="text-gray-600 text-green-600",
+                    )
+
+            blocked_days_input.on("blur", update_blocked_days)
+
+            ui.separator()
+
+            # Maximale Anzahl Schichten pro Schichttyp
+            if instance.shift_types:
+                ui.label("Maximale Anzahl Schichten pro Schichttyp (optional)").classes(
+                    "font-semibold"
+                )
+                ui.label(
+                    "Wählen Sie einen Schichttyp aus und geben Sie die maximale Anzahl an (leer = unbegrenzt)"
+                ).classes("text-sm text-gray-600 mb-2")
+
+                # Shift Type Limits werden hier gespeichert
+                shift_type_limits = {}
+
+                # Dropdown für Shift Type Auswahl
+                shift_type_options = {
+                    uid: st.name for uid, st in instance.shift_types.items()
+                }
+
+                # Wähle ersten Shift Type als default
+                current_shift_type_uid = next(iter(instance.shift_types.keys()))
+
+                def update_count_field(shift_type_uid):
+                    """Aktualisiert das Eingabefeld mit dem gespeicherten Wert für den Shift Type."""
+                    if shift_type_uid in shift_type_limits:
+                        count_input.value = shift_type_limits[shift_type_uid]
+                    else:
+                        count_input.value = None  # type: ignore
+
+                def save_current_value():
+                    """Speichert den aktuellen Wert für den ausgewählten Shift Type."""
+                    value = count_input.value
+                    if value is not None and value > 0:
+                        shift_type_limits[current_shift_type_uid] = int(value)
+                    elif current_shift_type_uid in shift_type_limits:
+                        # Wenn Wert gelöscht wurde, entferne aus limits
+                        del shift_type_limits[current_shift_type_uid]
+
+                    # Aktualisiere form_data
+                    form_data["max_numbers_of_shifts"] = shift_type_limits.copy()
+
+                def on_shift_type_change(e):
+                    """Wird aufgerufen wenn Shift Type gewechselt wird."""
+                    nonlocal current_shift_type_uid
+
+                    # Speichere aktuellen Wert
+                    save_current_value()
+
+                    # Wechsel zu neuem Shift Type
+                    current_shift_type_uid = e.value
+
+                    # Lade Wert für neuen Shift Type
+                    update_count_field(current_shift_type_uid)
+
+                def reset_current_value():
+                    """Setzt den Wert für den aktuellen Shift Type auf unbegrenzt zurück."""
+                    if current_shift_type_uid in shift_type_limits:
+                        del shift_type_limits[current_shift_type_uid]
+                    form_data["max_numbers_of_shifts"] = shift_type_limits.copy()
+                    count_input.value = None  # type: ignore
+                    ui.notify("Limit entfernt (unbegrenzt)", type="info")
+
+                with ui.row().classes("w-full items-center gap-2"):
+                    ui.select(
+                        options=shift_type_options,
+                        label="Schichttyp",
+                        value=current_shift_type_uid,
+                        on_change=on_shift_type_change,
+                    ).classes("flex-grow")
+
+                    count_input = ui.number(
+                        label="Max. Anzahl",
+                        min=1,
+                        format="%d",
+                        placeholder="unbegrenzt",
+                        on_change=lambda: save_current_value(),
+                    ).classes("w-48")
+
+                    ui.button(icon="clear", on_click=reset_current_value).props(
+                        "flat"
+                    ).tooltip("Auf unbegrenzt zurücksetzen")
+
+                # Initiales Update
+                update_count_field(current_shift_type_uid)
+
+        # Buttons
+        with ui.row().classes("w-full justify-end gap-2 mt-4"):
+            ui.button("Abbrechen", on_click=dialog.close).props("flat")
+            ui.button("Hinzufügen", on_click=add_new_employee).props("color=primary")
+
+    dialog.open()
 
 
 def _show_edit_shift_type_dialog(
@@ -663,15 +978,6 @@ def _show_add_shift_type_dialog(instance: Instance, refresh_callback=None) -> No
                     label="Blockierte Schichttypen",
                 ).classes("w-full").bind_value(form_data, "blocked_shifts_after")
 
-            # Info Box
-            with ui.card().classes("w-full bg-blue-50 mt-2"):
-                ui.label("ℹ️ Hinweise").classes("font-semibold")
-                ui.label("• Der Schichttyp kann allen Tagen zugewiesen werden").classes(
-                    "text-sm"
-                )
-                ui.label("• Die UID wird automatisch generiert").classes("text-sm")
-                ui.label("• Startzeit im Format HH:MM (24h)").classes("text-sm")
-
         # Buttons
         with ui.row().classes("w-full justify-end gap-2 mt-4"):
             ui.button("Abbrechen", on_click=dialog.close).props("flat")
@@ -830,7 +1136,7 @@ def instance_page():
         with instance_container:
             render_instance_info()
             render_shift_type_details(refresh_callback=update_instance_display)
-            render_employee_details()
+            render_employee_details(refresh_callback=update_instance_display)
             render_shifts_table()
 
     # UI Layout
