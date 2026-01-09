@@ -185,9 +185,17 @@ def render_employee_details(refresh_callback=None) -> None:
             employee = instance.employees[employee_uid]
 
             with detail_container:
-                ui.label(f"Mitarbeiter: {employee.name}").classes(
-                    "text-lg font-semibold mb-2"
-                )
+                with ui.row().classes("w-full items-center justify-between mb-2"):
+                    ui.label(f"Mitarbeiter: {employee.name}").classes(
+                        "text-lg font-semibold"
+                    )
+                    ui.button(
+                        "Bearbeiten",
+                        icon="edit",
+                        on_click=lambda _: _show_edit_employee_dialog(
+                            instance, employee_uid, refresh_callback
+                        ),
+                    ).props("flat dense color=primary")
 
                 with ui.grid(columns=2).classes("gap-2"):
                     ui.label("UID:").classes("font-semibold")
@@ -348,40 +356,71 @@ def _build_shifts_table_rows(
     return rows, shift_cell_mapping
 
 
-def _show_add_employee_dialog(instance: Instance, refresh_callback=None) -> None:
-    """Zeigt einen Dialog zum Hinzufügen eines neuen Mitarbeiters.
+def _show_employee_dialog(
+    instance: Instance, refresh_callback=None, employee_uid: int | None = None
+) -> None:
+    """Zeigt einen Dialog zum Hinzufügen oder Bearbeiten eines Mitarbeiters.
 
     Args:
         instance: Die aktuelle Instance
         refresh_callback: Optional callback function to refresh the display
+        employee_uid: Optional UID des zu bearbeitenden Mitarbeiters (None = neuer Mitarbeiter)
     """
     from ...inputTypes.employee import Employee
 
-    # Default Werte
+    # Bei Bearbeitung: Lade bestehenden Mitarbeiter
+    is_edit = employee_uid is not None
+
+    if is_edit:
+        employee = instance.employees.get(employee_uid)
+        if not employee:
+            ui.notify("Mitarbeiter nicht gefunden", type="negative")
+            return
+    else:
+        employee = None
+
+    # Default Werte (neu) oder vorausgefüllte Werte (bearbeiten)
     form_data = {
-        "name": "",
-        "min_minutes_assigned": 0,
-        "max_minutes_assigned": 999999,
-        "min_number_consecutive_shifts": 0,
-        "max_number_consecutive_shifts": 999999,
-        "min_number_consecutive_days_off": 1,
-        "max_number_weekends": 999999,
-        "blocked_shifts": set(),
-        "max_numbers_of_shifts": {},
+        "name": employee.name if employee else "",
+        "min_minutes_assigned": employee.min_minutes_assigned if employee else 0,
+        "max_minutes_assigned": employee.max_minutes_assigned if employee else 999999,
+        "min_number_consecutive_shifts": employee.min_number_consecutive_shifts
+        if employee
+        else 0,
+        "max_number_consecutive_shifts": employee.max_number_consecutive_shifts
+        if employee
+        else 999999,
+        "min_number_consecutive_days_off": employee.min_number_consecutive_days_off
+        if employee
+        else 1,
+        "max_number_weekends": employee.max_number_weekends if employee else 999999,
+        "blocked_shifts": (
+            employee.blocked_shifts.copy() if employee.blocked_shifts else set()
+        )
+        if employee
+        else set(),
+        "max_numbers_of_shifts": (
+            employee.max_numbers_of_shifts.copy()
+            if employee.max_numbers_of_shifts
+            else {}
+        )
+        if employee
+        else {},
     }
 
-    def add_new_employee():
-        """Fügt den neuen Mitarbeiter zur Instance hinzu."""
+    def save_employee():
+        """Fügt den neuen Mitarbeiter hinzu oder aktualisiert einen bestehenden."""
         try:
             # Validierung
             if not form_data["name"] or not form_data["name"].strip():
                 ui.notify("Bitte geben Sie einen Namen ein", type="warning")
                 return
 
-            # Prüfe ob Name bereits existiert
+            # Prüfe ob Name bereits existiert (bei Edit: außer bei gleichem Employee)
             if any(
                 emp.name.lower() == form_data["name"].strip().lower()
-                for emp in instance.employees.values()
+                and uid != employee_uid
+                for uid, emp in instance.employees.items()
             ):
                 ui.notify(
                     f"Ein Mitarbeiter mit dem Namen '{form_data['name']}' existiert bereits",
@@ -413,43 +452,72 @@ def _show_add_employee_dialog(instance: Instance, refresh_callback=None) -> None
                 )
                 return
 
-            # Generiere neue eindeutige UID basierend auf dem Namen
-            new_uid = hash_string(f"employee_{form_data['name'].strip()}")
+            if is_edit:
+                # Aktualisiere bestehenden Mitarbeiter
+                if employee:  # Type guard
+                    employee.name = form_data["name"].strip()
+                    employee.min_minutes_assigned = form_data["min_minutes_assigned"]
+                    employee.max_minutes_assigned = form_data["max_minutes_assigned"]
+                    employee.min_number_consecutive_shifts = form_data[
+                        "min_number_consecutive_shifts"
+                    ]
+                    employee.max_number_consecutive_shifts = form_data[
+                        "max_number_consecutive_shifts"
+                    ]
+                    employee.min_number_consecutive_days_off = form_data[
+                        "min_number_consecutive_days_off"
+                    ]
+                    employee.max_number_weekends = form_data["max_number_weekends"]
+                    employee.blocked_shifts = (
+                        form_data["blocked_shifts"].copy()
+                        if form_data["blocked_shifts"]
+                        else set()
+                    )
+                    employee.max_numbers_of_shifts = (
+                        form_data["max_numbers_of_shifts"].copy()
+                        if form_data["max_numbers_of_shifts"]
+                        else {}
+                    )
 
-            # Erstelle neuen Mitarbeiter
-            new_employee = Employee(
-                uid=new_uid,
-                name=form_data["name"].strip(),
-                min_minutes_assigned=form_data["min_minutes_assigned"],
-                max_minutes_assigned=form_data["max_minutes_assigned"],
-                min_number_consecutive_shifts=form_data[
-                    "min_number_consecutive_shifts"
-                ],
-                max_number_consecutive_shifts=form_data[
-                    "max_number_consecutive_shifts"
-                ],
-                min_number_consecutive_days_off=form_data[
-                    "min_number_consecutive_days_off"
-                ],
-                max_number_weekends=form_data["max_number_weekends"],
-                blocked_shifts=form_data["blocked_shifts"].copy()
-                if form_data["blocked_shifts"]
-                else set(),
-                max_numbers_of_shifts=form_data["max_numbers_of_shifts"].copy()
-                if form_data["max_numbers_of_shifts"]
-                else {},
-            )
+                success_msg = (
+                    f"Mitarbeiter '{form_data['name']}' erfolgreich aktualisiert"
+                )
+            else:
+                # Erstelle neuen Mitarbeiter
+                new_uid = hash_string(f"employee_{form_data['name'].strip()}")
 
-            # Füge Mitarbeiter zur Instance hinzu
-            instance.employees[new_uid] = new_employee
+                new_employee = Employee(
+                    uid=new_uid,
+                    name=form_data["name"].strip(),
+                    min_minutes_assigned=form_data["min_minutes_assigned"],
+                    max_minutes_assigned=form_data["max_minutes_assigned"],
+                    min_number_consecutive_shifts=form_data[
+                        "min_number_consecutive_shifts"
+                    ],
+                    max_number_consecutive_shifts=form_data[
+                        "max_number_consecutive_shifts"
+                    ],
+                    min_number_consecutive_days_off=form_data[
+                        "min_number_consecutive_days_off"
+                    ],
+                    max_number_weekends=form_data["max_number_weekends"],
+                    blocked_shifts=form_data["blocked_shifts"].copy()
+                    if form_data["blocked_shifts"]
+                    else set(),
+                    max_numbers_of_shifts=form_data["max_numbers_of_shifts"].copy()
+                    if form_data["max_numbers_of_shifts"]
+                    else {},
+                )
+
+                instance.employees[new_uid] = new_employee
+                success_msg = (
+                    f"Mitarbeiter '{form_data['name']}' erfolgreich hinzugefügt"
+                )
 
             # Speichere geänderte Instance
             state.set_instance(instance)
 
-            ui.notify(
-                f"Mitarbeiter '{form_data['name']}' erfolgreich hinzugefügt",
-                type="positive",
-            )
+            ui.notify(success_msg, type="positive")
 
             # Aktualisiere Anzeige
             if refresh_callback:
@@ -458,10 +526,20 @@ def _show_add_employee_dialog(instance: Instance, refresh_callback=None) -> None
             dialog.close()
 
         except Exception as e:
-            ui.notify(f"Fehler beim Hinzufügen: {str(e)}", type="negative")
+            ui.notify(
+                f"Fehler beim {'Aktualisieren' if is_edit else 'Hinzufügen'}: {str(e)}",
+                type="negative",
+            )
+
+    dialog_title = (
+        f"Mitarbeiter bearbeiten: {employee.name}"
+        if (is_edit and employee)
+        else "Neuen Mitarbeiter hinzufügen"
+    )
+    button_text = "Speichern" if is_edit else "Hinzufügen"
 
     with ui.dialog() as dialog, ui.card().classes("min-w-[600px]"):
-        ui.label("Neuen Mitarbeiter hinzufügen").classes("text-xl font-bold mb-4")
+        ui.label(dialog_title).classes("text-xl font-bold mb-4")
 
         with ui.column().classes("w-full gap-3"):
             # Name
@@ -509,11 +587,19 @@ def _show_add_employee_dialog(instance: Instance, refresh_callback=None) -> None
                 f"Geben Sie Tage ein, an denen der Mitarbeiter nicht arbeiten kann (0 bis {instance.number_of_days - 1})"
             ).classes("text-sm text-gray-600 mb-2")
 
+            # Vorausgefüllte blockierte Tage (bei Edit)
+            initial_blocked = (
+                ",".join(str(d) for d in sorted(form_data["blocked_shifts"]))
+                if form_data["blocked_shifts"]
+                else ""
+            )
+
             blocked_days_input = ui.input(
-                label="Blockierte Tage (kommagetrennt)", placeholder="z.B. 0,5,10,15"
+                label="Blockierte Tage (kommagetrennt)",
+                placeholder="z.B. 0,5,10,15",
+                value=initial_blocked,
             ).classes("w-full")
 
-            # Display der aktuell eingegebenen Tage
             blocked_days_display = ui.label("").classes("text-sm text-gray-600 mt-1")
 
             def update_blocked_days():
@@ -525,13 +611,11 @@ def _show_add_employee_dialog(instance: Instance, refresh_callback=None) -> None
                     return
 
                 try:
-                    # Parse kommagetrennte Werte
                     days = [int(d.strip()) for d in input_value.split(",") if d.strip()]
-
-                    # Validiere jeden Tag (1 bis number_of_days)
                     invalid_days = [
                         d for d in days if d < 0 or d > instance.number_of_days - 1
                     ]
+
                     if invalid_days:
                         blocked_days_display.text = (
                             f"⚠️ Ungültige Tage: {', '.join(map(str, invalid_days))}"
@@ -565,6 +649,10 @@ def _show_add_employee_dialog(instance: Instance, refresh_callback=None) -> None
 
             blocked_days_input.on("blur", update_blocked_days)
 
+            # Initial validation (bei Edit)
+            if initial_blocked:
+                update_blocked_days()
+
             ui.separator()
 
             # Maximale Anzahl Schichten pro Schichttyp
@@ -576,55 +664,37 @@ def _show_add_employee_dialog(instance: Instance, refresh_callback=None) -> None
                     "Wählen Sie einen Schichttyp aus und geben Sie die maximale Anzahl an (leer = unbegrenzt)"
                 ).classes("text-sm text-gray-600 mb-2")
 
-                # Shift Type Limits werden hier gespeichert
-                shift_type_limits = {}
-
-                # Dropdown für Shift Type Auswahl
+                shift_type_limits = form_data["max_numbers_of_shifts"].copy()
                 shift_type_options = {
                     uid: st.name for uid, st in instance.shift_types.items()
                 }
-
-                # Wähle ersten Shift Type als default
                 current_shift_type_uid = next(iter(instance.shift_types.keys()))
 
                 def update_count_field(shift_type_uid):
-                    """Aktualisiert das Eingabefeld mit dem gespeicherten Wert für den Shift Type."""
                     if shift_type_uid in shift_type_limits:
                         count_input.value = shift_type_limits[shift_type_uid]
                     else:
-                        count_input.value = None  # type: ignore
+                        count_input.set_value(None)
 
                 def save_current_value():
-                    """Speichert den aktuellen Wert für den ausgewählten Shift Type."""
                     value = count_input.value
                     if value is not None and value > 0:
                         shift_type_limits[current_shift_type_uid] = int(value)
                     elif current_shift_type_uid in shift_type_limits:
-                        # Wenn Wert gelöscht wurde, entferne aus limits
                         del shift_type_limits[current_shift_type_uid]
-
-                    # Aktualisiere form_data
                     form_data["max_numbers_of_shifts"] = shift_type_limits.copy()
 
                 def on_shift_type_change(e):
-                    """Wird aufgerufen wenn Shift Type gewechselt wird."""
                     nonlocal current_shift_type_uid
-
-                    # Speichere aktuellen Wert
                     save_current_value()
-
-                    # Wechsel zu neuem Shift Type
                     current_shift_type_uid = e.value
-
-                    # Lade Wert für neuen Shift Type
                     update_count_field(current_shift_type_uid)
 
                 def reset_current_value():
-                    """Setzt den Wert für den aktuellen Shift Type auf unbegrenzt zurück."""
                     if current_shift_type_uid in shift_type_limits:
                         del shift_type_limits[current_shift_type_uid]
                     form_data["max_numbers_of_shifts"] = shift_type_limits.copy()
-                    count_input.value = None  # type: ignore
+                    count_input.set_value(None)
                     ui.notify("Limit entfernt (unbegrenzt)", type="info")
 
                 with ui.row().classes("w-full items-center gap-2"):
@@ -647,52 +717,85 @@ def _show_add_employee_dialog(instance: Instance, refresh_callback=None) -> None
                         "flat"
                     ).tooltip("Auf unbegrenzt zurücksetzen")
 
-                # Initiales Update
                 update_count_field(current_shift_type_uid)
+
+            # Info Box (nur bei Edit)
+            if is_edit:
+                with ui.card().classes("w-full bg-yellow-50 mt-2"):
+                    ui.label("⚠️ Wichtig").classes("font-semibold")
+                    ui.label("• Die UID des Mitarbeiters bleibt unverändert").classes(
+                        "text-sm"
+                    )
 
         # Buttons
         with ui.row().classes("w-full justify-end gap-2 mt-4"):
             ui.button("Abbrechen", on_click=dialog.close).props("flat")
-            ui.button("Hinzufügen", on_click=add_new_employee).props("color=primary")
+            ui.button(button_text, on_click=save_employee).props("color=primary")
 
     dialog.open()
 
 
-def _show_edit_shift_type_dialog(
-    instance: Instance, shift_type_uid: int, refresh_callback=None
+def _show_add_employee_dialog(instance: Instance, refresh_callback=None) -> None:
+    """Zeigt einen Dialog zum Hinzufügen eines neuen Mitarbeiters."""
+    _show_employee_dialog(instance, refresh_callback, employee_uid=None)
+
+
+def _show_edit_employee_dialog(
+    instance: Instance, employee_uid: int, refresh_callback=None
 ) -> None:
-    """Zeigt einen Dialog zum Bearbeiten eines bestehenden Schichttyps.
+    """Zeigt einen Dialog zum Bearbeiten eines bestehenden Mitarbeiters."""
+    _show_employee_dialog(instance, refresh_callback, employee_uid=employee_uid)
+
+
+def _show_shift_type_dialog(
+    instance: Instance, refresh_callback=None, shift_type_uid: int | None = None
+) -> None:
+    """Zeigt einen Dialog zum Hinzufügen oder Bearbeiten eines Schichttyps.
 
     Args:
         instance: Die aktuelle Instance
-        shift_type_uid: Die UID des zu bearbeitenden Schichttyps
         refresh_callback: Optional callback function to refresh the display
+        shift_type_uid: Optional UID des zu bearbeitenden Schichttyps (None = neuer Typ)
     """
+    from ...inputTypes.shiftType import ShiftType
 
-    shift_type = instance.shift_types.get(shift_type_uid)
-    if not shift_type:
-        ui.notify("Schichttyp nicht gefunden", type="negative")
-        return
+    # Bei Bearbeitung: Lade bestehenden Schichttyp
+    is_edit = shift_type_uid is not None
+    shift_type = None
 
-    # Vorausgefüllte Werte aus dem bestehenden Shift Type
+    if is_edit:
+        shift_type = instance.shift_types.get(shift_type_uid)
+        if not shift_type:
+            ui.notify("Schichttyp nicht gefunden", type="negative")
+            return
+
+    # Default Werte (neu) oder vorausgefüllte Werte (bearbeiten)
     form_data = {
-        "name": shift_type.name,
-        "start_time": shift_type.start_time.strftime("%H:%M"),
-        "length": shift_type.length,
-        "blocked_shifts_after": shift_type.blocked_shifts_after.copy()
-        if shift_type.blocked_shifts_after
+        "name": shift_type.name if (is_edit and shift_type) else "",
+        "start_time": shift_type.start_time.strftime("%H:%M")
+        if (is_edit and shift_type)
+        else "00:00",
+        "length": shift_type.length
+        if (is_edit and shift_type)
+        else 480,  # 8 Stunden in Minuten
+        "blocked_shifts_after": (
+            shift_type.blocked_shifts_after.copy()
+            if shift_type.blocked_shifts_after
+            else set()
+        )
+        if (is_edit and shift_type)
         else set(),
     }
 
-    # Optionen für blockierte Schichten (ohne den aktuellen Typ)
+    # Optionen für blockierte Schichten (ohne den aktuellen Typ bei Edit)
     shift_type_options = {
         uid: f"{st.name} ({st.start_time})"
         for uid, st in instance.shift_types.items()
-        if uid != shift_type_uid
+        if not is_edit or uid != shift_type_uid
     }
 
-    def update_shift_type():
-        """Aktualisiert den Schichttyp in der Instance."""
+    def save_shift_type():
+        """Fügt den neuen Schichttyp hinzu oder aktualisiert einen bestehenden."""
         try:
             # Validierung
             if not form_data["name"] or not form_data["name"].strip():
@@ -715,35 +818,101 @@ def _show_edit_shift_type_dialog(
                 )
                 return
 
-            # Prüfe ob Name bereits existiert (außer bei gleichem Typ)
-            if any(
-                st.name.lower() == form_data["name"].strip().lower()
-                and uid != shift_type_uid
-                for uid, st in instance.shift_types.items()
-            ):
-                ui.notify(
-                    f"Ein anderer Schichttyp mit dem Namen '{form_data['name']}' existiert bereits",
-                    type="warning",
-                )
-                return
+            if is_edit:
+                # Prüfe ob Name bereits existiert (außer bei gleichem Typ)
+                if any(
+                    st.name.lower() == form_data["name"].strip().lower()
+                    and uid != shift_type_uid
+                    for uid, st in instance.shift_types.items()
+                ):
+                    ui.notify(
+                        f"Ein anderer Schichttyp mit dem Namen '{form_data['name']}' existiert bereits",
+                        type="warning",
+                    )
+                    return
 
-            # Aktualisiere den Schichttyp
-            shift_type.name = form_data["name"].strip()
-            shift_type.start_time = time(hour=hours, minute=minutes)
-            shift_type.length = form_data["length"]
-            shift_type.blocked_shifts_after = (
-                form_data["blocked_shifts_after"].copy()
-                if form_data["blocked_shifts_after"]
-                else set()
-            )
+                # Aktualisiere den Schichttyp
+                if shift_type:  # Type guard
+                    shift_type.name = form_data["name"].strip()
+                    shift_type.start_time = time(hour=hours, minute=minutes)
+                    shift_type.length = form_data["length"]
+                    shift_type.blocked_shifts_after = (
+                        form_data["blocked_shifts_after"].copy()
+                        if form_data["blocked_shifts_after"]
+                        else set()
+                    )
+
+                success_msg = (
+                    f"Schichttyp '{form_data['name']}' erfolgreich aktualisiert"
+                )
+            else:
+                # Prüfe ob Name bereits existiert
+                if any(
+                    st.name.lower() == form_data["name"].strip().lower()
+                    for st in instance.shift_types.values()
+                ):
+                    ui.notify(
+                        f"Ein Schichttyp mit dem Namen '{form_data['name']}' existiert bereits",
+                        type="warning",
+                    )
+                    return
+
+                # Generiere neue eindeutige UID basierend auf dem Namen
+                new_uid = hash_string(f"shift_type_{form_data['name'].strip()}")
+
+                # Erstelle neuen Schichttyp
+                new_shift_type = ShiftType(
+                    uid=new_uid,
+                    name=form_data["name"].strip(),
+                    start_time=time(hour=hours, minute=minutes),
+                    length=form_data["length"],
+                    blocked_shifts_after=form_data["blocked_shifts_after"].copy()
+                    if form_data["blocked_shifts_after"]
+                    else set(),
+                )
+
+                # Füge Schichttyp zur Instance hinzu
+                instance.shift_types[new_uid] = new_shift_type
+
+                # Erstelle Default-Shifts für alle Tage
+                from ...inputTypes.shift import Shift
+
+                for day in range(1, instance.number_of_days + 1):
+                    # Prüfe ob Tag bereits existiert
+                    if day not in instance.shifts:
+                        instance.shifts[day] = {}
+
+                    # Prüfe ob Shift für diesen Tag und Typ bereits existiert
+                    if new_uid not in instance.shifts[day]:
+                        # Bestimme ob Wochenende
+                        is_weekend = day in instance.weekend_days
+
+                        # Generiere Shift UID
+                        shift_uid = hash_string(f"shift_{day}_{new_uid}")
+
+                        # Erstelle neue Default-Shift
+                        new_shift = Shift(
+                            uid=shift_uid,
+                            preffert_number_employees=1,
+                            weight_below_preferred=1,
+                            weight_above_preferred=1,
+                            is_weekend=is_weekend,
+                            assign_employee_day_shift=set(),
+                            ban_employee_day_shift=set(),
+                            penalty_assigned_day_employee={},
+                            penalty_not_assigned_day_employee={},
+                        )
+
+                        instance.shifts[day][new_uid] = new_shift
+
+                success_msg = (
+                    f"Schichttyp '{form_data['name']}' erfolgreich hinzugefügt"
+                )
 
             # Speichere geänderte Instance
             state.set_instance(instance)
 
-            ui.notify(
-                f"Schichttyp '{form_data['name']}' erfolgreich aktualisiert",
-                type="positive",
-            )
+            ui.notify(success_msg, type="positive")
 
             # Aktualisiere Anzeige
             if refresh_callback:
@@ -752,12 +921,20 @@ def _show_edit_shift_type_dialog(
             dialog.close()
 
         except Exception as e:
-            ui.notify(f"Fehler beim Aktualisieren: {str(e)}", type="negative")
+            ui.notify(
+                f"Fehler beim {'Aktualisieren' if is_edit else 'Hinzufügen'}: {str(e)}",
+                type="negative",
+            )
+
+    dialog_title = (
+        f"Schichttyp bearbeiten: {shift_type.name}"
+        if (is_edit and shift_type)
+        else "Neuen Schichttyp hinzufügen"
+    )
+    button_text = "Speichern" if is_edit else "Hinzufügen"
 
     with ui.dialog() as dialog, ui.card().classes("min-w-[500px]"):
-        ui.label(f"Schichttyp bearbeiten: {shift_type.name}").classes(
-            "text-xl font-bold mb-4"
-        )
+        ui.label(dialog_title).classes("text-xl font-bold mb-4")
 
         with ui.column().classes("w-full gap-3"):
             # Name
@@ -769,10 +946,25 @@ def _show_edit_shift_type_dialog(
             ui.input(label="Startzeit (HH:MM)", placeholder="08:00").classes(
                 "w-full"
             ).bind_value(form_data, "start_time")
+            # Länge in Minuten (mit Live-Update für Edit, ohne für Add da es dort schon ist)
+            if not is_edit:
+                length_label = ui.label("").classes("text-sm text-gray-600")
 
-            ui.number(label="Länge in Minuten", min=1, format="%d").classes(
-                "w-full"
-            ).bind_value(form_data, "length")
+                def update_length_label():
+                    hours = form_data["length"] / 60
+                    length_label.text = f"= {hours:.1f} Stunden"
+
+                ui.number(label="Länge in Minuten", min=1, format="%d").classes(
+                    "w-full"
+                ).bind_value(form_data, "length").on_value_change(
+                    lambda: update_length_label()
+                )
+
+                update_length_label()
+            else:
+                ui.number(label="Länge in Minuten", min=1, format="%d").classes(
+                    "w-full"
+                ).bind_value(form_data, "length")
 
             ui.separator()
 
@@ -791,199 +983,35 @@ def _show_edit_shift_type_dialog(
                     label="Blockierte Schichttypen",
                 ).classes("w-full").bind_value(form_data, "blocked_shifts_after")
 
-            # Info Box
-            with ui.card().classes("w-full bg-yellow-50 mt-2"):
-                ui.label("⚠️ Wichtig").classes("font-semibold")
-                ui.label(
-                    "• Änderungen am Namen oder der Länge betreffen bestehende Schichten"
-                ).classes("text-sm")
-                ui.label("• Die UID des Schichttyps bleibt unverändert").classes(
-                    "text-sm"
-                )
+            # Info Box (nur bei Edit)
+            if is_edit:
+                with ui.card().classes("w-full bg-yellow-50 mt-2"):
+                    ui.label("⚠️ Wichtig").classes("font-semibold")
+                    ui.label(
+                        "• Änderungen am Namen oder der Länge betreffen bestehende Schichten"
+                    ).classes("text-sm")
+                    ui.label("• Die UID des Schichttyps bleibt unverändert").classes(
+                        "text-sm"
+                    )
 
         # Buttons
         with ui.row().classes("w-full justify-end gap-2 mt-4"):
             ui.button("Abbrechen", on_click=dialog.close).props("flat")
-            ui.button("Speichern", on_click=update_shift_type).props("color=primary")
+            ui.button(button_text, on_click=save_shift_type).props("color=primary")
 
     dialog.open()
 
 
 def _show_add_shift_type_dialog(instance: Instance, refresh_callback=None) -> None:
-    """Zeigt einen Dialog zum Hinzufügen eines neuen Schichttyps.
+    """Zeigt einen Dialog zum Hinzufügen eines neuen Schichttyps."""
+    _show_shift_type_dialog(instance, refresh_callback, shift_type_uid=None)
 
-    Args:
-        instance: Die aktuelle Instance
-        refresh_callback: Optional callback function to refresh the display
-    """
 
-    from ...inputTypes.shiftType import ShiftType
-
-    # Default Werte in einem Dictionary, damit bind_value funktioniert
-    form_data = {
-        "name": "",
-        "start_time": "00:00",
-        "length": 480,  # 8 Stunden in Minuten
-        "blocked_shifts_after": set(),
-    }
-
-    # Optionen für blockierte Schichten
-    shift_type_options = {
-        uid: f"{st.name} ({st.start_time})" for uid, st in instance.shift_types.items()
-    }
-
-    def add_new_shift_type():
-        """Fügt den neuen Schichttyp zur Instance hinzu."""
-        try:
-            # Validierung
-            if not form_data["name"] or not form_data["name"].strip():
-                ui.notify("Bitte geben Sie einen Namen ein", type="warning")
-                return
-
-            if form_data["length"] <= 0:
-                ui.notify("Die Länge muss größer als 0 sein", type="warning")
-                return
-            try:
-                hours, minutes = map(int, form_data["start_time"].split(":"))
-            except ValueError:
-                ui.notify("Die Startzeit muss im Format HH:MM sein", type="warning")
-                return
-            if not (0 <= hours < 24 and 0 <= minutes < 60):
-                ui.notify(
-                    "Die Startzeit muss eine gültige Uhrzeit sein", type="warning"
-                )
-                return
-
-            # Prüfe ob Name bereits existiert
-            if any(
-                st.name.lower() == form_data["name"].strip().lower()
-                for st in instance.shift_types.values()
-            ):
-                ui.notify(
-                    f"Ein Schichttyp mit dem Namen '{form_data['name']}' existiert bereits",
-                    type="warning",
-                )
-                return
-
-            # Generiere neue eindeutige UID basierend auf dem Namen
-            new_uid = hash_string(f"shift_type_{form_data['name'].strip()}")
-
-            # Erstelle neuen Schichttyp
-            new_shift_type = ShiftType(
-                uid=new_uid,
-                name=form_data["name"].strip(),
-                start_time=time(hour=hours, minute=minutes),
-                length=form_data["length"],
-                blocked_shifts_after=form_data["blocked_shifts_after"].copy()
-                if form_data["blocked_shifts_after"]
-                else set(),
-            )
-
-            # Füge Schichttyp zur Instance hinzu
-            instance.shift_types[new_uid] = new_shift_type
-
-            # Erstelle Default-Shifts für alle Tage
-            from ...inputTypes.shift import Shift
-
-            shifts_created = 0
-            for day in range(1, instance.number_of_days + 1):
-                # Prüfe ob Tag bereits existiert
-                if day not in instance.shifts:
-                    instance.shifts[day] = {}
-
-                # Prüfe ob Shift für diesen Tag und Typ bereits existiert
-                if new_uid not in instance.shifts[day]:
-                    # Bestimme ob Wochenende
-                    is_weekend = day in instance.weekend_days
-
-                    # Generiere Shift UID
-                    shift_uid = hash_string(f"shift_{day}_{new_uid}")
-
-                    # Erstelle neue Default-Shift
-                    new_shift = Shift(
-                        uid=shift_uid,
-                        preffert_number_employees=1,
-                        weight_below_preferred=1,
-                        weight_above_preferred=1,
-                        is_weekend=is_weekend,
-                        assign_employee_day_shift=set(),
-                        ban_employee_day_shift=set(),
-                        penalty_assigned_day_employee={},
-                        penalty_not_assigned_day_employee={},
-                    )
-
-                    instance.shifts[day][new_uid] = new_shift
-                    shifts_created += 1
-
-            # Speichere geänderte Instance
-            state.set_instance(instance)
-
-            ui.notify(
-                f"Schichttyp '{form_data['name']}' erfolgreich hinzugefügt",
-                type="positive",
-            )
-
-            # Aktualisiere Anzeige
-            if refresh_callback:
-                refresh_callback()
-
-            dialog.close()
-
-        except Exception as e:
-            ui.notify(f"Fehler beim Hinzufügen: {str(e)}", type="negative")
-
-    with ui.dialog() as dialog, ui.card().classes("min-w-[500px]"):
-        ui.label("Neuen Schichttyp hinzufügen").classes("text-xl font-bold mb-4")
-
-        with ui.column().classes("w-full gap-3"):
-            # Name
-            ui.input(
-                label="Name", placeholder="z.B. Frühschicht, Spätschicht, Nachtschicht"
-            ).classes("w-full").bind_value(form_data, "name")
-
-            # Startzeit
-            ui.input(label="Startzeit (HH:MM)", placeholder="08:00").classes(
-                "w-full"
-            ).bind_value(form_data, "start_time")
-
-            # Länge in Minuten
-            length_label = ui.label("").classes("text-sm text-gray-600")
-
-            def update_length_label():
-                hours = form_data["length"] / 60
-                length_label.text = f"= {hours:.1f} Stunden"
-
-            ui.number(label="Länge in Minuten", min=1, format="%d").classes(
-                "w-full"
-            ).bind_value(form_data, "length").on_value_change(
-                lambda: update_length_label()
-            )
-
-            update_length_label()
-
-            ui.separator()
-
-            # Blockierte Schichten danach
-            if shift_type_options:
-                ui.label("Blockierte Schichttypen danach (optional)").classes(
-                    "font-semibold"
-                )
-                ui.label(
-                    "Wählen Sie Schichttypen aus, die nach diesem Schichttyp nicht erlaubt sind"
-                ).classes("text-sm text-gray-600 mb-2")
-
-                ui.select(
-                    options=shift_type_options,
-                    multiple=True,
-                    label="Blockierte Schichttypen",
-                ).classes("w-full").bind_value(form_data, "blocked_shifts_after")
-
-        # Buttons
-        with ui.row().classes("w-full justify-end gap-2 mt-4"):
-            ui.button("Abbrechen", on_click=dialog.close).props("flat")
-            ui.button("Hinzufügen", on_click=add_new_shift_type).props("color=primary")
-
-    dialog.open()
+def _show_edit_shift_type_dialog(
+    instance: Instance, shift_type_uid: int, refresh_callback=None
+) -> None:
+    """Zeigt einen Dialog zum Bearbeiten eines bestehenden Schichttyps."""
+    _show_shift_type_dialog(instance, refresh_callback, shift_type_uid=shift_type_uid)
 
 
 def _display_shift_details_dialog(
