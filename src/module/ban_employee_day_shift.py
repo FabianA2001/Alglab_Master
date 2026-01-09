@@ -13,8 +13,9 @@ class Ban_employee_day_shift(ShiftAssignmentModule):
     ) -> cp_model.LinearExprT:
         for day in range(instance.number_of_days):
             for type_uid in instance.shifts[day]:
-                for employee_uid in instance.shifts[day][
-                    type_uid
-                ].ban_employee_day_shift:
-                    vars.model.Add(vars.get_var(day, type_uid, employee_uid) == 0)
+                for employee_uid in instance.employees:
+                    if employee_uid in instance.shifts[day][
+                        type_uid
+                    ].ban_employee_day_shift:
+                        vars.model.Add(vars.get_var(day, type_uid, employee_uid) == 0)
         return 0
