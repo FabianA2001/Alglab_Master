@@ -26,6 +26,11 @@ class Solution(BaseModel):
         description="Mapping of boolean variables that indicate whether a specific employee is assigned to a given shift on a specified day. The key is a tuple of (day, shift type, employee ID).",
     )
 
+    work_vars: Dict[Tuple[int, employee.EmployeeUid], int] = Field(
+        default_factory=dict,
+        description="Mapping of boolean variables that indicate whether a specific employee is assigned to a given shift on a specified day. The key is a tuple of (day, shift type, employee ID).",
+    )
+
     weekend_vars: Dict[Tuple[int, employee.EmployeeUid], int] = Field(
         default_factory=dict,
         description="Mapping of boolean variables that indicate whether a specific employee is working on a weekend day. The key is a tuple of (weekend day, employee ID).",
@@ -86,6 +91,19 @@ class Solution(BaseModel):
             }  # type: ignore
         return v
 
+    @field_validator("work_vars", mode="before")
+    @classmethod
+    def validate_work_vars(cls, v: Any) -> Dict[Tuple[int, int], int]:
+        """Convert string keys back to tuple keys for work_vars field."""
+        if isinstance(v, dict):
+            return {
+                (int(k.split(",")[0]), employee.EmployeeUid(int(k.split(",")[1])))
+                if isinstance(k, str)
+                else k: val
+                for k, val in v.items()
+            }  # type: ignore
+        return v
+
     @field_validator("weekend_vars", mode="before")
     @classmethod
     def validate_weekend_vars(cls, v: Any) -> Dict[Tuple[int, int], int]:
@@ -133,6 +151,9 @@ class Solution(BaseModel):
     def set_var(self, day: int, type_uid: int, employee_uid: int, value: int):
         """Sets the boolean variable value."""
         self.vars[(day, type_uid, employee_uid)] = value
+
+    def set_work_vars(self, day: int, employee_uid: int, value: int):
+        self.work_vars[(day, employee_uid)] = value
 
     def set_weekend_var(self, weekend: int, employee_uid: int, value: int):
         """Sets the weekend variable value."""
@@ -356,6 +377,21 @@ class Solution(BaseModel):
 
         return solution
 
+    @classmethod
+    def delete_json_solution(cls, name: str) -> None:
+        """Delete a JSON file corresponding to the Solution.
+
+        Args:
+            name: Name of the Solution, without the .json extension.
+        """
+        path = DATA_DIR / f"{name}.json"
+
+        if path.exists():
+            path.unlink()  # Delete the file
+            print(f"Datei gelöscht: {path}")
+        else:
+            print(f"Datei nicht gefunden: {path}")
+
     def minimal_shift_fulfillment(self) -> float:
         """Return the minimum fulfillment ratio across all shifts."""
         min_fulfillment = float("inf")
@@ -565,6 +601,89 @@ class Solution(BaseModel):
             return percentages[mid]
         else:  # Even number of elements
             return (percentages[mid - 1] + percentages[mid]) / 2
+
+    # TODO instead of updating below_prefferd_vars and above_prefferd_vars calculating using the self and the extra solution
+    def copy_solution(self, solution: "Solution"):
+        self.vars.update(solution.vars)
+        self.weekend_vars.update(solution.weekend_vars)
+        self.above_prefferd_vars.update(solution.above_prefferd_vars)
+        self.work_vars.update(solution.work_vars)
+        self.below_prefferd_vars.update(solution.below_prefferd_vars)
+
+    def store_solution_vars(
+        self,
+        solution: "Solution",
+        day: int | None = None,
+        employee_uid: employee.EmployeeUid | None = None,
+        shift_type_uid: shift.ShiftUid | None = None,
+    ):
+        if day is None:
+            day_start = 0
+            day_end = self.instance.number_of_days
+        else:
+            day_start = day
+            day_end = day + 1
+
+        if employee_uid is None:
+            employees = self.instance.employees
+        elif employee_uid in self.instance.employees.keys():
+            employees = {employee_uid: self.instance.employees[employee_uid]}
+        else:
+            print(f"somthing bad happend: {employee_uid} is not in the instance")
+            return
+
+        if shift_type_uid is None:
+            shifts_types = self.instance.shift_types
+        elif shift_type_uid in self.instance.shift_types.keys():
+            shifts_types = {shift_type_uid: self.instance.shift_types[shift_type_uid]}
+        else:
+            print(
+                f"somthing bad happend: shift type {shift_type_uid} is not in the instance"
+            )
+            return
+        for day_ in range(day_start, day_end):
+            for employee_uid, employee_ in employees.items():
+                for shift_type_uid, shift_type in shifts_types.items():
+                    if (day_, shift_type_uid, employee_uid) in solution.vars.keys():
+                        self.set_var(
+                            day_,
+                            shift_type_uid,
+                            employee_uid,
+                            solution.vars[(day_, shift_type_uid, employee_uid)] == 1,
+                        )
+                    # else:
+                    #     print(f"key var {(day_, shift_type_uid, employee_uid)} is not a key in the to be copied solution")
+
+    def store_solution_work_vars(
+        self,
+        solution: "Solution",
+        day: int | None = None,
+        employee_uid: employee.EmployeeUid | None = None,
+    ):
+        if day is None:
+            day_start = 0
+            day_end = self.instance.number_of_days
+        else:
+            day_start = day
+            day_end = day + 1
+
+        if employee_uid is None:
+            employees = self.instance.employees
+        elif employee_uid in self.instance.employees.keys():
+            employees = {employee_uid: self.instance.employees[employee_uid]}
+        else:
+            print(f"somthing bad happend: {employee_uid} is not in the instance")
+            return
+        for employee_uid, employee_ in employees.items():
+            for day_ in range(day_start, day_end):
+                if (day_, employee_uid) in solution.work_vars.keys():
+                    self.set_work_vars(
+                        day_,
+                        employee_uid,
+                        solution.work_vars[(day_, employee_uid)] == 1,
+                    )
+                # else:
+                #     print(f"key work var {(day_, employee_uid)} is not a key in the to be copied solution")
 
 
 # Standalone constraint checking functions

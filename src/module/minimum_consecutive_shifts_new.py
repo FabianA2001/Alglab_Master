@@ -180,3 +180,66 @@ class Min_Cons_Shifts_Alternative_exact(ShiftAssignmentModule):
                                    )
                 day_s = day_s + 1
         return 0
+    
+
+class Min_Cons_Shifts_Alternative_exact_original(ShiftAssignmentModule):
+    def build(
+        self,
+        instance: instace.Instance,
+        vars: shift_vars.Shift_vars,
+    ) -> cp_model.LinearExprT:
+        for employee_uid in instance.employees:
+            minimal_consecutive = instance.employees[employee_uid].min_number_consecutive_shifts
+            for day in range(instance.number_of_days - minimal_consecutive):
+                for day_j in range(day + 1, day + minimal_consecutive):
+                    assigned_shifts_start = []
+                    assigned_shifts_end = []
+                    assigned_shifts_inner_interval = []
+                    assigned_shifts_interval_end = []
+                    for type_uid in instance.shift_types:
+                        assigned_shifts_start.append(
+                            vars.vars[(day_j, type_uid, employee_uid)]
+                        )
+                        assigned_shifts_end.append(
+                            vars.vars[(day, type_uid, employee_uid)]
+                        )
+                        assigned_shifts_inner_interval.append(
+                            vars.vars[(day + 1, type_uid, employee_uid)]
+                        )
+                        assigned_shifts_interval_end.append(
+                            vars.vars[(day_j + 1, type_uid, employee_uid)]
+                        )
+                    vars.model.add(sum(assigned_shifts_start)
+                                   - sum(assigned_shifts_end)
+                                   + (sum(assigned_shifts_inner_interval) - 1)
+                                   <= sum(assigned_shifts_interval_end)
+                                   )
+                    
+            # Constraint for days that do not have less than minimal_consecutive days after them
+            day_s = 1
+            for day in range(instance.number_of_days - minimal_consecutive, instance.number_of_days):
+                for day_j in range(day + 1, day + minimal_consecutive - day_s):
+                    assigned_shifts_start = []
+                    assigned_shifts_end = []
+                    assigned_shifts_inner_interval = []
+                    assigned_shifts_interval_end = []
+                    for type_uid in instance.shift_types:
+                        assigned_shifts_start.append(
+                            vars.vars[(day_j, type_uid, employee_uid)]
+                        )
+                        assigned_shifts_end.append(
+                            vars.vars[(day, type_uid, employee_uid)]
+                        )
+                        assigned_shifts_inner_interval.append(
+                            vars.vars[(day + 1, type_uid, employee_uid)]
+                        )
+                        assigned_shifts_interval_end.append(
+                            vars.vars[(day_j + 1, type_uid, employee_uid)]
+                        )
+                    vars.model.add(sum(assigned_shifts_start)
+                                   - sum(assigned_shifts_end)
+                                   + (sum(assigned_shifts_inner_interval) - 1)
+                                   <= sum(assigned_shifts_interval_end)
+                                   )
+                day_s = day_s + 1
+        return 0
