@@ -98,9 +98,17 @@ def render_shift_type_details(refresh_callback=None) -> None:
             shift_type = instance.shift_types[shift_type_uid]
 
             with detail_container:
-                ui.label(f"Schichttyp: {shift_type.name}").classes(
-                    "text-lg font-semibold mb-2"
-                )
+                with ui.row().classes("w-full items-center justify-between mb-2"):
+                    ui.label(f"Schichttyp: {shift_type.name}").classes(
+                        "text-lg font-semibold"
+                    )
+                    ui.button(
+                        "Bearbeiten",
+                        icon="edit",
+                        on_click=lambda uid=shift_type_uid: _show_edit_shift_type_dialog(
+                            instance, uid, refresh_callback
+                        ),
+                    ).props("flat dense color=primary")
 
                 with ui.grid(columns=2).classes("gap-2"):
                     ui.label("UID:").classes("font-semibold")
@@ -333,6 +341,157 @@ def _build_shifts_table_rows(
         rows.append(row)
 
     return rows, shift_cell_mapping
+
+
+def _show_edit_shift_type_dialog(
+    instance: Instance, shift_type_uid: int, refresh_callback=None
+) -> None:
+    """Zeigt einen Dialog zum Bearbeiten eines bestehenden Schichttyps.
+
+    Args:
+        instance: Die aktuelle Instance
+        shift_type_uid: Die UID des zu bearbeitenden Schichttyps
+        refresh_callback: Optional callback function to refresh the display
+    """
+
+    shift_type = instance.shift_types.get(shift_type_uid)
+    if not shift_type:
+        ui.notify("Schichttyp nicht gefunden", type="negative")
+        return
+
+    # Vorausgefüllte Werte aus dem bestehenden Shift Type
+    form_data = {
+        "name": shift_type.name,
+        "start_time": shift_type.start_time.strftime("%H:%M"),
+        "length": shift_type.length,
+        "blocked_shifts_after": shift_type.blocked_shifts_after.copy()
+        if shift_type.blocked_shifts_after
+        else set(),
+    }
+
+    # Optionen für blockierte Schichten (ohne den aktuellen Typ)
+    shift_type_options = {
+        uid: f"{st.name} ({st.start_time})"
+        for uid, st in instance.shift_types.items()
+        if uid != shift_type_uid
+    }
+
+    def update_shift_type():
+        """Aktualisiert den Schichttyp in der Instance."""
+        try:
+            # Validierung
+            if not form_data["name"] or not form_data["name"].strip():
+                ui.notify("Bitte geben Sie einen Namen ein", type="warning")
+                return
+
+            if form_data["length"] <= 0:
+                ui.notify("Die Länge muss größer als 0 sein", type="warning")
+                return
+
+            try:
+                hours, minutes = map(int, form_data["start_time"].split(":"))
+            except ValueError:
+                ui.notify("Die Startzeit muss im Format HH:MM sein", type="warning")
+                return
+
+            if not (0 <= hours < 24 and 0 <= minutes < 60):
+                ui.notify(
+                    "Die Startzeit muss eine gültige Uhrzeit sein", type="warning"
+                )
+                return
+
+            # Prüfe ob Name bereits existiert (außer bei gleichem Typ)
+            if any(
+                st.name.lower() == form_data["name"].strip().lower()
+                and uid != shift_type_uid
+                for uid, st in instance.shift_types.items()
+            ):
+                ui.notify(
+                    f"Ein anderer Schichttyp mit dem Namen '{form_data['name']}' existiert bereits",
+                    type="warning",
+                )
+                return
+
+            # Aktualisiere den Schichttyp
+            shift_type.name = form_data["name"].strip()
+            shift_type.start_time = time(hour=hours, minute=minutes)
+            shift_type.length = form_data["length"]
+            shift_type.blocked_shifts_after = (
+                form_data["blocked_shifts_after"].copy()
+                if form_data["blocked_shifts_after"]
+                else set()
+            )
+
+            # Speichere geänderte Instance
+            state.set_instance(instance)
+
+            ui.notify(
+                f"Schichttyp '{form_data['name']}' erfolgreich aktualisiert",
+                type="positive",
+            )
+
+            # Aktualisiere Anzeige
+            if refresh_callback:
+                refresh_callback()
+
+            dialog.close()
+
+        except Exception as e:
+            ui.notify(f"Fehler beim Aktualisieren: {str(e)}", type="negative")
+
+    with ui.dialog() as dialog, ui.card().classes("min-w-[500px]"):
+        ui.label(f"Schichttyp bearbeiten: {shift_type.name}").classes(
+            "text-xl font-bold mb-4"
+        )
+
+        with ui.column().classes("w-full gap-3"):
+            # Name
+            ui.input(
+                label="Name", placeholder="z.B. Frühschicht, Spätschicht, Nachtschicht"
+            ).classes("w-full").bind_value(form_data, "name")
+
+            # Startzeit
+            ui.input(label="Startzeit (HH:MM)", placeholder="08:00").classes(
+                "w-full"
+            ).bind_value(form_data, "start_time")
+
+            ui.number(label="Länge in Minuten", min=1, format="%d").classes(
+                "w-full"
+            ).bind_value(form_data, "length")
+
+            ui.separator()
+
+            # Blockierte Schichten danach
+            if shift_type_options:
+                ui.label("Blockierte Schichttypen danach (optional)").classes(
+                    "font-semibold"
+                )
+                ui.label(
+                    "Wählen Sie Schichttypen aus, die nach diesem Schichttyp nicht erlaubt sind"
+                ).classes("text-sm text-gray-600 mb-2")
+
+                ui.select(
+                    options=shift_type_options,
+                    multiple=True,
+                    label="Blockierte Schichttypen",
+                ).classes("w-full").bind_value(form_data, "blocked_shifts_after")
+
+            # Info Box
+            with ui.card().classes("w-full bg-yellow-50 mt-2"):
+                ui.label("⚠️ Wichtig").classes("font-semibold")
+                ui.label(
+                    "• Änderungen am Namen oder der Länge betreffen bestehende Schichten"
+                ).classes("text-sm")
+                ui.label("• Die UID des Schichttyps bleibt unverändert").classes(
+                    "text-sm"
+                )
+
+        # Buttons
+        with ui.row().classes("w-full justify-end gap-2 mt-4"):
+            ui.button("Abbrechen", on_click=dialog.close).props("flat")
+            ui.button("Speichern", on_click=update_shift_type).props("color=primary")
+
+    dialog.open()
 
 
 def _show_add_shift_type_dialog(instance: Instance, refresh_callback=None) -> None:
