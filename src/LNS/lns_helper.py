@@ -2,48 +2,6 @@ from .. import solution
 from ..module.solverConstraints import SolverConstraints
 
 
-# TODO new objective value ergänzen
-# def calculate_objective_value(sol: solution.Solution) -> float:
-#     """
-#     Berechnet den objective value einer Lösung basierend auf den Zuweisungen.
-#     """
-#     objective_value = 0.0
-
-#     # Penalty für Mitarbeiter-Zuweisungen
-#     for employee_uid in sol.instance.employees:
-#         for day in range(sol.instance.number_of_days):
-#             for type_uid in sol.instance.shifts[day]:
-#                 is_assigned = sol.vars.get((day, type_uid, employee_uid), 0)
-
-#                 # Penalty wenn NICHT zugewiesen (aber gewünscht)
-#                 objective_value += sol.instance.get_shift(
-#                     day=day, type_uid=type_uid
-#                 ).penalty_assigned_day_employee.get(employee_uid, 0) * (1 - is_assigned)
-
-#                 # Penalty wenn zugewiesen (aber nicht gewünscht)
-#                 objective_value += (
-#                     sol.instance.get_shift(
-#                         day=day, type_uid=type_uid
-#                     ).penalty_not_assigned_day_employee.get(employee_uid, 0)
-#                     * is_assigned
-#                 )
-
-#     # Penalty für above/below preferred
-#     for day in range(sol.instance.number_of_days):
-#         for type_uid in sol.instance.shifts[day]:
-#             below = sol.below_prefferd_vars.get((day, type_uid), 0)
-#             above = sol.above_prefferd_vars.get((day, type_uid), 0)
-
-#             objective_value += (
-#                 below * sol.instance.shifts[day][type_uid].weight_below_preferred
-#             )
-#             objective_value += (
-#                 above * sol.instance.shifts[day][type_uid].weight_above_preferred
-#             )
-
-#     return objective_value
-
-
 def calculate_objective_value(sol: solution.Solution) -> float:
     objective_value = 0
     for employee_uid in sol.instance.employees:

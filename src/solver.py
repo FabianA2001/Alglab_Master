@@ -475,9 +475,7 @@ class Solver:
         log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
     ) -> Solution:
-        # self.set_constraints(
-        #     disabled_constraints=self.disabled_constraints, automaton=False
-        # )
+        self.set_constraints(automaton=False)
         solver = cp_model.CpSolver()
         solver.parameters.log_search_progress = log_search_progress
         solver.parameters.max_time_in_seconds = max_time_in_seconds

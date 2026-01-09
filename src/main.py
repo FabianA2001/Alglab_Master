@@ -219,7 +219,7 @@ def try_warmstart_callback():
 
 def run_one_instance():
     test_file = Path.joinpath(
-        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance9.txt"
+        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance4.txt"
     )
     instance = parseTXT.parse_txt(test_file)
     vars = Shift_vars(instance)
@@ -242,9 +242,9 @@ def main() -> None:
     # sol = Solution.from_json_file("Instance1")
     # get_test_solution_from_model()
     # try_compare_solutions()
-    run_lns_example()
+    # run_lns_example()
     # run_lns_minimal_change_example()
-    # run_one_instance()
+    run_one_instance()
     # run_lns_example()
     # try_compare_multiple_solutions()
     # try_warmstart_callback()

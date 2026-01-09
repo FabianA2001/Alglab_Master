@@ -84,19 +84,6 @@ class Solver_for_window(solver.Solver):
                         f"prev_day_has_shift_before_max_cons_{employee_uid}"
                     )
 
-    # def solve_window(
-    #     self,
-    #     log_search_progress: bool = True,
-    #     max_time_in_seconds: float = 60.0,
-    #     stop_after_first_solution: bool = False,
-    #     callback: cp_model.CpSolverSolutionCallback | None = None,
-    # ) -> Solution:
-    #     return super().solve_with_early_stop(
-    #         log_search_progress=log_search_progress,
-    #         max_time_in_seconds=max_time_in_seconds,
-    #         stop_after_first_solution=stop_after_first_solution,
-    #     )
-
     def solve_window(
         self,
         log_search_progress: bool = True,
