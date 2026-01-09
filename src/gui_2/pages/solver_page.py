@@ -95,7 +95,18 @@ def solver_page() -> None:
             "color": "warning",
             "params": {
                 "max_solve_time": DEFAULT_TIMEOUT_SECONDS,
-                "log_search_progress": False,
+                "log_search_progress": True,
+            },
+            "requires_solution": True,
+        },
+        {
+            "name": "Minimal Changes Warm Start",
+            "description": "Minimal Changes with hints from previous solution",
+            "icon": "build",
+            "method": "warm_start",
+            "color": "warning",
+            "params": {
+                "max_time_in_seconds": DEFAULT_TIMEOUT_SECONDS,
             },
             "requires_solution": True,
         },
@@ -386,7 +397,12 @@ def solver_page() -> None:
                 vars = Shift_vars(instance)
                 solver = Solver(instance, vars)
                 solver_method = getattr(solver, method_name)
-                solution = solver_method(**method_config["params"])
+                if method_config.get("requires_solution", False):
+                    solution = solver_method(
+                        solution=state.get_solution(), **method_config["params"]
+                    )
+                else:
+                    solution = solver_method(**method_config["params"])
 
             # Schließe Write-Ende der Pipe
             os.close(write_pipe)
