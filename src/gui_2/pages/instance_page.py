@@ -1,8 +1,10 @@
+from datetime import time
 from pathlib import Path
 from typing import Any, Dict, List
 
 from nicegui import ui
 
+from ...help_functions import hash_string
 from ...inputTypes.instace import Instance
 from ...parseData import parseTXT
 from .. import state
@@ -47,14 +49,32 @@ def render_instance_info() -> None:
             ui.label(f"Wochenendtage: {len(instance.weekend_days)}")
 
 
-def render_shift_type_details() -> None:
-    """Rendert Details zu Schichttypen mit Dropdown."""
+def render_shift_type_details(refresh_callback=None) -> None:
+    """Rendert Details zu Schichttypen mit Dropdown.
+
+    Args:
+        refresh_callback: Optional callback function to refresh the display after changes
+    """
     instance: Instance | None = state.get_instance()
-    if instance is None or not instance.shift_types:
+    if instance is None:
         return
 
     with ui.card().classes("w-full mb-4"):
-        ui.label("Schichttypen Details").classes("text-xl font-bold mb-2")
+        with ui.row().classes("w-full items-center justify-between mb-2"):
+            ui.label("Schichttypen Details").classes("text-xl font-bold")
+            ui.button(
+                "Neuer Schichttyp",
+                icon="add",
+                on_click=lambda: _show_add_shift_type_dialog(
+                    instance, refresh_callback
+                ),
+            ).props("color=primary")
+
+        if not instance.shift_types:
+            ui.label("Keine Schichttypen vorhanden").classes(
+                "text-gray-500 italic mt-2"
+            )
+            return
 
         # Dropdown für Schichttypen
         shift_type_options = {
@@ -90,9 +110,6 @@ def render_shift_type_details() -> None:
                     ui.label(str(shift_type.start_time))
 
                     ui.label("Länge:").classes("font-semibold")
-                    ui.label(
-                        f"{shift_type.length} Minuten ({shift_type.length / 60:.1f} Stunden)"
-                    )
 
                     ui.label("Blockierte Schichten danach:").classes("font-semibold")
                     if shift_type.blocked_shifts_after:
@@ -318,6 +335,192 @@ def _build_shifts_table_rows(
     return rows, shift_cell_mapping
 
 
+def _show_add_shift_type_dialog(instance: Instance, refresh_callback=None) -> None:
+    """Zeigt einen Dialog zum Hinzufügen eines neuen Schichttyps.
+
+    Args:
+        instance: Die aktuelle Instance
+        refresh_callback: Optional callback function to refresh the display
+    """
+
+    from ...inputTypes.shiftType import ShiftType
+
+    # Default Werte in einem Dictionary, damit bind_value funktioniert
+    form_data = {
+        "name": "",
+        "start_time": "00:00",
+        "length": 480,  # 8 Stunden in Minuten
+        "blocked_shifts_after": set(),
+    }
+
+    # Optionen für blockierte Schichten
+    shift_type_options = {
+        uid: f"{st.name} ({st.start_time})" for uid, st in instance.shift_types.items()
+    }
+
+    def add_new_shift_type():
+        """Fügt den neuen Schichttyp zur Instance hinzu."""
+        try:
+            # Validierung
+            if not form_data["name"] or not form_data["name"].strip():
+                ui.notify("Bitte geben Sie einen Namen ein", type="warning")
+                return
+
+            if form_data["length"] <= 0:
+                ui.notify("Die Länge muss größer als 0 sein", type="warning")
+                return
+            try:
+                hours, minutes = map(int, form_data["start_time"].split(":"))
+            except ValueError:
+                ui.notify("Die Startzeit muss im Format HH:MM sein", type="warning")
+                return
+            if not (0 <= hours < 24 and 0 <= minutes < 60):
+                ui.notify(
+                    "Die Startzeit muss eine gültige Uhrzeit sein", type="warning"
+                )
+                return
+
+            # Prüfe ob Name bereits existiert
+            if any(
+                st.name.lower() == form_data["name"].strip().lower()
+                for st in instance.shift_types.values()
+            ):
+                ui.notify(
+                    f"Ein Schichttyp mit dem Namen '{form_data['name']}' existiert bereits",
+                    type="warning",
+                )
+                return
+
+            # Generiere neue eindeutige UID basierend auf dem Namen
+            new_uid = hash_string(f"shift_type_{form_data['name'].strip()}")
+
+            # Erstelle neuen Schichttyp
+            new_shift_type = ShiftType(
+                uid=new_uid,
+                name=form_data["name"].strip(),
+                start_time=time(hour=hours, minute=minutes),
+                length=form_data["length"],
+                blocked_shifts_after=form_data["blocked_shifts_after"].copy()
+                if form_data["blocked_shifts_after"]
+                else set(),
+            )
+
+            # Füge Schichttyp zur Instance hinzu
+            instance.shift_types[new_uid] = new_shift_type
+
+            # Erstelle Default-Shifts für alle Tage
+            from ...inputTypes.shift import Shift
+
+            shifts_created = 0
+            for day in range(1, instance.number_of_days + 1):
+                # Prüfe ob Tag bereits existiert
+                if day not in instance.shifts:
+                    instance.shifts[day] = {}
+
+                # Prüfe ob Shift für diesen Tag und Typ bereits existiert
+                if new_uid not in instance.shifts[day]:
+                    # Bestimme ob Wochenende
+                    is_weekend = day in instance.weekend_days
+
+                    # Generiere Shift UID
+                    shift_uid = hash_string(f"shift_{day}_{new_uid}")
+
+                    # Erstelle neue Default-Shift
+                    new_shift = Shift(
+                        uid=shift_uid,
+                        preffert_number_employees=1,
+                        weight_below_preferred=1,
+                        weight_above_preferred=1,
+                        is_weekend=is_weekend,
+                        assign_employee_day_shift=set(),
+                        ban_employee_day_shift=set(),
+                        penalty_assigned_day_employee={},
+                        penalty_not_assigned_day_employee={},
+                    )
+
+                    instance.shifts[day][new_uid] = new_shift
+                    shifts_created += 1
+
+            # Speichere geänderte Instance
+            state.set_instance(instance)
+
+            ui.notify(
+                f"Schichttyp '{form_data['name']}' erfolgreich hinzugefügt",
+                type="positive",
+            )
+
+            # Aktualisiere Anzeige
+            if refresh_callback:
+                refresh_callback()
+
+            dialog.close()
+
+        except Exception as e:
+            ui.notify(f"Fehler beim Hinzufügen: {str(e)}", type="negative")
+
+    with ui.dialog() as dialog, ui.card().classes("min-w-[500px]"):
+        ui.label("Neuen Schichttyp hinzufügen").classes("text-xl font-bold mb-4")
+
+        with ui.column().classes("w-full gap-3"):
+            # Name
+            ui.input(
+                label="Name", placeholder="z.B. Frühschicht, Spätschicht, Nachtschicht"
+            ).classes("w-full").bind_value(form_data, "name")
+
+            # Startzeit
+            ui.input(label="Startzeit (HH:MM)", placeholder="08:00").classes(
+                "w-full"
+            ).bind_value(form_data, "start_time")
+
+            # Länge in Minuten
+            length_label = ui.label("").classes("text-sm text-gray-600")
+
+            def update_length_label():
+                hours = form_data["length"] / 60
+                length_label.text = f"= {hours:.1f} Stunden"
+
+            ui.number(label="Länge in Minuten", min=1, format="%d").classes(
+                "w-full"
+            ).bind_value(form_data, "length").on_value_change(
+                lambda: update_length_label()
+            )
+
+            update_length_label()
+
+            ui.separator()
+
+            # Blockierte Schichten danach
+            if shift_type_options:
+                ui.label("Blockierte Schichttypen danach (optional)").classes(
+                    "font-semibold"
+                )
+                ui.label(
+                    "Wählen Sie Schichttypen aus, die nach diesem Schichttyp nicht erlaubt sind"
+                ).classes("text-sm text-gray-600 mb-2")
+
+                ui.select(
+                    options=shift_type_options,
+                    multiple=True,
+                    label="Blockierte Schichttypen",
+                ).classes("w-full").bind_value(form_data, "blocked_shifts_after")
+
+            # Info Box
+            with ui.card().classes("w-full bg-blue-50 mt-2"):
+                ui.label("ℹ️ Hinweise").classes("font-semibold")
+                ui.label("• Der Schichttyp kann allen Tagen zugewiesen werden").classes(
+                    "text-sm"
+                )
+                ui.label("• Die UID wird automatisch generiert").classes("text-sm")
+                ui.label("• Startzeit im Format HH:MM (24h)").classes("text-sm")
+
+        # Buttons
+        with ui.row().classes("w-full justify-end gap-2 mt-4"):
+            ui.button("Abbrechen", on_click=dialog.close).props("flat")
+            ui.button("Hinzufügen", on_click=add_new_shift_type).props("color=primary")
+
+    dialog.open()
+
+
 def _display_shift_details_dialog(
     row_key: str,
     col_name: str,
@@ -467,7 +670,7 @@ def instance_page():
 
         with instance_container:
             render_instance_info()
-            render_shift_type_details()
+            render_shift_type_details(refresh_callback=update_instance_display)
             render_employee_details()
             render_shifts_table()
 
