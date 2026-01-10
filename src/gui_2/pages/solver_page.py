@@ -504,6 +504,7 @@ def solver_page() -> None:
             start_time: Startzeit des Solvers
         """
         state.add_solution(solution)
+        solution.to_json_file(solution.instance.name)
         state.set_solver_end_time(time.time())
 
         elapsed = time.time() - start_time
