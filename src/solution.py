@@ -45,6 +45,12 @@ class Solution(BaseModel):
         default_factory=dict,
         description="Mapping of integer variables representing the shortfall of employees assigned to a shift below its preferred capacity. The key is a tuple of (day, shift type).",
     )
+
+    below_threshold_vars: Dict[Tuple[int, shift.ShiftUid], int] = Field(
+        default_factory=dict,
+        description="Mapping of integer variables representing the shortfall of employees assigned to a shift below its threshold capacity. The key is a tuple of (day, shift type).",
+    )
+
     instance: instace.Instance = Field(
         description="An instance that contains all given variables",
     )
@@ -84,14 +90,16 @@ class Solution(BaseModel):
                 for k, val in v.items()
             }  # type: ignore
         return v
-    
+
     @field_validator("work_vars", mode="before")
     @classmethod
     def validate_work_vars(cls, v: Any) -> Dict[Tuple[int, int], int]:
         """Convert string keys back to tuple keys for work_vars field."""
         if isinstance(v, dict):
             return {
-                (int(k.split(",")[0]), employee.EmployeeUid(int(k.split(",")[1]))) if isinstance(k, str) else k: val
+                (int(k.split(",")[0]), employee.EmployeeUid(int(k.split(",")[1])))
+                if isinstance(k, str)
+                else k: val
                 for k, val in v.items()
             }  # type: ignore
         return v
@@ -129,11 +137,24 @@ class Solution(BaseModel):
             }  # type: ignore
         return v
 
+    @field_validator("below_threshold_vars", mode="before")
+    @classmethod
+    def validate_below_threshold_vars(cls, v: Any) -> Dict[Tuple[int, int], int]:
+        """Convert string keys back to tuple keys for below_threshold_vars field."""
+        if isinstance(v, dict):
+            return {
+                tuple(map(int, k.split(","))) if isinstance(k, str) else k: val
+                for k, val in v.items()
+            }  # type: ignore
+        return v
+
     def set_var(self, day: int, type_uid: int, employee_uid: int, value: int):
         """Sets the boolean variable value."""
         self.vars[(day, type_uid, employee_uid)] = value
+
     def set_work_vars(self, day: int, employee_uid: int, value: int):
         self.work_vars[(day, employee_uid)] = value
+
     def set_weekend_var(self, weekend: int, employee_uid: int, value: int):
         """Sets the weekend variable value."""
         self.weekend_vars[(weekend, employee_uid)] = value
@@ -145,6 +166,10 @@ class Solution(BaseModel):
     def set_below_prefferd_var(self, day: int, type_uid: int, value: int):
         """Sets the below preferred variable value."""
         self.below_prefferd_vars[(day, type_uid)] = value
+
+    def set_below_threshold_var(self, day: int, type_uid: int, value: int):
+        """Sets the below threshold variable value."""
+        self.below_threshold_vars[(day, type_uid)] = value
 
     def set_instance(self, instance: instace.Instance):
         self.instance = instance
@@ -351,7 +376,7 @@ class Solution(BaseModel):
         print(f"Solution geladen aus: {path_obj}")
 
         return solution
-    
+
     @classmethod
     def delete_json_solution(cls, name: str) -> None:
         """Delete a JSON file corresponding to the Solution.
@@ -369,35 +394,43 @@ class Solution(BaseModel):
 
     def minimal_shift_fulfillment(self) -> float:
         """Return the minimum fulfillment ratio across all shifts."""
-        min_fulfillment = float('inf')
+        min_fulfillment = float("inf")
 
         for day, day_shift_dict in self.instance.shifts.items():
             for type_uid, shift in day_shift_dict.items():
-                filled_count = sum(1 for emp in self.instance.employees if self.vars.get((day, type_uid, emp), 0) == 1)
+                filled_count = sum(
+                    1
+                    for emp in self.instance.employees
+                    if self.vars.get((day, type_uid, emp), 0) == 1
+                )
                 total_required = shift.preffert_number_employees
-                
+
                 # Calculate the fulfillment ratio
                 if total_required > 0:
                     fulfillment_ratio = filled_count / total_required
                     min_fulfillment = min(min_fulfillment, fulfillment_ratio)
 
-        return min_fulfillment if min_fulfillment != float('inf') else 1
+        return min_fulfillment if min_fulfillment != float("inf") else 1
 
     def maximum_shift_fulfillment(self) -> float:
         """Return the maximum fulfillment ratio across all shifts."""
-        max_fulfillment = float('-inf')
+        max_fulfillment = float("-inf")
 
         for day, day_shift_dict in self.instance.shifts.items():
             for type_uid, shift in day_shift_dict.items():
-                filled_count = sum(1 for emp in self.instance.employees if self.vars.get((day, type_uid, emp), 0) == 1)
+                filled_count = sum(
+                    1
+                    for emp in self.instance.employees
+                    if self.vars.get((day, type_uid, emp), 0) == 1
+                )
                 total_required = shift.preffert_number_employees
-                
+
                 # Calculate the fulfillment ratio
                 if total_required > 0:
                     fulfillment_ratio = filled_count / total_required
                     max_fulfillment = max(max_fulfillment, fulfillment_ratio)
 
-        return max_fulfillment if max_fulfillment != float('-inf') else 1
+        return max_fulfillment if max_fulfillment != float("-inf") else 1
 
     def average_shift_fulfillment(self) -> float:
         """Return the average fulfillment ratio across all shifts."""
@@ -406,7 +439,11 @@ class Solution(BaseModel):
 
         for day, day_shift_dict in self.instance.shifts.items():
             for type_uid, shift in day_shift_dict.items():
-                filled_count = sum(1 for emp in self.instance.employees if self.vars.get((day, type_uid, emp), 0) == 1)
+                filled_count = sum(
+                    1
+                    for emp in self.instance.employees
+                    if self.vars.get((day, type_uid, emp), 0) == 1
+                )
                 total_required = shift.preffert_number_employees
 
                 # Calculate the fulfillment ratio
@@ -419,8 +456,8 @@ class Solution(BaseModel):
 
     def _calculate_fulfillment_ratio(self, wishes_type: str):
         """Helper method to calculate fulfillment ratios for positive or negative wishes."""
-        min_percentage = float('inf')  # For minimal
-        max_percentage = float('-inf')  # For maximum
+        min_percentage = float("inf")  # For minimal
+        max_percentage = float("-inf")  # For maximum
         total_percentage = 0.0
         count = 0
 
@@ -430,14 +467,16 @@ class Solution(BaseModel):
 
             for day, day_shift_dict in self.instance.shifts.items():
                 for type_uid, shift in day_shift_dict.items():
-                    if wishes_type == 'positive':
+                    if wishes_type == "positive":
                         weight = shift.penalty_assigned_day_employee.get(emp, 0)
                     else:  # negative wishes
                         weight = shift.penalty_not_assigned_day_employee.get(emp, 0)
 
                     if weight > 0:
                         total_wishes += 1
-                        if self.vars.get((day, type_uid, emp), 0) == (1 if wishes_type == 'positive' else 0):
+                        if self.vars.get((day, type_uid, emp), 0) == (
+                            1 if wishes_type == "positive" else 0
+                        ):
                             fulfilled_wishes += 1
 
             if total_wishes > 0:
@@ -448,29 +487,36 @@ class Solution(BaseModel):
                 count += 1
 
         # Return appropriate values based on the type of fulfillment requested
-        if wishes_type == 'positive':
-            return min_percentage if min_percentage != float('inf') else 1, max_percentage if max_percentage != float('-inf') else 1, total_percentage / count if count > 0 else 1
+        if wishes_type == "positive":
+            return (
+                min_percentage if min_percentage != float("inf") else 1,
+                max_percentage if max_percentage != float("-inf") else 1,
+                total_percentage / count if count > 0 else 1,
+            )
         else:
-            return min_percentage if min_percentage != float('inf') else 1, max_percentage if max_percentage != float('-inf') else 1, total_percentage / count if count > 0 else 1
+            return (
+                min_percentage if min_percentage != float("inf") else 1,
+                max_percentage if max_percentage != float("-inf") else 1,
+                total_percentage / count if count > 0 else 1,
+            )
 
     def minimal_employee_positive_wishes_met(self) -> float:
-        return self._calculate_fulfillment_ratio('positive')[0]  # Return min
+        return self._calculate_fulfillment_ratio("positive")[0]  # Return min
 
     def maximum_employee_positive_wishes_met(self) -> float:
-        return self._calculate_fulfillment_ratio('positive')[1]  # Return max
+        return self._calculate_fulfillment_ratio("positive")[1]  # Return max
 
     def average_employee_positive_wishes_met(self) -> float:
-        return self._calculate_fulfillment_ratio('positive')[2]  # Return average
+        return self._calculate_fulfillment_ratio("positive")[2]  # Return average
 
     def minimal_employee_negative_wishes_met(self) -> float:
-        return self._calculate_fulfillment_ratio('negative')[0]  # Return min
+        return self._calculate_fulfillment_ratio("negative")[0]  # Return min
 
     def maximum_employee_negative_wishes_met(self) -> float:
-        return self._calculate_fulfillment_ratio('negative')[1]  # Return max
+        return self._calculate_fulfillment_ratio("negative")[1]  # Return max
 
     def average_employee_negative_wishes_met(self) -> float:
-        return self._calculate_fulfillment_ratio('negative')[2]  # Return average
-
+        return self._calculate_fulfillment_ratio("negative")[2]  # Return average
 
     def total_fulfilled_wishes(self) -> int:
         """Count total fulfilled positive and negative wishes."""
@@ -493,7 +539,6 @@ class Solution(BaseModel):
                             total_fulfilled += 1
 
         return total_fulfilled
-
 
     def median_employee_positive_wishes_met(self) -> float:
         """Return the median percentage of fulfilled positive wishes for all employees."""
@@ -557,15 +602,21 @@ class Solution(BaseModel):
         else:  # Even number of elements
             return (percentages[mid - 1] + percentages[mid]) / 2
 
-    #TODO instead of updating below_prefferd_vars and above_prefferd_vars calculating using the self and the extra solution
+    # TODO instead of updating below_prefferd_vars and above_prefferd_vars calculating using the self and the extra solution
     def copy_solution(self, solution: "Solution"):
         self.vars.update(solution.vars)
         self.weekend_vars.update(solution.weekend_vars)
         self.above_prefferd_vars.update(solution.above_prefferd_vars)
         self.work_vars.update(solution.work_vars)
         self.below_prefferd_vars.update(solution.below_prefferd_vars)
-    
-    def store_solution_vars(self, solution: "Solution", day: int | None = None, employee_uid: employee.EmployeeUid | None = None, shift_type_uid: shift.ShiftUid | None = None):
+
+    def store_solution_vars(
+        self,
+        solution: "Solution",
+        day: int | None = None,
+        employee_uid: employee.EmployeeUid | None = None,
+        shift_type_uid: shift.ShiftUid | None = None,
+    ):
         if day is None:
             day_start = 0
             day_end = self.instance.number_of_days
@@ -586,18 +637,29 @@ class Solution(BaseModel):
         elif shift_type_uid in self.instance.shift_types.keys():
             shifts_types = {shift_type_uid: self.instance.shift_types[shift_type_uid]}
         else:
-            print(f"somthing bad happend: shift type {shift_type_uid} is not in the instance")
+            print(
+                f"somthing bad happend: shift type {shift_type_uid} is not in the instance"
+            )
             return
         for day_ in range(day_start, day_end):
             for employee_uid, employee_ in employees.items():
                 for shift_type_uid, shift_type in shifts_types.items():
                     if (day_, shift_type_uid, employee_uid) in solution.vars.keys():
-                        self.set_var(day_, shift_type_uid, employee_uid, solution.vars[(day_, shift_type_uid, employee_uid)] == 1)
+                        self.set_var(
+                            day_,
+                            shift_type_uid,
+                            employee_uid,
+                            solution.vars[(day_, shift_type_uid, employee_uid)] == 1,
+                        )
                     # else:
                     #     print(f"key var {(day_, shift_type_uid, employee_uid)} is not a key in the to be copied solution")
 
-
-    def store_solution_work_vars(self, solution: "Solution", day: int | None = None, employee_uid: employee.EmployeeUid | None = None):
+    def store_solution_work_vars(
+        self,
+        solution: "Solution",
+        day: int | None = None,
+        employee_uid: employee.EmployeeUid | None = None,
+    ):
         if day is None:
             day_start = 0
             day_end = self.instance.number_of_days
@@ -615,10 +677,13 @@ class Solution(BaseModel):
         for employee_uid, employee_ in employees.items():
             for day_ in range(day_start, day_end):
                 if (day_, employee_uid) in solution.work_vars.keys():
-                    self.set_work_vars(day_, employee_uid, solution.work_vars[(day_, employee_uid)] == 1)
+                    self.set_work_vars(
+                        day_,
+                        employee_uid,
+                        solution.work_vars[(day_, employee_uid)] == 1,
+                    )
                 # else:
                 #     print(f"key work var {(day_, employee_uid)} is not a key in the to be copied solution")
-    
 
 
 # Standalone constraint checking functions

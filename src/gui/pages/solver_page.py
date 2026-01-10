@@ -69,13 +69,14 @@ def solve_with_lns(**kwargs) -> solution.Solution:
 def solve_with_lns_minimal_changes(**kwargs) -> solution.Solution:
     """Führt den Solver in einem separaten Thread aus"""
     sol = kwargs["solution"]
+    old_solution = kwargs["solution"]
     inst = kwargs["instance"]
     disabled_constraints = kwargs["disabled_constraints"]
     if disabled_constraints != []:
         st.error("⚠️ LNS unterstützt derzeit keine Deaktivierung von Constraints.")
         assert False
     sol = minimal_change_lns.solve_changes(
-        old_solution=sol,
+        old_solution=old_solution,
         new_instanc=inst,
         days_with_change=kwargs["days_with_change"],
         max_solve_time=kwargs["timeout_seconds"],

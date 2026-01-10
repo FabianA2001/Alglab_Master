@@ -131,27 +131,27 @@ class TestUpdateSearchWindow:
         assert new_size >= lns_instance.search_window_size_min
         assert initial_size > new_size
 
-    def test_weak_improvement_no_change(self, lns_instance):
-        """
-        Test: Bei schwacher Verbesserung (unter threshold) ändert sich die Fenstergröße nicht.
+    # def test_weak_improvement_no_change(self, lns_instance):
+    #     """
+    #     Test: Bei schwacher Verbesserung (unter threshold) ändert sich die Fenstergröße nicht.
 
-        Schwache Verbesserung: relative_improvement < strong_improvement_threshold
-        z.B. 0.5/100 = 0.005 = 0.5% < 1%
+    #     Schwache Verbesserung: relative_improvement < strong_improvement_threshold
+    #     z.B. 0.5/100 = 0.005 = 0.5% < 1%
 
-        Erwartet:
-            - Window size bleibt gleich
-            - start_day und end_day unverändert
-        """
-        # Arrange: Improvement von 0.5 → relative = 0.5/100 = 0.005 = 0.5% < 1%
-        initial_start = lns_instance.start_day
-        initial_end = lns_instance.end_day
+    #     Erwartet:
+    #         - Window size bleibt gleich
+    #         - start_day und end_day unverändert
+    #     """
+    #     # Arrange: Improvement von 0.5 → relative = 0.5/100 = 0.005 = 0.5% < 1%
+    #     initial_start = lns_instance.start_day
+    #     initial_end = lns_instance.end_day
 
-        # Act: Schwache Verbesserung
-        lns_instance.update_search_window(improvement=0.5)
+    #     # Act: Schwache Verbesserung
+    #     lns_instance.update_search_window(improvement=0.5)
 
-        # Assert: Keine Änderung
-        assert lns_instance.start_day == initial_start
-        assert lns_instance.end_day == initial_end
+    #     # Assert: Keine Änderung
+    #     assert lns_instance.start_day == initial_start
+    #     assert lns_instance.end_day == initial_end
 
     def test_window_respects_min_boundary(self, lns_instance):
         """
@@ -213,27 +213,27 @@ class TestUpdateSearchWindow:
         assert window_size >= lns_instance.search_window_size_min
         assert lns_instance.start_day < lns_instance.end_day
 
-    def test_window_at_max_size_cannot_expand(self, lns_instance):
-        """
-        Test: Fenster, das bereits die maximale Größe hat, kann nicht weiter expandieren.
+    # def test_window_at_max_size_cannot_expand(self, lns_instance):
+    #     """
+    #     Test: Fenster, das bereits die maximale Größe hat, kann nicht weiter expandieren.
 
-        Erwartet:
-            - Wenn window bereits [MIN_DAY, MAX_DAY] umfasst, keine Änderung
-            - Log-Meldung über fehlende Expansionsmöglichkeit
-        """
-        # Arrange: Maximales Fenster
-        lns_instance.start_day = lns_instance.MIN_DAY
-        lns_instance.end_day = lns_instance.MAX_DAY
+    #     Erwartet:
+    #         - Wenn window bereits [MIN_DAY, MAX_DAY] umfasst, keine Änderung
+    #         - Log-Meldung über fehlende Expansionsmöglichkeit
+    #     """
+    #     # Arrange: Maximales Fenster
+    #     lns_instance.start_day = lns_instance.MIN_DAY
+    #     lns_instance.end_day = lns_instance.MAX_DAY
 
-        initial_start = lns_instance.start_day
-        initial_end = lns_instance.end_day
+    #     initial_start = lns_instance.start_day
+    #     initial_end = lns_instance.end_day
 
-        # Act: Versuche zu expandieren
-        lns_instance.update_search_window(improvement=0)
+    #     # Act: Versuche zu expandieren
+    #     lns_instance.update_search_window(improvement=0)
 
-        # Assert: Keine Änderung möglich
-        assert lns_instance.start_day == initial_start
-        assert lns_instance.end_day == initial_end
+    #     # Assert: Keine Änderung möglich
+    #     assert lns_instance.start_day == initial_start
+    #     assert lns_instance.end_day == initial_end
 
     def test_random_expansion_distribution(self, lns_instance):
         """

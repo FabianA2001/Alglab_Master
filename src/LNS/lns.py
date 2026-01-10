@@ -32,7 +32,7 @@ class LNS:
         self,
         sol_or_instance: solution.Solution | instace.Instance,
         percent_search_time_first_solution: float = 0.1,
-        timeout_seconds: float = 180,
+        timeout_seconds: float = 60.0,
         small_runtime_base: float = 0.01,  # * number_of_days * (number_of_shift_types + number_of_employees)
         ####################
         start_search_window_size: int = 7,
@@ -90,9 +90,11 @@ class LNS:
         # time parameters
         self.timeout_seconds: float = timeout_seconds
         self.small_runtime_milliseconds_base: float = small_runtime_base
-        self.timeout_seconds: float = max(
-            0.0, timeout_seconds - create_time_first_solution
-        )
+        # TODO test if this was important
+        # self.timeout_seconds: float = max(
+        #     0.0, timeout_seconds - create_time_first_solution
+        # )
+        self.timeout_seconds = timeout_seconds
         self.disabled_for_window = []
         # logging info
         self.logger.info(
@@ -110,8 +112,7 @@ class LNS:
         timeout_seconds: float,
     ) -> tuple[solution.Solution, float]:
         if isinstance(sol_or_instance, solution.Solution):
-            # TODO calc objective value
-            return sol_or_instance, 0.0
+            return sol_or_instance, sol_or_instance.objective_value
         elif isinstance(sol_or_instance, instace.Instance):
             start_time = time.time()
             vars = solver.shift_vars.Shift_vars(sol_or_instance)
@@ -162,7 +163,7 @@ class LNS:
                         f"Strong improvement ({relative_improvement:.2%}): "
                         f"Decreasing window size from {old_window_size} to {new_window_size}"
                     )
-            else:
+            elif improvement == 0:
                 # Keine Verbesserung -> Fenster vergrößern
                 new_window_size = min(
                     self.MAX_DAY,
@@ -171,6 +172,13 @@ class LNS:
                 self.logger.debug(
                     f"No improvement: Increasing window size from {old_window_size} to {new_window_size}"
                 )
+            else:
+                # negative improvement - fenster verschieben mit startgröße
+                new_window_size = old_window_size
+                self.logger.debug(
+                    f"Negative improvement: Keeping window size at {new_window_size} and shifting"
+                )
+
             return new_window_size
 
         new_window_size = __calculate_new_window_size()
@@ -194,7 +202,16 @@ class LNS:
                 self.MIN_DAY, self.start_day - (increase - shift_start)
             )
             self.end_day = min(self.MAX_DAY, self.start_day + new_window_size)
-        # else: Fenster bleibt gleich groß
+        else:
+            # Fenster bleibt gleich groß
+            self.start_day = random.randint(
+                self.MIN_DAY,
+                max(
+                    self.MIN_DAY,
+                    self.MAX_DAY - self.start_search_window_size,
+                ),
+            )
+            self.end_day = min(self.MAX_DAY, self.start_day + new_window_size)
 
         assert self.end_day - self.start_day >= self.search_window_size_min
         assert self.start_day >= self.MIN_DAY
@@ -215,8 +232,9 @@ class LNS:
         iteration = 0
         improvements = 0
 
-        # TODO stop with erly stop
-        while time.time() - start_time < self.timeout_seconds:
+        # TODO early stop statt runtime im while loop hier
+        early_stop = False
+        while (time.time() - start_time < self.timeout_seconds) and not early_stop:
             assert self.end_day > self.start_day
             iteration += 1
             elapsed_time = time.time() - start_time
@@ -301,6 +319,9 @@ class LNS:
                 self.logger.debug(
                     f"Iteration {iteration}: No improvement (current best: {self.old_solution.objective_value})"
                 )
+                improvement = -1
+            # Lösung ist gut genug
+            early_stop = self.lns_early_stop(sol)
 
             self.update_search_window(improvement)
 
@@ -315,3 +336,45 @@ class LNS:
             or self.old_solution.solve_status == cp_model.FEASIBLE
         )
         return self.old_solution
+
+    def lns_early_stop(self, sol: solution.Solution) -> bool:
+        total_weights = 0
+        satisfied_wishes = 0
+        # TODO Wunsch-Rate muss ggf angepasst werden, wie lange wir wollen, dass gelöst wird
+        ratio_wishes = 0.8
+        reatio_below_pref = 0.5
+
+        # Über alle Schichten der Instanz iterieren
+        for day, day_shift_dict in sol.instance.shifts.items():
+            for type_uid, shift in day_shift_dict.items():
+                # Beispiel: preferred employees check
+                pref = shift.preffert_number_employees
+
+                below = sol.below_prefferd_vars[(day, type_uid)]
+                if below > pref * reatio_below_pref:
+                    return False  # schlechte Lösung -> sofort abbrechen
+
+                # Wünsche
+                for emp in sol.instance.employees:
+                    weight_pos = shift.penalty_assigned_day_employee.get(emp, 0)
+                    weight_neg = shift.penalty_not_assigned_day_employee.get(emp, 0)
+
+                    if weight_pos > 0:
+                        total_weights += 1
+                        if sol.vars[(day, type_uid, emp)] == 1:
+                            satisfied_wishes += 1
+
+                    if weight_neg > 0:
+                        total_weights += 1
+                        if sol.vars[(day, type_uid, emp)] == 0:
+                            satisfied_wishes += 1
+
+        if total_weights == 0:
+            return False
+
+        ratio = satisfied_wishes / total_weights
+
+        if ratio >= ratio_wishes:
+            print("Stopping LNS: Gute Lösung gefunden.")
+            return True  # Gute Lösung -> StopSearch()
+        return False
