@@ -1407,6 +1407,7 @@ def instance_page():
             instance_path = DATA_DIR / instance_name
             loaded_instance = parseTXT.parse_txt(instance_path)
 
+            # TODO Vergleichsmodus liste aktualisieren
             # Setze Instance im globalen State
             state.clear_solutions()
             state.set_instance(loaded_instance)

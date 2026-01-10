@@ -80,7 +80,7 @@ def get_solution() -> Optional[Solution]:
     """
     if len(_current_solution) == 0:
         return None
-    return _current_solution[0]
+    return _current_solution[-1]
 
 
 def get_all_solutions() -> list[Solution]:
