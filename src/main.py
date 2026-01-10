@@ -12,7 +12,7 @@ from src.help_functions import (
 from src.solution import Solution
 
 from .inputTypes import employee, instace, shiftType
-from .LNS import lns
+from .LNS import lns, minimal_change_lns
 from .parseData import parseTXT
 from .shift_vars import Shift_vars
 from .solver import Solver
@@ -82,16 +82,40 @@ def t_single_day_validation():
 
 def run_lns_example():
     # old_sol = Solution.from_json_file("Instance9")
-    inst = get_tes_data()
-    sol = Solution.from_json_file("Instance9_slow")
+    test_file = Path.joinpath(
+        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance9.txt"
+    )
+    instance = parseTXT.parse_txt(test_file)
+    vars = Shift_vars(instance)
+    solv = Solver(instance, vars)
+    sol1 = solv.solve_with_early_stop(
+        max_time_in_seconds=500, log_search_progress=False
+    )
+    sol = Solution.from_json_file("Instance9")
     lns_solver = lns.LNS(
-        sol,
+        sol1,
         timeout_seconds=60,
         start_search_window_size=5,
     )
     improved_solution = lns_solver.solve()
     # improved_solution.print_all_variables_values()
     # print("Objective value before LNS:", old_sol.objective_value)
+    print("Objective value after LNS:", improved_solution.objective_value)
+
+
+def run_lns_minimal_change_example():
+    old_sol = Solution.from_json_file("Instance9")
+    inst = get_tes_data()
+    lns_solver = lns.LNS(
+        old_sol,
+        timeout_seconds=60,
+        start_search_window_size=5,
+    )
+    improved_solution = minimal_change_lns.solve_changes(
+        old_sol, inst, [0], max_solve_time=60
+    )
+    # improved_solution.print_all_variables_values()
+    print("Objective value before LNS:", old_sol.objective_value)
     print("Objective value after LNS:", improved_solution.objective_value)
 
 
@@ -193,6 +217,22 @@ def try_warmstart_callback():
         return
 
 
+def run_one_instance():
+    test_file = Path.joinpath(
+        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance4.txt"
+    )
+    instance = parseTXT.parse_txt(test_file)
+    vars = Shift_vars(instance)
+    solv = Solver(instance, vars)
+    sol1 = solv.solve_with_early_stop(max_time_in_seconds=500)
+    print("Objective value:", sol1.objective_value)
+    if sol1.solve_status == cp_model.OPTIMAL or sol1.solve_status == cp_model.FEASIBLE:
+        sol1.to_json_file(instance.name)
+    else:
+        print(f"No feasible solution found for {instance.name}")
+        return
+
+
 def main() -> None:
     # inst = get_tes_data()
     # x = inst
@@ -202,7 +242,9 @@ def main() -> None:
     # sol = Solution.from_json_file("Instance1")
     # get_test_solution_from_model()
     # try_compare_solutions()
-    run_lns_example()
+    # run_lns_example()
+    # run_lns_minimal_change_example()
+    run_one_instance()
     # run_lns_example()
     # try_compare_multiple_solutions()
     # try_warmstart_callback()

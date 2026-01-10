@@ -77,12 +77,14 @@ class Solver:
         self,
         log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
+        stop_after_first_solution: bool = False,
     ):
         callback = Callback_Early_Stop(self.instance, self.vars)
         return self.solve(
             log_search_progress,
             max_time_in_seconds,
             callback=callback,
+            stop_after_first_solution=stop_after_first_solution,
         )
 
     def objevtive_value(self):
@@ -244,8 +246,12 @@ class Solver:
                 below_value = solver.Value(
                     self.vars.get_below_prefferd_var(day, type_uid)
                 )
+                below_threshold_value = solver.Value(
+                    self.vars.get_below_threshold_var(day, type_uid)
+                )
                 solution.set_above_prefferd_var(day, type_uid, above_value)
                 solution.set_below_prefferd_var(day, type_uid, below_value)
+                solution.set_below_threshold_var(day, type_uid, below_threshold_value)
 
         solution.instance.name = (
             solution.instance.name + "_" + f"seed{solver.parameters.random_seed}"
@@ -460,7 +466,29 @@ class Solver:
                     # If the assignment has changed, add the change weight
 
                     objective_value += changes_weight * changed
+
         return objective_value + self.objective_value_new()
+
+    def solve_min_changes(
+        self,
+        solution: Solution,
+        log_search_progress: bool = True,
+        max_time_in_seconds: float = 60.0,
+    ) -> Solution:
+        self.set_constraints(automaton=False)
+        solver = cp_model.CpSolver()
+        solver.parameters.log_search_progress = log_search_progress
+        solver.parameters.max_time_in_seconds = max_time_in_seconds
+
+        self.vars.model.Minimize(self.objective_value_weight_changes(solution=solution))
+        self.start_solve_time = datetime.now()
+        # status = solver.Solve(self.vars.model)
+        ##mit Callback
+        callback = Callback_Early_Stop(self.instance, self.vars)
+        status = solver.SolveWithSolutionCallback(self.vars.model, callback)
+        ###
+        self.solve_time = (datetime.now() - self.start_solve_time).total_seconds()
+        return self.handle_results(status, solver)
 
     def set_constraints(
         self,

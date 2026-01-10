@@ -19,12 +19,15 @@ def __solve_change(
     log_search_progress: bool = True,
 ) -> Solution:
     updated_solution = copy.deepcopy(old_solution)
-    solver = Slice_instance(
+    slice_instance = Slice_instance(
         sol=updated_solution, inst=new_instanc, start=start_day, end=end_day
-    ).get_solver()
+    )
+    solver = slice_instance.get_solver()
     # TODO min changs callback
-    return solver.solve_window(
-        max_time_in_seconds=max_solve_time, log_search_progress=log_search_progress
+    return solver.solve_window_min_changes(
+        solution=slice_instance.slice_solution,
+        log_search_progress=log_search_progress,
+        max_time_in_seconds=max_solve_time,
     )
 
 
