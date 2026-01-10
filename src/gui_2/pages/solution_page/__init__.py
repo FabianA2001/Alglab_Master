@@ -25,7 +25,8 @@ def solution_page():
         try:
             solution = Solution.from_json_file(solution_name)
             # Setze Solution im globalen State (verfügbar für alle Seiten)
-            state.set_solution(solution)
+            state.clear_solutions()
+            state.add_solution(solution)
             state.set_instance(solution.instance)
             state.clear_changed_days()  # Zurücksetzen bei neuer Solution
             update_solution_display()

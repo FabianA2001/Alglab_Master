@@ -502,7 +502,7 @@ def solver_page() -> None:
             solution: Die gefundene Lösung
             start_time: Startzeit des Solvers
         """
-        state.set_solution(solution)
+        state.add_solution(solution)
         state.set_solver_end_time(time.time())
 
         elapsed = time.time() - start_time

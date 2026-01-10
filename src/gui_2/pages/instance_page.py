@@ -1408,8 +1408,8 @@ def instance_page():
             loaded_instance = parseTXT.parse_txt(instance_path)
 
             # Setze Instance im globalen State
+            state.clear_solutions()
             state.set_instance(loaded_instance)
-            state.set_solution(None)  # Lösung zurücksetzen
 
             update_instance_display()
             ui.notify(
