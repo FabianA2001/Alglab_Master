@@ -1032,102 +1032,363 @@ def _display_shift_details_dialog(
     shift = instance.shifts[day][shift_type_uid]
     shift_type = instance.shift_types[shift_type_uid]
 
+    # Form data für Edit-Modus
+    form_data = {
+        "preffert_number_employees": shift.preffert_number_employees,
+        "weight_below_preferred": shift.weight_below_preferred,
+        "weight_above_preferred": shift.weight_above_preferred,
+        "assign_employee_day_shift": shift.assign_employee_day_shift.copy()
+        if shift.assign_employee_day_shift
+        else set(),
+        "ban_employee_day_shift": shift.ban_employee_day_shift.copy()
+        if shift.ban_employee_day_shift
+        else set(),
+        "penalty_assigned_day_employee": shift.penalty_assigned_day_employee.copy()
+        if shift.penalty_assigned_day_employee
+        else {},
+        "penalty_not_assigned_day_employee": shift.penalty_not_assigned_day_employee.copy()
+        if shift.penalty_not_assigned_day_employee
+        else {},
+    }
+
+    edit_mode = {"active": False}
+
+    def save_shift():
+        """Speichert die Änderungen an der Schicht."""
+        try:
+            # Validierung
+            if form_data["preffert_number_employees"] < 0:
+                ui.notify("Bevorzugte Anzahl kann nicht negativ sein", type="warning")
+                return
+
+            if form_data["weight_below_preferred"] < 0:
+                ui.notify(
+                    "Gewicht Unterbesetzung kann nicht negativ sein", type="warning"
+                )
+                return
+
+            if form_data["weight_above_preferred"] < 0:
+                ui.notify(
+                    "Gewicht Überbesetzung kann nicht negativ sein", type="warning"
+                )
+                return
+
+            # Aktualisiere Shift-Objekt direkt
+            shift.preffert_number_employees = form_data["preffert_number_employees"]
+            shift.weight_below_preferred = form_data["weight_below_preferred"]
+            shift.weight_above_preferred = form_data["weight_above_preferred"]
+
+            # Sichere Handhabung von Sets (können None sein)
+            shift.assign_employee_day_shift = (
+                form_data["assign_employee_day_shift"].copy()
+                if form_data["assign_employee_day_shift"] is not None
+                else set()
+            )
+            shift.ban_employee_day_shift = (
+                form_data["ban_employee_day_shift"].copy()
+                if form_data["ban_employee_day_shift"] is not None
+                else set()
+            )
+
+            # Sichere Handhabung von Dicts (können None sein)
+            shift.penalty_assigned_day_employee = (
+                form_data["penalty_assigned_day_employee"].copy()
+                if form_data["penalty_assigned_day_employee"] is not None
+                else {}
+            )
+            shift.penalty_not_assigned_day_employee = (
+                form_data["penalty_not_assigned_day_employee"].copy()
+                if form_data["penalty_not_assigned_day_employee"] is not None
+                else {}
+            )
+
+            # Stelle sicher, dass die Änderungen in der Instance gespeichert werden
+            instance.shifts[day][shift_type_uid] = shift
+
+            # Speichere geänderte Instance
+            state.set_instance(instance)
+
+            ui.notify("Schicht erfolgreich aktualisiert", type="positive")
+
+            # Zurück zum View-Modus
+            edit_mode["active"] = False
+            update_content()
+            update_buttons()
+
+        except Exception as e:
+            ui.notify(f"Fehler beim Speichern: {str(e)}", type="negative")
+
+    def toggle_edit_mode():
+        """Wechselt zwischen View und Edit-Modus."""
+        edit_mode["active"] = not edit_mode["active"]
+        update_content()
+        update_buttons()
+
+    def update_content():
+        """Aktualisiert den Dialog-Inhalt basierend auf dem Modus."""
+        content_container.clear()
+
+        with content_container:
+            if edit_mode["active"]:
+                # Edit-Modus: Eingabefelder
+                with ui.column().classes("w-full gap-3"):
+                    # Besetzungsanforderungen
+                    with ui.card().classes("w-full mb-3 bg-blue-50"):
+                        ui.label("Besetzungsanforderungen").classes(
+                            "font-semibold mb-2"
+                        )
+
+                        ui.number(
+                            label="Bevorzugte Anzahl Mitarbeiter",
+                            min=0,
+                            format="%d",
+                        ).classes("w-full").bind_value(
+                            form_data, "preffert_number_employees"
+                        )
+
+                        ui.number(
+                            label="Gewicht Unterbesetzung",
+                            min=0,
+                            format="%d",
+                        ).classes("w-full").bind_value(
+                            form_data, "weight_below_preferred"
+                        )
+
+                        ui.number(
+                            label="Gewicht Überbesetzung",
+                            min=0,
+                            format="%d",
+                        ).classes("w-full").bind_value(
+                            form_data, "weight_above_preferred"
+                        )
+
+                    # Mitarbeiter Zuweisungen/Sperren
+                    with ui.card().classes("w-full mb-3 bg-green-50"):
+                        ui.label("Mitarbeiter Zuweisungen").classes(
+                            "font-semibold mb-2"
+                        )
+
+                        employee_options = {
+                            uid: emp.name for uid, emp in instance.employees.items()
+                        }
+
+                        ui.select(
+                            options=employee_options,
+                            multiple=True,
+                            label="Zugewiesene Mitarbeiter",
+                        ).classes("w-full").bind_value(
+                            form_data, "assign_employee_day_shift"
+                        )
+
+                        ui.select(
+                            options=employee_options,
+                            multiple=True,
+                            label="Gesperrte Mitarbeiter",
+                        ).classes("w-full").bind_value(
+                            form_data, "ban_employee_day_shift"
+                        )
+
+                    # Strafpunkte
+                    with ui.card().classes("w-full mb-3 bg-yellow-50"):
+                        ui.label("Strafpunkte").classes("font-semibold mb-2")
+                        ui.label(
+                            "Wählen Sie einen Mitarbeiter aus und setzen Sie die Strafpunkte"
+                        ).classes("text-sm text-gray-600 mb-2")
+
+                        if instance.employees:
+                            penalty_assigned = form_data[
+                                "penalty_assigned_day_employee"
+                            ].copy()
+                            penalty_not_assigned = form_data[
+                                "penalty_not_assigned_day_employee"
+                            ].copy()
+
+                            current_employee_uid = next(iter(instance.employees.keys()))
+
+                            def update_penalty_fields(emp_uid):
+                                assigned_input.value = penalty_assigned.get(emp_uid, 0)
+                                not_assigned_input.value = penalty_not_assigned.get(
+                                    emp_uid, 0
+                                )
+
+                            def save_penalty_assigned():
+                                value = assigned_input.value
+                                if value is not None and value > 0:
+                                    penalty_assigned[current_employee_uid] = int(value)
+                                elif current_employee_uid in penalty_assigned:
+                                    del penalty_assigned[current_employee_uid]
+                                form_data["penalty_assigned_day_employee"] = (
+                                    penalty_assigned.copy()
+                                )
+
+                            def save_penalty_not_assigned():
+                                value = not_assigned_input.value
+                                if value is not None and value > 0:
+                                    penalty_not_assigned[current_employee_uid] = int(
+                                        value
+                                    )
+                                elif current_employee_uid in penalty_not_assigned:
+                                    del penalty_not_assigned[current_employee_uid]
+                                form_data["penalty_not_assigned_day_employee"] = (
+                                    penalty_not_assigned.copy()
+                                )
+
+                            def on_employee_change(e):
+                                nonlocal current_employee_uid
+                                save_penalty_assigned()
+                                save_penalty_not_assigned()
+                                current_employee_uid = e.value
+                                update_penalty_fields(current_employee_uid)
+
+                            ui.select(
+                                options=employee_options,
+                                label="Mitarbeiter",
+                                value=current_employee_uid,
+                                on_change=on_employee_change,
+                            ).classes("w-full mb-2")
+
+                            with ui.row().classes("w-full gap-2"):
+                                assigned_input = ui.number(
+                                    label="Strafpunkte bei Zuweisung",
+                                    min=0,
+                                    format="%d",
+                                    on_change=save_penalty_assigned,
+                                ).classes("flex-1")
+
+                                not_assigned_input = ui.number(
+                                    label="Strafpunkte bei Nicht-Zuweisung",
+                                    min=0,
+                                    format="%d",
+                                    on_change=save_penalty_not_assigned,
+                                ).classes("flex-1")
+
+                            update_penalty_fields(current_employee_uid)
+
+            else:
+                # View-Modus: Nur Anzeige
+                # Basic Information
+                with ui.card().classes("w-full mb-3 bg-gray-50"):
+                    ui.label("Grundinformationen").classes("font-semibold mb-2")
+                    with ui.grid(columns=2).classes("gap-2"):
+                        ui.label("Schicht UID:").classes("font-semibold")
+                        ui.label(f"...{str(shift.uid)[-6:]}")
+
+                        ui.label("Schichttyp UID:").classes("font-semibold")
+                        ui.label(f"...{str(shift_type_uid)[-6:]}")
+
+                        ui.label("Wochenende:").classes("font-semibold")
+                        ui.label("Ja" if shift.is_weekend else "Nein")
+
+                        ui.label("Startzeit:").classes("font-semibold")
+                        ui.label(str(shift_type.start_time))
+
+                        ui.label("Länge:").classes("font-semibold")
+                        ui.label(
+                            f"{shift_type.length} min ({shift_type.length / 60:.1f}h)"
+                        )
+
+                # Coverage Requirements
+                with ui.card().classes("w-full mb-3 bg-blue-50"):
+                    ui.label("Besetzungsanforderungen").classes("font-semibold mb-2")
+                    with ui.grid(columns=2).classes("gap-2"):
+                        ui.label("Bevorzugte Anzahl:").classes("font-semibold")
+                        ui.label(str(shift.preffert_number_employees))
+
+                        ui.label("Gewicht Unterbesetzung:").classes("font-semibold")
+                        ui.label(str(shift.weight_below_preferred))
+
+                        ui.label("Gewicht Überbesetzung:").classes("font-semibold")
+                        ui.label(str(shift.weight_above_preferred))
+
+                # Employee Assignments/Bans
+                if shift.assign_employee_day_shift or shift.ban_employee_day_shift:
+                    with ui.card().classes("w-full mb-3 bg-green-50"):
+                        ui.label("Mitarbeiter Zuweisungen").classes(
+                            "font-semibold mb-2"
+                        )
+
+                        if shift.assign_employee_day_shift:
+                            ui.label("Zugewiesene Mitarbeiter:").classes(
+                                "text-sm font-semibold mt-2"
+                            )
+                            for emp_uid in shift.assign_employee_day_shift:
+                                emp = instance.employees.get(emp_uid)
+                                if emp:
+                                    ui.label(f"• {emp.name} (...{str(emp_uid)[-6:]})")
+
+                        if shift.ban_employee_day_shift:
+                            ui.label("Gesperrte Mitarbeiter:").classes(
+                                "text-sm font-semibold mt-2"
+                            )
+                            for emp_uid in shift.ban_employee_day_shift:
+                                emp = instance.employees.get(emp_uid)
+                                if emp:
+                                    ui.label(f"• {emp.name} (...{str(emp_uid)[-6:]})")
+
+                # Penalty Information
+                if (
+                    shift.penalty_assigned_day_employee
+                    or shift.penalty_not_assigned_day_employee
+                ):
+                    with ui.card().classes("w-full mb-3 bg-yellow-50"):
+                        ui.label("Strafpunkte").classes("font-semibold mb-2")
+
+                        if shift.penalty_assigned_day_employee:
+                            ui.label("Strafpunkte bei Zuweisung:").classes(
+                                "text-sm font-semibold mt-2"
+                            )
+                            for (
+                                emp_uid,
+                                penalty,
+                            ) in shift.penalty_assigned_day_employee.items():
+                                if penalty > 0:
+                                    emp = instance.employees.get(emp_uid)
+                                    if emp:
+                                        ui.label(
+                                            f"• {emp.name} (...{str(emp_uid)[-6:]}): {penalty}"
+                                        )
+
+                        if shift.penalty_not_assigned_day_employee:
+                            ui.label("Strafpunkte bei Nicht-Zuweisung:").classes(
+                                "text-sm font-semibold mt-2"
+                            )
+                            for (
+                                emp_uid,
+                                penalty,
+                            ) in shift.penalty_not_assigned_day_employee.items():
+                                if penalty > 0:
+                                    emp = instance.employees.get(emp_uid)
+                                    if emp:
+                                        ui.label(
+                                            f"• {emp.name} (...{str(emp_uid)[-6:]}): {penalty}"
+                                        )
+
     with ui.dialog() as dialog, ui.card().classes("min-w-[600px]"):
-        ui.label(f"Schicht Details: Tag {day}, {shift_type.name}").classes(
-            "text-xl font-bold mb-4"
-        )
+        with ui.row().classes("w-full items-center justify-between mb-4"):
+            ui.label(f"Schicht Details: Tag {day}, {shift_type.name}").classes(
+                "text-xl font-bold"
+            )
 
-        # Basic Information
-        with ui.card().classes("w-full mb-3 bg-gray-50"):
-            ui.label("Grundinformationen").classes("font-semibold mb-2")
-            with ui.grid(columns=2).classes("gap-2"):
-                ui.label("Schicht UID:").classes("font-semibold")
-                ui.label(f"...{str(shift.uid)[-6:]}")
+        # Container für den Inhalt
+        content_container = ui.column().classes("w-full")
 
-                ui.label("Schichttyp UID:").classes("font-semibold")
-                ui.label(f"...{str(shift_type_uid)[-6:]}")
+        # Buttons
+        button_container = ui.row().classes("w-full justify-end gap-2 mt-4")
 
-                ui.label("Wochenende:").classes("font-semibold")
-                ui.label("Ja" if shift.is_weekend else "Nein")
+        def update_buttons():
+            button_container.clear()
+            with button_container:
+                if edit_mode["active"]:
+                    ui.button("Abbrechen", on_click=toggle_edit_mode).props("flat")
+                    ui.button("Speichern", on_click=save_shift).props("color=primary")
+                else:
+                    ui.button(
+                        "Bearbeiten", icon="edit", on_click=toggle_edit_mode
+                    ).props("color=primary")
+                    ui.button("Schließen", on_click=dialog.close).props("flat")
 
-                ui.label("Startzeit:").classes("font-semibold")
-                ui.label(str(shift_type.start_time))
-
-                ui.label("Länge:").classes("font-semibold")
-                ui.label(f"{shift_type.length} min ({shift_type.length / 60:.1f}h)")
-
-        # Coverage Requirements
-        with ui.card().classes("w-full mb-3 bg-blue-50"):
-            ui.label("Besetzungsanforderungen").classes("font-semibold mb-2")
-            with ui.grid(columns=2).classes("gap-2"):
-                ui.label("Bevorzugte Anzahl:").classes("font-semibold")
-                ui.label(str(shift.preffert_number_employees))
-
-                ui.label("Gewicht Unterbesetzung:").classes("font-semibold")
-                ui.label(str(shift.weight_below_preferred))
-
-                ui.label("Gewicht Überbesetzung:").classes("font-semibold")
-                ui.label(str(shift.weight_above_preferred))
-
-        # Employee Assignments/Bans
-        if shift.assign_employee_day_shift or shift.ban_employee_day_shift:
-            with ui.card().classes("w-full mb-3 bg-green-50"):
-                ui.label("Mitarbeiter Zuweisungen").classes("font-semibold mb-2")
-
-                if shift.assign_employee_day_shift:
-                    ui.label("Zugewiesene Mitarbeiter:").classes(
-                        "text-sm font-semibold mt-2"
-                    )
-                    for emp_uid in shift.assign_employee_day_shift:
-                        emp = instance.employees.get(emp_uid)
-                        if emp:
-                            ui.label(f"• {emp.name} (...{str(emp_uid)[-6:]})")
-
-                if shift.ban_employee_day_shift:
-                    ui.label("Gesperrte Mitarbeiter:").classes(
-                        "text-sm font-semibold mt-2"
-                    )
-                    for emp_uid in shift.ban_employee_day_shift:
-                        emp = instance.employees.get(emp_uid)
-                        if emp:
-                            ui.label(f"• {emp.name} (...{str(emp_uid)[-6:]})")
-
-        # Penalty Information
-        if (
-            shift.penalty_assigned_day_employee
-            or shift.penalty_not_assigned_day_employee
-        ):
-            with ui.card().classes("w-full mb-3 bg-yellow-50"):
-                ui.label("Strafpunkte").classes("font-semibold mb-2")
-
-                if shift.penalty_assigned_day_employee:
-                    ui.label("Strafpunkte bei Zuweisung:").classes(
-                        "text-sm font-semibold mt-2"
-                    )
-                    for emp_uid, penalty in shift.penalty_assigned_day_employee.items():
-                        if penalty > 0:
-                            emp = instance.employees.get(emp_uid)
-                            if emp:
-                                ui.label(
-                                    f"• {emp.name} (...{str(emp_uid)[-6:]}): {penalty}"
-                                )
-
-                if shift.penalty_not_assigned_day_employee:
-                    ui.label("Strafpunkte bei Nicht-Zuweisung:").classes(
-                        "text-sm font-semibold mt-2"
-                    )
-                    for (
-                        emp_uid,
-                        penalty,
-                    ) in shift.penalty_not_assigned_day_employee.items():
-                        if penalty > 0:
-                            emp = instance.employees.get(emp_uid)
-                            if emp:
-                                ui.label(
-                                    f"• {emp.name} (...{str(emp_uid)[-6:]}): {penalty}"
-                                )
-
-        ui.button("Schließen", on_click=dialog.close).classes("mt-4")
+        update_content()
+        update_buttons()
 
     dialog.open()
 
