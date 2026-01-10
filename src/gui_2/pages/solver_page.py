@@ -9,6 +9,7 @@ import os
 import sys
 import threading
 import time
+import traceback
 from datetime import datetime
 from typing import Any
 
@@ -524,7 +525,17 @@ def solver_page() -> None:
         state.set_solver_end_time(time.time())
         state.set_solver_status("ERROR")
         state.update_solver_statistics("error", str(error))
-        add_log_message(f"❌ Fehler: {str(error)}")
+
+        # Formatiere Fehler mit Traceback-Informationen
+        tb_lines = traceback.format_exception(type(error), error, error.__traceback__)
+        tb_str = "".join(tb_lines)
+
+        add_log_message(f"❌ Fehler: {type(error).__name__}: {str(error)}")
+        add_log_message("Traceback:")
+        for line in tb_str.split("\n"):
+            if line.strip():
+                add_log_message(line)
+
         update_log_content()
 
     def _cleanup_solver_thread(old_stdout) -> None:
