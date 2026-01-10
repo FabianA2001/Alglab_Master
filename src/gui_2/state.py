@@ -29,6 +29,7 @@ _solver_statistics: dict = {}
 _last_objective_value: Optional[float] = None
 _solver_status: Optional[str] = None
 _changed_days: set[int] = set()
+_solver_timeout: float | None = None  # Default timeout in Sekunden
 
 # UI-Referenzen (für Background-Updates)
 solver_log_html_element = None
@@ -279,11 +280,31 @@ def clear_changed_days() -> None:
     _changed_days = set()
 
 
+def set_solver_timeout(timeout: float) -> None:
+    """Setzt das Solver-Timeout.
+
+    Args:
+        timeout: Timeout in Sekunden
+    """
+    global _solver_timeout
+    _solver_timeout = max(1.0, timeout)  # Mindestens 1 Sekunde
+
+
+def get_solver_timeout() -> float | None:
+    """Holt das Solver-Timeout.
+
+    Returns:
+        float: Timeout in Sekunden
+    """
+    return _solver_timeout
+
+
 def reset_solver_state() -> None:
     """Setzt alle Solver-bezogenen State-Variablen zurück."""
     global _solver_running, _solver_start_time, _solver_end_time
     global _solver_logs, _solver_statistics, _last_objective_value, _solver_status
     global solver_log_html_element, solver_log_scroll_area, solver_runtime_task
+    # Hinweis: _solver_timeout wird NICHT zurückgesetzt, da es eine Benutzereinstellung ist
 
     _solver_running = False
     _solver_start_time = None

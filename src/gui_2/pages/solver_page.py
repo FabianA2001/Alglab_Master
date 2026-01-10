@@ -23,7 +23,7 @@ from .. import state
 LOG_SEPARATOR = "─" * 60
 MAX_LOG_STORAGE = 1000  # Maximale Anzahl gespeicherter Log-Zeilen
 MAX_LOG_DISPLAY = 50  # Anzahl angezeigter Zeilen (Rest ist scrollbar)
-DEFAULT_TIMEOUT_SECONDS = 300.0
+DEFAULT_TIMEOUT_SECONDS = 60.0
 RUNTIME_UPDATE_INTERVAL = 0.1
 
 
@@ -127,6 +127,29 @@ def solver_page() -> None:
             ).classes("text-green-600")
         else:
             ui.label("✗ Keine Instance geladen").classes("text-orange-500")
+
+    @ui.refreshable
+    def timeout_config() -> None:
+        """Zeigt die Timeout-Konfiguration an."""
+        current_timeout = state.get_solver_timeout()
+        assert current_timeout is not None
+
+        with ui.row().classes("items-center gap-4"):
+            ui.label("Timeout:").classes("font-semibold")
+            timeout_input = ui.number(
+                label="Sekunden",
+                value=current_timeout,
+                min=1,
+                max=3600,
+                step=10,
+                format="%.0f",
+                on_change=lambda e: state.set_solver_timeout(
+                    e.value if e.value else DEFAULT_TIMEOUT_SECONDS
+                ),
+            ).classes("w-32")
+            ui.label(f"({current_timeout / 60:.1f} Minuten)").classes(
+                "text-sm text-gray-600"
+            )
 
     @ui.refreshable
     def solution_info() -> None:
@@ -359,12 +382,24 @@ def solver_page() -> None:
             # Führe Solver-Methode aus
             method_name = method_config["method"]
 
+            # Hole aktuelles Timeout aus State und überschreibe Parameter
+            current_timeout = state.get_solver_timeout()
+            params = method_config["params"].copy()
+
+            # Setze timeout je nach Methode mit richtigem Parameter-Namen
+            if "max_time_in_seconds" in params:
+                params["max_time_in_seconds"] = current_timeout
+            elif "timeout_seconds" in params:
+                params["timeout_seconds"] = current_timeout
+            elif "max_solve_time" in params:
+                params["max_solve_time"] = current_timeout
+
             if method_name == "lns":
                 # LNS-Solver
                 inst_sol = state.get_solution()
                 if inst_sol is None:
                     inst_sol = instance
-                lns_solver = lns.LNS(inst_sol, **method_config["params"])
+                lns_solver = lns.LNS(inst_sol, **params)
                 solution = lns_solver.solve()
             elif method_name == "minimal_change_lns":
                 # Minimal Changes LNS - benötigt existierende Lösung
@@ -390,7 +425,7 @@ def solver_page() -> None:
                     old_solution=old_solution,
                     new_instanc=instance,
                     days_with_change=list(days_with_change),
-                    **method_config["params"],
+                    **params,
                 )
             else:
                 # Standard Solver-Methoden
@@ -398,11 +433,9 @@ def solver_page() -> None:
                 solver = Solver(instance, vars)
                 solver_method = getattr(solver, method_name)
                 if method_config.get("requires_solution", False):
-                    solution = solver_method(
-                        solution=state.get_solution(), **method_config["params"]
-                    )
+                    solution = solver_method(solution=state.get_solution(), **params)
                 else:
-                    solution = solver_method(**method_config["params"])
+                    solution = solver_method(**params)
 
             # Schließe Write-Ende der Pipe
             os.close(write_pipe)
@@ -625,6 +658,10 @@ def solver_page() -> None:
 
         ui.notify("Solver wurde gestoppt", type="warning")
 
+    # Initialisierung: Setze Default-Timeout falls noch nicht gesetzt
+    if state.get_solver_timeout() == None:  # Default-Wert aus state.py
+        state.set_solver_timeout(DEFAULT_TIMEOUT_SECONDS)
+
     # UI-Aufbau
     with ui.card().classes("w-full mb-4"):
         ui.label("Solver").classes("text-2xl font-bold mb-4")
@@ -633,6 +670,11 @@ def solver_page() -> None:
         with ui.column().classes("w-full gap-2"):
             instance_info()
             solution_info()
+
+        ui.separator()
+
+        # Timeout-Konfiguration
+        timeout_config()
 
         ui.separator()
 
