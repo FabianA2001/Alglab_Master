@@ -12,6 +12,7 @@ class Slice_instance:
         sol: solution.Solution,
         start: int,
         end: int,
+        slice_solution: solution.Solution | None = None,
         inst: instace.Instance | None = None,
     ):
         self.sol = sol
@@ -20,6 +21,11 @@ class Slice_instance:
         self.end_day = end
 
         self.window_instance = self.create_window_instance()
+
+        # Erstelle slice_solution basierend auf den Tagen im Fenster
+        self.slice_solution = (
+            self.create_slice_solution() if slice_solution is None else slice_solution
+        )
 
         self.config = defaultdict(solver_for_window.Config_for_employee)
         for emp_uid, emp in self.window_instance.employees.items():
@@ -140,6 +146,51 @@ class Slice_instance:
         )
 
         return window_instance
+
+    def create_slice_solution(self) -> solution.Solution:
+        """Erstellt eine Solution für die Tage des Fensters aus der Original-Solution.
+
+        Die neue Solution enthält nur die Variablenwerte für die Tage zwischen
+        start_day und end_day, umindexiert auf das Fenster-Koordinatensystem (0-basiert).
+        """
+        # Erstelle eine neue Solution basierend auf der window_instance
+        slice_sol = solution.Solution(self.window_instance)
+
+        # Kopiere die Variablenwerte für die Tage im Fenster
+        for day_in_window in range(self.window_instance.number_of_days):
+            old_day = self.start_day + day_in_window
+            for shift_type_uid in self.window_instance.shift_types:
+                for emp_uid in self.window_instance.employees:
+                    # Hole den Wert aus der Original-Solution
+                    value = self.sol.vars.get((old_day, shift_type_uid, emp_uid), 0)
+                    # Setze den Wert in der neuen Solution mit neuem Tag-Index
+                    slice_sol.set_var(day_in_window, shift_type_uid, emp_uid, value)
+
+        # Kopiere auch Weekend-Variablen falls vorhanden
+        for day_in_window in range(self.window_instance.number_of_days):
+            old_day = self.start_day + day_in_window
+            for emp_uid in self.window_instance.employees:
+                value = self.sol.weekend_vars.get((old_day, emp_uid), 0)
+                if value != 0:
+                    slice_sol.weekend_vars[(day_in_window, emp_uid)] = value
+
+        # Kopiere auch die below_prefferd_vars
+        for day_in_window in range(self.window_instance.number_of_days):
+            old_day = self.start_day + day_in_window
+            for emp_uid in self.window_instance.employees:
+                value = self.sol.below_prefferd_vars.get((old_day, emp_uid), 0)
+                if value != 0:
+                    slice_sol.below_prefferd_vars[(day_in_window, emp_uid)] = value
+
+        # kopiere auch die below_threshold_vars
+        for day_in_window in range(self.window_instance.number_of_days):
+            old_day = self.start_day + day_in_window
+            for emp_uid in self.window_instance.employees:
+                value = self.sol.below_threshold_vars.get((old_day, emp_uid), 0)
+                if value != 0:
+                    slice_sol.below_threshold_vars[(day_in_window, emp_uid)] = value
+
+        return slice_sol
 
     def edit_max_numbers_of_shifts_for_emploeey(
         self, uid: employee.EmployeeUid, old_emp: employee.Employee
