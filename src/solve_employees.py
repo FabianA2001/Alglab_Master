@@ -192,9 +192,7 @@ class solve_employee():
         print(end_time-start_time)         
         return solution
     
-    #TODO instead of using timers only, use instead callbacks
-    #TODO add more parameters (optimization, [percent1,percent2,percent3]where one say how much time should be spent on the first optimization (one shift type), 2 one the second optimization(set work days) and 3 for the over all optimization)
-    #TODO maybe optimization is just as fast with CP, see how fast normal CP reach a solution similar to what this method offer.(callback that stop when reach a certin objective value)
+    #TODO Create a function in solution that create full solution from assigned shifts.
     def solve_instance_one_shift(self, one_shift_max_time:int=0, fixed_work_var_opt_max_time:int=0, general_optimization_max_time:int=0, one_shift_callback: cp_model.CpSolverSolutionCallback | None=None, fixed_work_var_opt_callback: cp_model.CpSolverSolutionCallback | None=None, optimization_callback: cp_model.CpSolverSolutionCallback | None=None, constraint_set_opt: int = 1):
         """
         The function get a simplified instance (containing only one shift type) of the main instance and solve it, which result in work_var solution. Because the result maybe invalid, the solution for the work_var is validated for each employee and fixed if needed. After ward an optimization with the work_var variable as hard constraints is preformed. At the very end general optimization is preformed.  
@@ -266,6 +264,11 @@ class solve_employee():
 
         employee_verification_time=time.time()
         print("verification time: " , employee_verification_time-one_shift_time_end) # type: ignore
+        self.hint_solution.set_preferred_vars()
+        self.hint_solution.solve_time = employee_verification_time-start_time
+        self.hint_solution.objective_value_new()
+        self.hint_solution.solve_status = cp_model.FEASIBLE
+        self.hint_solution.timestamp = datetime.now()
         stop_after_first_solution=False
         if fixed_work_var_opt_max_time <= 0:
             fixed_work_var_opt_max_time=1200
@@ -274,7 +277,7 @@ class solve_employee():
         del solver
         del solution
         gc.collect()
-        
+        #TODO if no middle optimization is required then just make the hint the solution
         for counter in range(3):
             solver = Solver(self.instance, shift_vars.Shift_vars(self.instance))
             solution_temp = solver.warm_start_generalized(hard_constraint_solution=self.solution ,hint_solution=self.hint_solution, max_time_in_seconds=fixed_work_var_opt_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution, callback=fixed_work_var_opt_callback)
