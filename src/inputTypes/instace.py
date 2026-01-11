@@ -201,7 +201,6 @@ class Instance(BaseModel):
         shift_length=shift_length/sum(shift_balance_dict.values())
 
         shift_types_new[0].length=int(shift_length)
-        print(int(shift_length))
 
         return Instance.create(
             name=instance_name,

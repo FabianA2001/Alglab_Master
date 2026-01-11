@@ -166,12 +166,11 @@ def main():
    
 
 
-    for one_shift_time, work_var_time, opt_time in [ (10,0,0), (10,10,0),
-                                                    (10,10,10)
+    for one_shift_time, work_var_time, opt_time in [ (0,0,0)
                                                     ]:
     #     # ,  (2.5, 0, 0), (1, 0, 0),  (5, 2.5, 0), (5, 5, 0),  (10, 5, 0), (5, 10, 0),  (10, 10, 0), (0, 0, 30), (0, 2.5, 27.5), (2.5, 0, 27.5), (2.5, 2.5, 25), (2.5, 5, 22.5), (5, 2.5, 22.5), (5, 5, 20), (5, 10, 15), (10, 10, 10), (10, 5, 15)
         for json_file in json_files_best_till_time:
-            for x in range(0, 3):
+            for x in range(0, 1):
                 for percentual_improvement_shift, time_between_checks_in_seconds_shift, percentual_improvement_work_var, time_between_checks_in_seconds_work_var, numerical_improvement_opt in [(0.025,8,0.012,8,0)]:
                     time_between_checks_in_seconds_opt=120
                     callback_one_shift = callback_improvement_slowed(percentual_improvement=percentual_improvement_shift, time_between_checks_in_seconds=time_between_checks_in_seconds_shift)
