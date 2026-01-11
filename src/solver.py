@@ -57,7 +57,7 @@ class Solver:
         disabled_constraints: list[SolverConstraints] = [],
         stop_after_first_solution: bool = False,
         callback: cp_model.CpSolverSolutionCallback | None = None,
-        constraint_set=1,
+        constraint_set=2,
         automaton: bool = False,
     ) -> Solution:
         objective_function = partial(
@@ -78,7 +78,7 @@ class Solver:
         self,
         log_search_progress: bool = False,
         max_time_in_seconds: float = 60.0,
-        constraint_set: int = 1,
+        constraint_set: int = 2,
         stop_after_first_solution: bool = False,
     ):
         callback = Callback_Early_Stop(self.instance, self.vars)
@@ -127,7 +127,7 @@ class Solver:
         callback: cp_model.CpSolverSolutionCallback | None = None,
         objective_function: Callable[[], cp_model.ObjLinearExprT]
         | None = None,  # Accept a callable
-        constraint_set=1,
+        constraint_set=2,
         automaton: bool = False,
     ) -> Solution:
         """
@@ -332,7 +332,7 @@ class Solver:
         log_search_progress: bool = False,
         stop_after_first_solution: bool = False,
         callback: cp_model.CpSolverSolutionCallback | None = None,
-        constraint_set: int = 1,
+        constraint_set: int = 2,
     ) -> Solution:
         """
         A function that allow to give a solution as hint and another solution as hard constraints (only work_var and var are considered)
@@ -502,7 +502,7 @@ class Solver:
 
     def set_constraints(
         self,
-        constraint_set=1,
+        constraint_set=2,
         automaton: bool = False,
     ):
         """
