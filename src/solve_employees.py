@@ -260,7 +260,7 @@ class solve_employee():
                     for day in range(self.instance.number_of_days):
                             self.solution.work_vars.pop((day, employee_uid))
                 del solution_temp 
-                print(gc.collect())
+                gc.collect()
             else:
                 print(f"Error solving for employee {employee_uid}: ")
 
@@ -273,7 +273,7 @@ class solve_employee():
         instance_name_=self.instance.name+""
         del solver
         del solution
-        print(gc.collect())
+        gc.collect()
         
         for counter in range(3):
             solver = Solver(self.instance, shift_vars.Shift_vars(self.instance))
@@ -290,7 +290,7 @@ class solve_employee():
             if counter == 2:
                 return solution_temp
             del solver
-            print(gc.collect())
+            gc.collect()
             
         work_var_opt_time = time.time()
         print("work_var time", work_var_opt_time - employee_verification_time)
