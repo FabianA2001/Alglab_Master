@@ -388,6 +388,37 @@ class Solver:
                 #         weekend_value = hint_solution.weekend_vars.get((weekend, employee_uid)) == 1  # Assuming 0 means "not on weekend"
                 #         self.vars.model.AddHint(self.vars.get_weekend_var(weekend, employee_uid), weekend_value)
 
+            # Adding hints for weekend_vars
+                for weekend in range(round(self.instance.number_of_days / 7)):
+                    if (weekend, employee_uid) in hint_solution.weekend_vars.keys():
+                        var_value = (
+                            hint_solution.weekend_vars[(weekend, employee_uid)] == 1
+                        )
+                        self.vars.model.AddHint(
+                            self.vars.get_weekend_var(weekend, employee_uid), var_value
+                        )
+
+            # Adding hints for above_prefferd_vars
+            for day in range(self.instance.number_of_days):
+                for type_uid in self.instance.shifts[day].keys():
+                    if (day, type_uid) in hint_solution.above_prefferd_vars.keys():
+                        var_value = hint_solution.above_prefferd_vars[(day, type_uid)]
+                        self.vars.model.AddHint(
+                            self.vars.get_above_prefferd_var(day, type_uid), var_value
+                        )
+            # Adding hints for below_prefferd_vars
+                    if (day, type_uid) in hint_solution.below_prefferd_vars.keys():
+                        var_value = hint_solution.below_prefferd_vars[(day, type_uid)]
+                        self.vars.model.AddHint(
+                            self.vars.get_below_prefferd_var(day, type_uid), var_value
+                        )
+            # Adding hints for below_threshold_vars
+                    if (day, type_uid) in hint_solution.below_threshold_vars.keys():
+                        var_value = hint_solution.below_threshold_vars[(day, type_uid)]
+                        self.vars.model.AddHint(
+                            self.vars.get_below_threshold_var(day, type_uid), var_value
+                        )
+
         if hard_constraint_solution is not None:
             for employee_uid in self.instance.employees.keys():
                 for day in range(self.instance.number_of_days):

@@ -392,21 +392,6 @@ class Solution(BaseModel):
         else:
             print(f"Datei nicht gefunden: {path}")
 
-    @classmethod
-    def delete_json_solution(cls, name: str) -> None:
-        """Delete a JSON file corresponding to the Solution.
-
-        Args:
-            name: Name of the Solution, without the .json extension.
-        """
-        path = DATA_DIR / f"{name}.json"
-
-        if path.exists():
-            path.unlink()  # Delete the file
-            print(f"Datei gelöscht: {path}")
-        else:
-            print(f"Datei nicht gefunden: {path}")
-
     def minimal_shift_fulfillment(self) -> float:
         """Return the minimum fulfillment ratio across all shifts."""
         min_fulfillment = float("inf")
