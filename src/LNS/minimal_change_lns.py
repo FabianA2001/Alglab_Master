@@ -7,7 +7,8 @@ from ..solution import Solution
 from .lns_helper import merge_solutions
 from .slice_instance import Slice_instance
 
-PADDING = 2
+# Original 2
+PADDING = 3
 
 
 def __solve_change(
