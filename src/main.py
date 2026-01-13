@@ -38,6 +38,22 @@ def sayHello(name="World") -> str:
     return f"Hello, {name}!"
 
 
+def load_solution_from_first_threshold(instance_name: str) -> Solution:
+    """Lädt eine Solution aus dem first_solution_with_below_threshold Ordner.
+
+    Args:
+        instance_name: z.B. "Instance9_seed817573_1S0_wv0_o0_1Scp0.025_wvcp0.012_ocn0_new_immediate_first_0"
+
+    Returns:
+        Solution: Die geladene Solution
+    """
+    folder = (
+        Path(__file__).resolve().parent.parent / "first_solution_with_below_threshold"
+    )
+    path = folder / f"{instance_name}.json"
+    return Solution.from_json_path(path)
+
+
 def get_tes_data() -> instace.Instance:
     test_file = Path.joinpath(
         Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance9.txt"
@@ -91,12 +107,11 @@ def run_lns_example():
     sol1 = solv.solve_with_early_stop(
         max_time_in_seconds=500, log_search_progress=False
     )
-    sol = Solution.from_json_file("Instance9")
-    lns_solver = lns.LNS(
-        sol1,
-        timeout_seconds=60,
-        start_search_window_size=5,
+    old_sol = load_solution_from_first_threshold(
+        "Instance23_seed9033871_1S0_wv0_o0_1Scp0.025_wvcp0.012_ocn0_new_immediate_first_0"
     )
+    inst = get_tes_data()
+    lns_solver = lns.LNS(old_sol, timeout_seconds=60)
     improved_solution = lns_solver.solve()
     # improved_solution.print_all_variables_values()
     # print("Objective value before LNS:", old_sol.objective_value)
@@ -242,9 +257,9 @@ def main() -> None:
     # sol = Solution.from_json_file("Instance1")
     # get_test_solution_from_model()
     # try_compare_solutions()
-    # run_lns_example()
+    run_lns_example()
     # run_lns_minimal_change_example()
-    run_one_instance()
+    # run_one_instance()
     # run_lns_example()
     # try_compare_multiple_solutions()
     # try_warmstart_callback()

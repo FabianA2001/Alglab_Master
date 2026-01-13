@@ -26,7 +26,7 @@ class StopAfterMinTimeAndFirstSolution(cp_model.CpSolverSolutionCallback):
 
 # TODO disabled_constraints erlauben
 class LNS:
-    MIN_SMALL_SEARCH_TIME: float = 2.0  # sec
+    MIN_SMALL_SEARCH_TIME: float = 5.0  # sec
 
     def __init__(
         self,
@@ -35,7 +35,7 @@ class LNS:
         timeout_seconds: float = 60.0,
         small_runtime_base: float = 0.01,  # * number_of_days * (number_of_shift_types + number_of_employees)
         ####################
-        start_search_window_size: int = 7,
+        start_search_window_size: int = 20,
         search_window_size_min: int = 3,
         window_increase_factor: float = 1.3,
         window_decrease_factor: float = 0.7,
@@ -173,8 +173,8 @@ class LNS:
                     f"No improvement: Increasing window size from {old_window_size} to {new_window_size}"
                 )
             else:
-                # negative improvement - fenster verschieben mit startgröße
-                new_window_size = old_window_size
+                # negative improvement - fenster verschieben
+                new_window_size = max(old_window_size, 10)
                 self.logger.debug(
                     f"Negative improvement: Keeping window size at {new_window_size} and shifting"
                 )
@@ -254,7 +254,7 @@ class LNS:
                 start=self.start_day,
                 end=self.end_day,
             ).get_solver()
-
+            infeasible = False
             sol = solvr.solve_window(
                 log_search_progress=False,
                 max_time_in_seconds=small_max_solve_time,
@@ -267,14 +267,15 @@ class LNS:
                 self.logger.debug(
                     f"Iteration {iteration}: No feasible solution found (status: {sol.solve_status})"
                 )
-                self.old_solution.to_json_file(
-                    f"error_lns_infeasible_start_{self.start_day}_end_{self.end_day}"
-                )
+                # self.old_solution.to_json_file(
+                #     f"error_lns_infeasible_start_{self.start_day}_end_{self.end_day}"
+                # )
                 # HACK
                 # import sys
 
                 # sys.exit(1)
                 #############
+                self.update_search_window(improvement=-1)  # oder spezieller Wert
                 continue
             old_sol_debugg = sol.model_copy()
             sol = self.merge_solutions(sol)

@@ -8,7 +8,7 @@ from .lns_helper import merge_solutions
 from .slice_instance import Slice_instance
 
 # Original 2
-PADDING = 3
+PADDING = 10
 
 
 def __solve_change(
@@ -43,7 +43,8 @@ def solve_changes(
         "Die Anzahl der Tage in der alten und neuen Instanz muss übereinstimmen."
     )
     assert len(days_with_change) > 0, "Es wurden keine Tage mit Änderungen angegeben."
-    small_max_solve_time = max_solve_time // len(days_with_change)
+    # small_max_solve_time = max_solve_time // len(days_with_change)
+    small_max_solve_time = max_solve_time
     for day in days_with_change:
         start_day = max(0, day - PADDING)
         end_day = min(new_instanc.number_of_days - 1, day + PADDING)
@@ -61,9 +62,28 @@ def solve_changes(
             or new_solution.solve_status == cp_model.FEASIBLE
         ):
             # TODO behandeln
-            assert False, (
-                f"Kein Lösungsstatus für das Fenster {start_day}-{end_day} gefunden."
-            )
+            print(f"Kein Lösungsstatus für das Fenster {start_day}-{end_day} gefunden.")
+            infeasible = True
+            i = 0
+            while infeasible and (PADDING + (2 * i) < new_instanc.number_of_days):
+                print(f"Erneuter Versuch mit mehr Padding: {PADDING + (2 * i)}")
+                i += 1
+                start_day = max(0, day - (PADDING + (2 * i)))
+                end_day = min(new_instanc.number_of_days - 1, day + (PADDING + (2 * i)))
+                new_solution = __solve_change(
+                    old_solution,
+                    new_instanc,
+                    start_day,
+                    end_day,
+                    small_max_solve_time,
+                    log_search_progress=log_search_progress,
+                )
+                if (
+                    new_solution.solve_status == cp_model.OPTIMAL
+                    or new_solution.solve_status == cp_model.FEASIBLE
+                ):
+                    infeasible = False
+
         old_solution = merge_solutions(
             old_solutions=old_solution,
             new_solution=new_solution,
