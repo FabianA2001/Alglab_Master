@@ -269,7 +269,7 @@ def test_double_lns():
         max_solve_time=120,
         log_search_progress=False,
     )
-    print(sol1.solve_status)
+    print("Sol1 status:", sol1.solve_status)
     ###################
     sol2 = minimal_change_lns.__solve_change(
         sol,
@@ -278,7 +278,7 @@ def test_double_lns():
         max_solve_time=120,
         log_search_progress=False,
     )
-    print(sol2.solve_status)
+    print("Sol2 status:", sol2.solve_status)
 
 
 def main() -> None:
