@@ -127,7 +127,7 @@ def run_lns_minimal_change_example():
         start_search_window_size=5,
     )
     improved_solution = minimal_change_lns.solve_changes(
-        old_sol, inst, [0], max_solve_time=60
+        old_sol, [0], max_solve_time=60
     )
     # improved_solution.print_all_variables_values()
     print("Objective value before LNS:", old_sol.objective_value)
@@ -252,11 +252,33 @@ def test_minimal_changes_lns():
     sol = Solution.from_json_file("Instance4_bearbeitet")
     minimal_change_lns.solve_changes(
         old_solution=sol,
-        new_instanc=sol.instance,
         days_with_change=[0, 1, 2, 3],
         max_solve_time=120,
         log_search_progress=False,
     )
+
+
+def test_double_lns():
+    sol = Solution.from_json_file("Instance4_bearbeitet")
+
+    ###################
+    sol1 = minimal_change_lns.__solve_change(
+        sol,
+        start_day=0,
+        end_day=5,
+        max_solve_time=120,
+        log_search_progress=False,
+    )
+    print(sol1.solve_status)
+    ###################
+    sol2 = minimal_change_lns.__solve_change(
+        sol,
+        start_day=0,
+        end_day=sol.instance.number_of_days - 1,
+        max_solve_time=120,
+        log_search_progress=False,
+    )
+    print(sol2.solve_status)
 
 
 def main() -> None:
@@ -276,7 +298,8 @@ def main() -> None:
     # try_warmstart_callback()
     # calculate_all_instancen()
     # print_some_infos()
-    test_minimal_changes_lns()
+    # test_minimal_changes_lns()
+    test_double_lns()
 
 
 if __name__ == "__main__":

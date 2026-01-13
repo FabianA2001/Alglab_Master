@@ -75,9 +75,9 @@ def solve_with_lns_minimal_changes(**kwargs) -> solution.Solution:
     if disabled_constraints != []:
         st.error("⚠️ LNS unterstützt derzeit keine Deaktivierung von Constraints.")
         assert False
+    old_solution.instance = inst
     sol = minimal_change_lns.solve_changes(
         old_solution=old_solution,
-        new_instanc=inst,
         days_with_change=kwargs["days_with_change"],
         max_solve_time=kwargs["timeout_seconds"],
         log_search_progress=False,

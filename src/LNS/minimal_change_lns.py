@@ -2,7 +2,6 @@ import copy
 
 from ortools.sat.python import cp_model
 
-from ..inputTypes.instace import Instance
 from ..solution import Solution
 from .lns_helper import merge_solutions
 from .slice_instance import Slice_instance
@@ -13,16 +12,13 @@ PADDING = 10
 
 def __solve_change(
     old_solution: Solution,
-    new_instanc: Instance,
     start_day: int,
     end_day: int,
     max_solve_time: int,
     log_search_progress: bool = True,
 ) -> Solution:
     updated_solution = copy.deepcopy(old_solution)
-    slice_instance = Slice_instance(
-        sol=updated_solution, inst=new_instanc, start=start_day, end=end_day
-    )
+    slice_instance = Slice_instance(sol=updated_solution, start=start_day, end=end_day)
     solver = slice_instance.get_solver()
     # TODO min changs callback
     return solver.solve_window_min_changes(
@@ -34,11 +30,11 @@ def __solve_change(
 
 def solve_changes(
     old_solution: Solution,
-    new_instanc: Instance,
     days_with_change: list[int],
     max_solve_time: int = 60,
     log_search_progress: bool = True,
 ) -> Solution:
+    new_instanc = old_solution.instance
     assert old_solution.instance.number_of_days == new_instanc.number_of_days, (
         "Die Anzahl der Tage in der alten und neuen Instanz muss übereinstimmen."
     )
@@ -51,7 +47,6 @@ def solve_changes(
 
         new_solution = __solve_change(
             old_solution,
-            new_instanc,
             start_day,
             end_day,
             small_max_solve_time,
@@ -65,14 +60,16 @@ def solve_changes(
             print(f"Kein Lösungsstatus für das Fenster {start_day}-{end_day} gefunden.")
             infeasible = True
             i = 0
+            # TODO (Fabian) Müsste number_of_days nicht durch 2 geteilt werden weil Padding in beide Richtungen erweitert wird?
+            # TODO (Fabian) Small solve time muss angepasst werden weil es jetzt ja pro trag theoretisch mehrmals versucht wird
             while infeasible and (PADDING + (2 * i) < new_instanc.number_of_days):
                 print(f"Erneuter Versuch mit mehr Padding: {PADDING + (2 * i)}")
-                i += 1
-                start_day = max(0, day - (PADDING + (2 * i)))
-                end_day = min(new_instanc.number_of_days - 1, day + (PADDING + (2 * i)))
+                start_day = max(0, day - (PADDING + (20 * i)))
+                end_day = min(
+                    new_instanc.number_of_days - 1, day + (PADDING + (20 * i))
+                )
                 new_solution = __solve_change(
                     old_solution,
-                    new_instanc,
                     start_day,
                     end_day,
                     small_max_solve_time,
@@ -84,6 +81,7 @@ def solve_changes(
                 ):
                     infeasible = False
 
+        # TODO (Fabian) testen ob die neue soltions feasible ist
         old_solution = merge_solutions(
             old_solutions=old_solution,
             new_solution=new_solution,

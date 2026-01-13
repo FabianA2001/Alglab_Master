@@ -385,10 +385,10 @@ def solver_page() -> None:
                     add_log_message(
                         f"ℹ️ Verwende {len(days_with_change)} geänderte Tage: {sorted(days_with_change)}"
                     )
-
+                lokal_solution = old_solution.model_copy(deep=True)
+                lokal_solution.instance = instance.model_copy(deep=True)
                 solution = minimal_change_lns.solve_changes(
-                    old_solution=old_solution,
-                    new_instanc=instance,
+                    old_solution=lokal_solution,
                     days_with_change=list(days_with_change),
                     **method_config["params"],
                 )
