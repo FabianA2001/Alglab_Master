@@ -248,6 +248,17 @@ def run_one_instance():
         return
 
 
+def test_minimal_changes_lns():
+    sol = Solution.from_json_file("Instance4_bearbeitet")
+    minimal_change_lns.solve_changes(
+        old_solution=sol,
+        new_instanc=sol.instance,
+        days_with_change=[0, 1, 2, 3],
+        max_solve_time=120,
+        log_search_progress=False,
+    )
+
+
 def main() -> None:
     # inst = get_tes_data()
     # x = inst
@@ -257,7 +268,7 @@ def main() -> None:
     # sol = Solution.from_json_file("Instance1")
     # get_test_solution_from_model()
     # try_compare_solutions()
-    run_lns_example()
+    # run_lns_example()
     # run_lns_minimal_change_example()
     # run_one_instance()
     # run_lns_example()
@@ -265,6 +276,7 @@ def main() -> None:
     # try_warmstart_callback()
     # calculate_all_instancen()
     # print_some_infos()
+    test_minimal_changes_lns()
 
 
 if __name__ == "__main__":
