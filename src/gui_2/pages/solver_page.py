@@ -23,7 +23,7 @@ from .. import state
 LOG_SEPARATOR = "─" * 60
 MAX_LOG_STORAGE = 1000  # Maximale Anzahl gespeicherter Log-Zeilen
 MAX_LOG_DISPLAY = 50  # Anzahl angezeigter Zeilen (Rest ist scrollbar)
-DEFAULT_TIMEOUT_SECONDS = 60.0
+DEFAULT_TIMEOUT_SECONDS = 300.0
 RUNTIME_UPDATE_INTERVAL = 0.1
 
 

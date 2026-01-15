@@ -32,10 +32,10 @@ class LNS:
         self,
         sol_or_instance: solution.Solution | instace.Instance,
         percent_search_time_first_solution: float = 0.1,
-        timeout_seconds: float = 60.0,
+        timeout_seconds: float = 300.0,
         small_runtime_base: float = 0.01,  # * number_of_days * (number_of_shift_types + number_of_employees)
         ####################
-        start_search_window_size: int = 20,
+        start_search_window_size: int = 10,
         search_window_size_min: int = 3,
         window_increase_factor: float = 1.3,
         window_decrease_factor: float = 0.7,
@@ -60,6 +60,7 @@ class LNS:
                 timeout_seconds,
             )
         )
+        self.start_objective = self.old_solution.objective_value
         self.NUMBER_OF_SHIFT_TYPES = len(self.old_solution.instance.shift_types)
         self.NUMBER_OF_EMPLOYEES = len(self.old_solution.instance.employees)
 
@@ -174,7 +175,7 @@ class LNS:
                 )
             else:
                 # negative improvement - fenster verschieben
-                new_window_size = max(old_window_size, 10)
+                new_window_size = max(old_window_size, 5)
                 self.logger.debug(
                     f"Negative improvement: Keeping window size at {new_window_size} and shifting"
                 )
@@ -329,7 +330,8 @@ class LNS:
         total_time = time.time() - start_time
         self.logger.info(
             f"LNS completed: {iteration} iterations, {improvements} improvements, "
-            f"total time: {total_time:.2f}s, final objective: {self.old_solution.objective_value}"
+            f"total time: {total_time:.2f}s, final objective: {self.old_solution.objective_value}, "
+            f"start objective: {self.start_objective}, improvement: {self.start_objective - self.old_solution.objective_value}"
         )
 
         assert (

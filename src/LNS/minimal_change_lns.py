@@ -7,7 +7,10 @@ from .lns_helper import merge_solutions
 from .slice_instance import Slice_instance
 
 # Original 2
-PADDING = 10
+# getestet mit 10
+# getestet mit 40
+
+PADDING = 3
 
 
 def __solve_change(
@@ -41,10 +44,11 @@ def solve_changes(
     assert len(days_with_change) > 0, "Es wurden keine Tage mit Änderungen angegeben."
     # small_max_solve_time = max_solve_time // len(days_with_change)
     small_max_solve_time = max_solve_time
-    for day in days_with_change:
+    for day in days_with_change[:]:
+        print(f"Löse Änderungen für Tag {day}...")
         start_day = max(0, day - PADDING)
         end_day = min(new_instanc.number_of_days - 1, day + PADDING)
-
+        days_with_change = [d for d in days_with_change if d < start_day or d > end_day]
         new_solution = __solve_change(
             old_solution,
             start_day,
@@ -60,14 +64,20 @@ def solve_changes(
             print(f"Kein Lösungsstatus für das Fenster {start_day}-{end_day} gefunden.")
             infeasible = True
             i = 0
+            reached_start = False
+            reached_end = False
             # TODO (Fabian) Müsste number_of_days nicht durch 2 geteilt werden weil Padding in beide Richtungen erweitert wird?
             # TODO (Fabian) Small solve time muss angepasst werden weil es jetzt ja pro trag theoretisch mehrmals versucht wird
-            while infeasible and (PADDING + (2 * i) < new_instanc.number_of_days):
-                print(f"Erneuter Versuch mit mehr Padding: {PADDING + (2 * i)}")
-                start_day = max(0, day - (PADDING + (20 * i)))
-                end_day = min(
-                    new_instanc.number_of_days - 1, day + (PADDING + (20 * i))
-                )
+            while infeasible and ((not reached_start) or (not reached_end)):
+                print(f"Erneuter Versuch mit mehr Padding: {PADDING + (3 * i)}")
+                start_day = max(0, day - (PADDING + (3 * i)))
+
+                end_day = min(new_instanc.number_of_days - 1, day + (PADDING + (3 * i)))
+                days_with_change = [
+                    d for d in days_with_change if d < start_day or d > end_day
+                ]
+                reached_start = start_day == 0
+                reached_end = end_day == new_instanc.number_of_days - 1
                 new_solution = __solve_change(
                     old_solution,
                     start_day,
@@ -75,6 +85,7 @@ def solve_changes(
                     small_max_solve_time,
                     log_search_progress=log_search_progress,
                 )
+                i += 1
                 if (
                     new_solution.solve_status == cp_model.OPTIMAL
                     or new_solution.solve_status == cp_model.FEASIBLE

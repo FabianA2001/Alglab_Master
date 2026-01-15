@@ -724,7 +724,7 @@ class Solver:
                 )
 
                 objective_value += self.vars.above_prefferd_vars[(day, type_uid)] * (
-                    self.instance.shifts[day][type_uid].weight_above_preferred / 2
+                    self.instance.shifts[day][type_uid].weight_above_preferred
                 )
                 objective_value += (
                     self.vars.below_threshold_vars[(day, type_uid)]
@@ -732,10 +732,6 @@ class Solver:
                     * 2
                 )
 
-                # objective_value += (
-                #     self.vars.above_prefferd_vars[(day, type_uid)]
-                #     * self.instance.shifts[day][type_uid].weight_above_preferred
-                # )
         return objective_value
 
     def objective_value_only_wishes(self) -> cp_model.ObjLinearExprT:
