@@ -210,7 +210,7 @@ def main():
                             solution_lns.to_json_file(filename)
                             
                         else:
-                            error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_{x}"
+                            error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_onlylns_{x}"
                             with open('error_log.txt', 'a') as error_file:
                                 error_file.write(error_filename + '\n')
                         
@@ -225,7 +225,7 @@ def main():
                             filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_alt_time_out_30_{x}"
                             solution_opt.to_json_file(filename)
                         else:
-                            error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_{x}"
+                            error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_lns_alt_opt_{x}"
                             with open('error_log.txt', 'a') as error_file:
                                 error_file.write(error_filename + '\n')
 
