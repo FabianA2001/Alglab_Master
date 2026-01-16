@@ -13,6 +13,11 @@ class Shift_vars:
             self.model = cp_model.CpModel()
         else:
             self.model = model
+    #     model: cp_model.CpModel = None,
+    # ):
+    #     if model is None:
+    #         model = cp_model.CpModel()
+    #     self.model: cp_model.CpModel = model
         # (day, type_uid, employee_uid) -> variable
 
         self.__init_vars(instance)

@@ -24,7 +24,7 @@ from .. import state
 LOG_SEPARATOR = "─" * 60
 MAX_LOG_STORAGE = 1000  # Maximale Anzahl gespeicherter Log-Zeilen
 MAX_LOG_DISPLAY = 50  # Anzahl angezeigter Zeilen (Rest ist scrollbar)
-DEFAULT_TIMEOUT_SECONDS = 60.0
+DEFAULT_TIMEOUT_SECONDS = 300.0
 RUNTIME_UPDATE_INTERVAL = 0.1
 
 
@@ -421,10 +421,10 @@ def solver_page() -> None:
                     add_log_message(
                         f"ℹ️ Verwende {len(days_with_change)} geänderte Tage: {sorted(days_with_change)}"
                     )
-
+                lokal_solution = old_solution.model_copy(deep=True)
+                lokal_solution.instance = instance.model_copy(deep=True)
                 solution = minimal_change_lns.solve_changes(
-                    old_solution=old_solution,
-                    new_instanc=instance,
+                    old_solution=lokal_solution,
                     days_with_change=list(days_with_change),
                     **params,
                 )

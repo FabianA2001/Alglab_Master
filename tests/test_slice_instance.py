@@ -35,7 +35,6 @@ class Test_slice_instance_assigned:
             self.slice_instance = Slice_instance(solution, start=3, end=5)
             # Manually set only the attributes needed for counting methods
             self.slice_instance.sol = solution
-            self.slice_instance.inst = instance
             self.slice_instance.start_day = 3
             self.slice_instance.end_day = 5
 
@@ -79,7 +78,6 @@ class Test_slice_instance_not_assigned:
             self.slice_instance = Slice_instance(solution, start=3, end=5)
             # Manually set only the attributes needed for counting methods
             self.slice_instance.sol = solution
-            self.slice_instance.inst = instance
             self.slice_instance.start_day = 3
             self.slice_instance.end_day = 5
 
@@ -116,7 +114,6 @@ class Test_slice_instance_count_days_off:
             self.slice_instance = Slice_instance(self.solution, start=start, end=end)
             # Manually set only the attributes needed for counting methods
             self.slice_instance.sol = self.solution
-            self.slice_instance.inst = self.instance
             self.slice_instance.start_day = start
             self.slice_instance.end_day = end
         return self.slice_instance
@@ -242,7 +239,6 @@ class Test_slice_instance_min_days:
             self.slice_instance = Slice_instance(self.solution, start=start, end=end)
             # Manually set only the attributes needed for counting methods
             self.slice_instance.sol = self.solution
-            self.slice_instance.inst = self.instance
             self.slice_instance.start_day = start
             self.slice_instance.end_day = end
         return self.slice_instance
@@ -370,7 +366,6 @@ class Test_slice_instance_max_days:
             self.slice_instance = Slice_instance(self.solution, start=start, end=end)
             # Manually set only the attributes needed for counting methods
             self.slice_instance.sol = self.solution
-            self.slice_instance.inst = self.instance
             self.slice_instance.start_day = start
             self.slice_instance.end_day = end
         return self.slice_instance

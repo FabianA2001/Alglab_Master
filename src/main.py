@@ -40,6 +40,22 @@ def sayHello(name="World") -> str:
     return f"Hello, {name}!"
 
 
+def load_solution_from_first_threshold(instance_name: str) -> Solution:
+    """Lädt eine Solution aus dem first_solution_with_below_threshold Ordner.
+
+    Args:
+        instance_name: z.B. "Instance9_seed817573_1S0_wv0_o0_1Scp0.025_wvcp0.012_ocn0_new_immediate_first_0"
+
+    Returns:
+        Solution: Die geladene Solution
+    """
+    folder = (
+        Path(__file__).resolve().parent.parent / "first_solution_with_below_threshold"
+    )
+    path = folder / f"{instance_name}.json"
+    return Solution.from_json_path(path)
+
+
 def get_tes_data() -> instace.Instance:
     test_file = Path.joinpath(
         Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance24.txt"
@@ -93,12 +109,11 @@ def run_lns_example():
     sol1 = solv.solve_with_early_stop(
         max_time_in_seconds=500, log_search_progress=False
     )
-    sol = Solution.from_json_file("Instance9")
-    lns_solver = lns.LNS(
-        sol1,
-        timeout_seconds=60,
-        start_search_window_size=5,
+    old_sol = load_solution_from_first_threshold(
+        "Instance23_seed9033871_1S0_wv0_o0_1Scp0.025_wvcp0.012_ocn0_new_immediate_first_0"
     )
+    inst = get_tes_data()
+    lns_solver = lns.LNS(old_sol, timeout_seconds=60)
     improved_solution = lns_solver.solve()
     # improved_solution.print_all_variables_values()
     # print("Objective value before LNS:", old_sol.objective_value)
@@ -114,7 +129,7 @@ def run_lns_minimal_change_example():
         start_search_window_size=5,
     )
     improved_solution = minimal_change_lns.solve_changes(
-        old_sol, inst, [0], max_solve_time=60
+        old_sol, [0], max_solve_time=60
     )
     # improved_solution.print_all_variables_values()
     print("Objective value before LNS:", old_sol.objective_value)
@@ -240,6 +255,39 @@ def run_one_instance():
         return
 
 
+def test_minimal_changes_lns():
+    sol = Solution.from_json_file("Instance4_bearbeitet")
+    minimal_change_lns.solve_changes(
+        old_solution=sol,
+        days_with_change=[0, 1, 2, 3],
+        max_solve_time=120,
+        log_search_progress=False,
+    )
+
+
+def test_double_lns():
+    sol = Solution.from_json_file("Instance4_bearbeitet")
+
+    ###################
+    sol1 = minimal_change_lns.__solve_change(
+        sol,
+        start_day=0,
+        end_day=5,
+        max_solve_time=120,
+        log_search_progress=False,
+    )
+    print("Sol1 status:", sol1.solve_status)
+    ###################
+    sol2 = minimal_change_lns.__solve_change(
+        sol,
+        start_day=0,
+        end_day=sol.instance.number_of_days - 1,
+        max_solve_time=120,
+        log_search_progress=False,
+    )
+    print("Sol2 status:", sol2.solve_status)
+
+
 def main() -> None:
     # inst = get_tes_data()
     # x = inst
@@ -251,11 +299,13 @@ def main() -> None:
     # try_compare_solutions()
     # run_lns_example()
     # run_lns_minimal_change_example()
-    run_one_instance()
+    # run_one_instance()
     # run_lns_example()
     #calculate_all_instancen()
     # print_some_infos()
-    test_solve_employee()
+    # test_minimal_changes_lns()
+    test_double_lns()
+
 
 if __name__ == "__main__":
     main()

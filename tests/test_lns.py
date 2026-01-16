@@ -318,7 +318,6 @@ class Test_Module_Max_Weekends:
                 )
                 # Manually set only the attributes needed for counting methods
                 self.slice_instance.sol = self.solution
-                self.slice_instance.inst = self.instance
                 self.slice_instance.start_day = start
                 self.slice_instance.end_day = end
             return self.slice_instance
