@@ -655,10 +655,10 @@ class Solution(BaseModel):
                 )
 
                 # Uncomment if needed
-                # objective_value += (
-                #     self.above_prefferd_vars[(day, type_uid)] 
-                #     * self.instance.shifts[day][type_uid].weight_above_preferred
-                # )
+                objective_value += (
+                    self.above_prefferd_vars[(day, type_uid)] 
+                    * self.instance.shifts[day][type_uid].weight_above_preferred
+                )
         self.objective_value = objective_value
 
     # TODO instead of updating below_prefferd_vars and above_prefferd_vars calculating using the self and the extra solution
@@ -743,6 +743,18 @@ class Solution(BaseModel):
                     )
                 # else:
                 #     print(f"key work var {(day_, employee_uid)} is not a key in the to be copied solution")
+
+    def calculate_work_vars(self,
+    ):
+        self.work_vars = {}
+        for day in range(self.instance.number_of_days):
+            for employee_uid in self.instance.employees:
+                for type_uid in self.instance.shifts[day]:
+                    if self.vars[(day, type_uid, employee_uid)] == 1:
+                        self.work_vars[(day, employee_uid)] = 1
+                        break
+                    elif self.vars[(day, type_uid, employee_uid)] == 0:
+                        self.work_vars[(day, employee_uid)] = 0
 
 
 # Standalone constraint checking functions

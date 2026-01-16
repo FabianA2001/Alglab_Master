@@ -301,7 +301,10 @@ class LNS:
                 # sys.exit(1)
                 ##########
                 continue
-
+            
+            sol.solve_status = cp_model.FEASIBLE
+            sol.calculate_work_vars()
+            sol.set_preferred_vars()
             self.logger.debug(
                 f"Iteration {iteration}: Found solution with objective {sol.objective_value}"
             )

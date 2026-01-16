@@ -333,6 +333,7 @@ class Solver:
         stop_after_first_solution: bool = False,
         callback: cp_model.CpSolverSolutionCallback | None = None,
         constraint_set: int = 2,
+        Test_solution: bool = False,
     ) -> Solution:
         """
         A function that allow to give a solution as hint and another solution as hard constraints (only work_var and var are considered)
@@ -354,6 +355,8 @@ class Solver:
         :type stop_after_first_solution: bool
         :param callback: Description
         :type callback: cp_model.CpSolverSolutionCallback | None
+        :param Test_solution: If set to True hard constraint will be added for all instance variable
+        :type Test_solution: bool
         :return: Description
         :rtype: Solution
         """
@@ -469,6 +472,58 @@ class Solver:
                     # elif employee_uid_ != employee_uid:
                     #     employee_uid_ = employee_uid
                     #     print(f"work var not found in hard_constraint solution {employee_uid}")
+
+            # Readd the following lines to test the full solutions
+            if Test_solution:
+                for employee_uid in self.instance.employees.keys():
+                    for day in range(self.instance.number_of_days):
+                        for type_uid, _ in self.instance.shifts[day].items():
+                            if (day, type_uid, employee_uid) in hard_constraint_solution.vars.keys():
+                                var_value = hard_constraint_solution.vars[(day, type_uid, employee_uid)] == 1
+                                self.vars.model.Add(
+                                    self.vars.get_var(day, type_uid, employee_uid) == var_value
+                                )
+
+                            if (day, employee_uid) in hard_constraint_solution.work_vars.keys():
+                                var_value = hard_constraint_solution.work_vars[(day, employee_uid)] == 1
+                                self.vars.model.Add(
+                                    self.vars.get_work_vars(day, employee_uid) == var_value
+                                )
+
+                    # Adding hard constraints for weekend_vars
+                    for weekend in range(round(self.instance.number_of_days / 7)):
+                        if (weekend, employee_uid) in hard_constraint_solution.weekend_vars.keys():
+                            var_value = hard_constraint_solution.weekend_vars[(weekend, employee_uid)] == 1
+                            self.vars.model.Add(
+                                self.vars.get_weekend_var(weekend, employee_uid) == var_value
+                            )
+
+                    # Adding hard constraints for above_prefferd_vars
+                    for day in range(self.instance.number_of_days):
+                        for type_uid in self.instance.shifts[day].keys():
+                            if (day, type_uid) in hard_constraint_solution.above_prefferd_vars.keys():
+                                var_value = hard_constraint_solution.above_prefferd_vars[(day, type_uid)]
+                                self.vars.model.Add(
+                                    self.vars.get_above_prefferd_var(day, type_uid) == var_value
+                                )
+                                # print("get_above_prefferd_var")
+
+                            # Adding hard constraints for below_prefferd_vars
+                            if (day, type_uid) in hard_constraint_solution.below_prefferd_vars.keys():
+                                var_value = hard_constraint_solution.below_prefferd_vars[(day, type_uid)]
+                                self.vars.model.Add(
+                                    self.vars.get_below_prefferd_var(day, type_uid) == var_value
+                                )
+                                # print("get_below_prefferd_var")
+
+                            # Adding hard constraints for below_threshold_vars
+                            if (day, type_uid) in hard_constraint_solution.below_threshold_vars.keys():
+                                var_value = hard_constraint_solution.below_threshold_vars[(day, type_uid)]
+                                self.vars.model.Add(
+                                    self.vars.get_below_threshold_var(day, type_uid) == var_value
+                                )
+                                # print("get_below_threshold_var")
+
 
         return self.solve_callback_with_solution(
             disabled_constraints=disabled_constraints,
