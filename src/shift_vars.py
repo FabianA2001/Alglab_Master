@@ -7,8 +7,10 @@ class Shift_vars:
     def __init__(
         self,
         instance: instace.Instance,
-        model: cp_model.CpModel = cp_model.CpModel(),
+        model: cp_model.CpModel = None,
     ):
+        if model is None:
+            model = cp_model.CpModel()
         self.model: cp_model.CpModel = model
         # (day, type_uid, employee_uid) -> variable
 

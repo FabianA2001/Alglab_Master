@@ -24,6 +24,10 @@ def calculate_objective_value(sol: solution.Solution) -> float:
                 * sol.instance.shifts[day][type_uid].weight_below_preferred
             )
             objective_value += (
+                sol.above_prefferd_vars[(day, type_uid)]
+                * sol.instance.shifts[day][type_uid].weight_above_preferred
+            )
+            objective_value += (
                 sol.below_threshold_vars[(day, type_uid)]
                 * sol.instance.shifts[day][type_uid].weight_below_preferred
                 * 2
