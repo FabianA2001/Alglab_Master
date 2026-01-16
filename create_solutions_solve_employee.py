@@ -190,7 +190,7 @@ def main():
                     first_opt_time=time.time()-start_time
 
                     print(opt_time*60-(time.time()-start_time))
-                    for not_better_stop_timer in [30, 3]:
+                    for not_better_stop_timer in [0.5, 3]:
                         lns_start_time = time.time()
                         solution_lns = lns.LNS(sol_or_instance=solution.model_copy(deep=True), timeout_seconds=timeout_seconds, log_level=20).solve(not_better_break_after=not_better_stop_timer*60)
 
