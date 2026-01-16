@@ -7,37 +7,59 @@ from src.solution import Solution
 import os
 from src.solver import Solver
 from src import shift_vars
+from ortools.sat.python import cp_model
 
 def gather_sol_times(data_dir):
     sol_times = []
     all_files = list(data_dir.glob("*.json"))
     dict_constraint = {
-        0:"original"
-        ,1:"new"
-        ,2:"Alternative"
-        ,3:"Alternative_enforce"
-        ,4:"Alternative_exact"
-        ,5:"Alternative_exact_Enforce"
-        ,7:"Alternative_exact_original"
-        ,9:"incrementallyTrue"
-        ,10:"incrementallyFalse"
-        ,
-        11:"1S5_wv5_o0"
-        ,12:"1S10_wv10_o0"
-        ,13:"1S1_wv1_o0"
-        ,14:"1S0_wv0_o0"
-        ,15:"1S2.5_wv2.5_o0"
-        ,16:"1S1_wv1_o28"
-        ,17:"1S2.5_wv2.5_o25"
-        ,18:"1S5_wv2.5_o0",
-        19:"1S10_wv10_o0_1Scp0.025_wvcp0.012_ocn1",
-        20:"1S10_wv10_o0_1Scp0.1_wvcp0.05_ocn1",
-        21:"1S10_wv10_o0_1Scp0.05_wvcp0.025_ocn1",
-        19:"1S10_wv10_o10_1Scp0.025_wvcp0.012_ocn1",
-        20:"1S10_wv10_o10_1Scp0.1_wvcp0.05_ocn1",
-        21:"1S10_wv10_o10_1Scp0.05_wvcp0.025_ocn1",
-        22:"1S0_wv0_o30",
-        23:"1S0_wv0_o30_till_median",
+        # 0:"original"
+        # ,1:"new"
+        # ,2:"Alternative"
+        # ,3:"Alternative_enforce"
+        # ,4:"Alternative_exact"
+        # ,5:"Alternative_exact_Enforce"
+        # ,7:"Alternative_exact_original"
+        # ,9:"incrementallyTrue"
+        # ,10:"incrementallyFalse"
+        # ,
+        # 11:"1S5_wv5_o0",
+        #12:"1S10_wv10_o0",
+        #13:"1S1_wv1_o0",
+        # 14:"1S0_wv0_o0",
+        # ,15:"1S2.5_wv2.5_o0"
+        # ,16:"1S1_wv1_o28"
+        # ,17:"1S2.5_wv2.5_o25"
+        # ,18:"1S5_wv2.5_o0",
+        # 19:"1S10_wv10_o0_1Scp0.025_wvcp0.012_ocn1",
+        # 20:"1S10_wv10_o0_1Scp0.1_wvcp0.05_ocn1",
+        # 21:"1S10_wv10_o0_1Scp0.05_wvcp0.025_ocn1",
+        # 22:"1S10_wv10_o10_1Scp0.025_wvcp0.012_ocn1",
+        # 23:"1S10_wv10_o10_1Scp0.1_wvcp0.05_ocn1",
+        # 24:"1S10_wv10_o10_1Scp0.05_wvcp0.025_ocn1",
+        # 25:"1S0_wv0_o30",
+        # 26:"1S0_wv0_o30_till_median",
+        # 27:"1S10_wv10_o0_1Scp0.025_wvcp0.03_ocn0",
+        # 28: "1S10_wv10_o0_1Scp0.025_wvcp0.012_ocn0",
+        # 29: "1S10_wv10_o10_1Scp0.025_wvcp0.012_ocn0",
+        # 30: "1S10_wv10_o0_1Scp0.025_wvcp0.012_ocn0_alt_exc_enf",
+        # 31: "1S10_wv10_o10_1Scp0.025_wvcp0.012_ocn0_alt_exc_enf",
+        # 32: "1S10_wv10_o0_1Scp0.025_wvcp0.012_ocn0_modifiedshiftlength",
+        # 33: "1S10_wv10_o10_1Scp0.025_wvcp0.012_ocn0_originalnew",
+        # 35: "1S10_wv10_o0_1Scp0.025_wvcp0.012_ocn0_alt_exc_enf",
+        # 36: "1S10_wv10_o0_1Scp0.025_wvcp0.012_ocn0_alt_exact",
+        # 37: "1S10_wv10_o0_1Scp0.025_wvcp0.012_ocn0_new",
+        # 38: "1S10_wv10_o0_1Scp0.025_wvcp0.012_ocn0_alt_enf",
+        # 42: "1S10_wv10_o10_1Scp0.025_wvcp0.012_ocn0_alt_enf",
+        # 34: "1S10_wv10_o0_1Scp0.025_wvcp0.012_ocn0_alternative",
+        # 39: "1S10_wv10_o10_1Scp0.025_wvcp0.012_ocn0_alternative",
+        # 40: "1S10_wv10_o10_1Scp0.025_wvcp0.012_ocn0_new",
+        41:"1S10_wv10_o10_1Scp0.05_wvcp0.024_ocn0_new",
+        42:"1S10_wv10_o10_1Scp0.025_wvcp0.012_ocn0_new",
+        #43:"1S0_wv0_o0_1Scp0.025_wvcp0.012_ocn0_new",
+        44:"1S0_wv0_o30_1Scp0.025_wvcp0.012_ocn0_new",
+        45:"1S10_wv10_o0_1Scp0.025_wvcp0.012_ocn0_new",
+        46:"1S10_wv10_o0_1Scp0.05_wvcp0.024_ocn0_new",
         }
     # Gathering files for optimal solutions
     for key in dict_constraint.values():  # Modify keys as per your dictionary
@@ -126,6 +148,10 @@ def gather_sol_times(data_dir):
                     'solve_time': solution.solve_time,
                     'objective_value': solution.objective_value
                 })
+
+                # if Solver(instance=solution.instance, vars=shift_vars.Shift_vars(solution.instance)).warm_start_generalized(hard_constraint_solution=solution).solve_status not in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
+                #     print(f"{file.stem} is not valid")
+                #     exit()
                 
                 # solve_=Solver(instance=solution.instance, vars=shift_vars.Shift_vars(instance=solution.instance))
                 # solution_copy = solve_.warm_start_generalized(hard_constraint_solution=solution, hint_solution=solution, objective_function=solve_.objevtive_value, max_time_in_seconds=300, stop_after_first_solution=True)
@@ -184,7 +210,6 @@ def gather_sol_times(data_dir):
             for file in file_pattern:
                 if file.stem.count("seed") >= 2:
                     print(f"{file.stem} Contains 'seed' twice or more.")
-                    continue
                 solution = Solution.from_json_file(file.stem)  # Load using the base filename
                 # solve_=Solver(instance=solution.instance, vars=shift_vars.Shift_vars(instance=solution.instance))
                 # solution_copy = solve_.warm_start_generalized(hard_constraint_solution=solution, hint_solution=solution, objective_function=solve_.objevtive_value, max_time_in_seconds=300, stop_after_first_solution=True)
@@ -275,6 +300,7 @@ def plot_sol_times_barchart(df, solution_type, value_type):
             plot_data = df.groupby(['instance', 'key'])[value_type].mean().reset_index(name='value')
         elif measure == 'median':
             plot_data = df.groupby(['instance', 'key'])[value_type].median().reset_index(name='value')
+            print(df.groupby(['instance'])[value_type].median().reset_index(name='value'))
         elif measure == 'count':
             plot_data = df.groupby(['instance', 'key'])[value_type].count().reset_index(name='value')
 

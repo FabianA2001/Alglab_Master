@@ -12,6 +12,7 @@ from .inputTypes import employee, instace
 from .module.solverConstraints import SolverConstraints
 from .solution import Solution
 from .solver import Solver
+from .solverCallback.callback_improvement_slowed import callback_improvement_slowed
 
 import time
 
@@ -19,26 +20,12 @@ from pathlib import Path
 from src.parseData import parseTXT
 from src.shift_vars import Shift_vars
 
-import gc
-
-#TODO Similarly to all this check for a not valid solution, which employees are causing the invalidity
-#TODO use the time or add a variable to let everything stop at first solution (to find first solution as fast as possible)
 class solve_employee():
     def __init__(self, instance: instace.Instance):
         self.instance = instance
         self.solve_time = 0
         self.solution = Solution(instance=instance)
         self.hint_solution = Solution(instance=instance)
-        # self.employee_broken_constraints={"Cover Requirements": 0,
-        #                                 "Days Off": 0,
-        #                                 "Limited Shifts per Type": 0,
-        #                                 "Max Consecutive Shifts": 0,
-        #                                 "Max Weekend Days": 0,
-        #                                 "Min Consecutive Days Off": 0,
-        #                                 "Min Consecutive Shifts": 0,
-        #                                 "Min/Max Worktime": 0,
-        #                                 "Single Day Assignment": 0,
-        #                                 "Shift Rotation": 0}
 
 
     def solve_all_employees(self, incrementally: bool = False, soft_max_time_in_seconds: int = 15*60, optimize_till_max_time: bool = False) -> Solution:
@@ -209,6 +196,11 @@ class solve_employee():
         :param fixed_work_var_opt_callback: Callback to stop fixed_work_var solver
         :type fixed_work_var_opt_callback: cp_model.CpSolverSolutionCallback | None
         """
+        if one_shift_callback is None:
+            one_shift_callback = callback_improvement_slowed(percentual_improvement=0.025, time_between_checks_in_seconds=8)
+        if fixed_work_var_opt_callback is None:
+            fixed_work_var_opt_callback = callback_improvement_slowed(percentual_improvement=0.012, time_between_checks_in_seconds=8)
+
         input_tupel=(one_shift_max_time+0, fixed_work_var_opt_max_time+0, general_optimization_max_time+0)
         stop_after_first_solution=False
         if one_shift_max_time <= 0:
