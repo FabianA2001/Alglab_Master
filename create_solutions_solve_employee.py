@@ -192,7 +192,7 @@ def main():
                     print(opt_time*60-(time.time()-start_time))
                     for not_better_stop_timer in [30, 5*60]:
                         lns_start_time = time.time()
-                        solution_lns = lns.LNS(sol_or_instance=solution.model_copy(deep=True), timeout_seconds=timeout_seconds, log_level=50).solve(not_better_break_after=not_better_stop_timer)
+                        solution_lns = lns.LNS(sol_or_instance=solution.model_copy(deep=True), timeout_seconds=timeout_seconds, log_level=20).solve(not_better_break_after=not_better_stop_timer)
 
                         only_lns_time = (time.time()-lns_start_time)
                         full_time=only_lns_time+first_opt_time
