@@ -280,6 +280,8 @@ class LNS:
                 continue
             old_sol_debugg = sol.model_copy()
             sol = self.merge_solutions(sol)
+            sol.calculate_work_vars()
+            sol.set_preferred_vars()
             if not sol.checkt_constraints[0]:
                 self.old_solution.to_json_file(
                     f"error_lns_merge_old_start_{self.start_day}_end_{self.end_day}"
@@ -303,8 +305,6 @@ class LNS:
                 continue
             
             sol.solve_status = cp_model.FEASIBLE
-            sol.calculate_work_vars()
-            sol.set_preferred_vars()
             self.logger.debug(
                 f"Iteration {iteration}: Found solution with objective {sol.objective_value}"
             )

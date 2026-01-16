@@ -54,7 +54,7 @@ def test_validity_of_produced_solution_one_shift_method_after_time_lns(instance)
 
         vars = Shift_vars(instance.model_copy(deep = True), model)
         solver = Solver(instance.model_copy(deep = True), vars)
-        solution = solver.warm_start_generalized(hard_constraint_solution=solution.model_copy(deep=True))
+        solution = solver.warm_start_generalized(hard_constraint_solution=solution.model_copy(deep=True), Test_solution=True)
         print(solution.objective_value)
         print(f"test time passed: {time.time()-start_time}")
 
@@ -82,7 +82,7 @@ def test_validity_of_produced_solution_one_shift_method_first_solution(instance)
 
         vars = Shift_vars(instance.model_copy(deep = True), model)
         solver = Solver(instance.model_copy(deep = True), vars)
-        solution = solver.warm_start_generalized(hard_constraint_solution=solution.model_copy(deep=True))
+        solution = solver.warm_start_generalized(hard_constraint_solution=solution.model_copy(deep=True), Test_solution=True)
         print(solution.objective_value)
         print(f"time passed: {time.time()-start_time}")
         
@@ -108,6 +108,6 @@ def test_validity_of_produced_solution_one_shift_method_after_time_solution(inst
         
         vars = Shift_vars(instance.model_copy(deep = True), model)
         solver = Solver(instance.model_copy(deep = True), vars)
-        solution = solver.warm_start_generalized(hard_constraint_solution=solution.model_copy(deep=True))
+        solution = solver.warm_start_generalized(hard_constraint_solution=solution.model_copy(deep=True), Test_solution=True)
         print(solution.objective_value)
         print(f"time passed: {time.time()-start_time}")

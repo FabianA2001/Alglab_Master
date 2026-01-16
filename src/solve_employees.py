@@ -180,7 +180,7 @@ class solve_employee():
         return solution
     
     #TODO Create a function in solution that create full solution from assigned shifts.
-    def solve_instance_one_shift(self, one_shift_max_time:int=0, fixed_work_var_opt_max_time:int=0, general_optimization_max_time:int=0, one_shift_callback: cp_model.CpSolverSolutionCallback | None=None, fixed_work_var_opt_callback: cp_model.CpSolverSolutionCallback | None=None, optimization_callback: cp_model.CpSolverSolutionCallback | None=None, constraint_set_opt: int = 1):
+    def solve_instance_one_shift(self, one_shift_max_time:int=0, fixed_work_var_opt_max_time:int=0, general_optimization_max_time:int=0, one_shift_callback: cp_model.CpSolverSolutionCallback | None=None, fixed_work_var_opt_callback: cp_model.CpSolverSolutionCallback | None=None, optimization_callback: cp_model.CpSolverSolutionCallback | None=None, constraint_set_opt: int = 2):
         """
         The function get a simplified instance (containing only one shift type) of the main instance and solve it, which result in work_var solution. Because the result maybe invalid, the solution for the work_var is validated for each employee and fixed if needed. After ward an optimization with the work_var variable as hard constraints is preformed. At the very end general optimization is preformed.  
         
@@ -270,7 +270,7 @@ class solve_employee():
         while fixed_work_var_opt_max_time > 0 and counter <= 1:
             self.instance.name = instance_name_
             solver = Solver(self.instance, shift_vars.Shift_vars(self.instance))
-            solution_temp = solver.warm_start_generalized(hard_constraint_solution=self.solution ,hint_solution=self.hint_solution, max_time_in_seconds=fixed_work_var_opt_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution, callback=fixed_work_var_opt_callback)
+            solution_temp = solver.warm_start_generalized(hard_constraint_solution=self.solution ,hint_solution=self.hint_solution, max_time_in_seconds=fixed_work_var_opt_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution, callback=fixed_work_var_opt_callback, constraint_set=constraint_set_opt)
             if solution_temp.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
                 self.solution=solution_temp
                 break
