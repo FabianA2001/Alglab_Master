@@ -113,5 +113,6 @@ def merge_solutions(
     objective_value = calculate_objective_value(updated_solution)
     updated_solution.set_objective_value(objective_value)
     updated_solution.disabled_constraints = disabled_for_window
+    updated_solution.solve_status = -1
 
     return updated_solution

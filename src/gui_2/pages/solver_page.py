@@ -9,6 +9,7 @@ import os
 import sys
 import threading
 import time
+import traceback
 from datetime import datetime
 from typing import Any
 
@@ -127,6 +128,29 @@ def solver_page() -> None:
             ).classes("text-green-600")
         else:
             ui.label("✗ Keine Instance geladen").classes("text-orange-500")
+
+    @ui.refreshable
+    def timeout_config() -> None:
+        """Zeigt die Timeout-Konfiguration an."""
+        current_timeout = state.get_solver_timeout()
+        assert current_timeout is not None
+
+        with ui.row().classes("items-center gap-4"):
+            ui.label("Timeout:").classes("font-semibold")
+            timeout_input = ui.number(
+                label="Sekunden",
+                value=current_timeout,
+                min=1,
+                max=3600,
+                step=10,
+                format="%.0f",
+                on_change=lambda e: state.set_solver_timeout(
+                    e.value if e.value else DEFAULT_TIMEOUT_SECONDS
+                ),
+            ).classes("w-32")
+            ui.label(f"({current_timeout / 60:.1f} Minuten)").classes(
+                "text-sm text-gray-600"
+            )
 
     @ui.refreshable
     def solution_info() -> None:
@@ -359,12 +383,24 @@ def solver_page() -> None:
             # Führe Solver-Methode aus
             method_name = method_config["method"]
 
+            # Hole aktuelles Timeout aus State und überschreibe Parameter
+            current_timeout = state.get_solver_timeout()
+            params = method_config["params"].copy()
+
+            # Setze timeout je nach Methode mit richtigem Parameter-Namen
+            if "max_time_in_seconds" in params:
+                params["max_time_in_seconds"] = current_timeout
+            elif "timeout_seconds" in params:
+                params["timeout_seconds"] = current_timeout
+            elif "max_solve_time" in params:
+                params["max_solve_time"] = current_timeout
+
             if method_name == "lns":
                 # LNS-Solver
                 inst_sol = state.get_solution()
                 if inst_sol is None:
                     inst_sol = instance
-                lns_solver = lns.LNS(inst_sol, **method_config["params"])
+                lns_solver = lns.LNS(inst_sol, **params)
                 solution = lns_solver.solve()
             elif method_name == "minimal_change_lns":
                 # Minimal Changes LNS - benötigt existierende Lösung
@@ -390,7 +426,7 @@ def solver_page() -> None:
                 solution = minimal_change_lns.solve_changes(
                     old_solution=lokal_solution,
                     days_with_change=list(days_with_change),
-                    **method_config["params"],
+                    **params,
                 )
             else:
                 # Standard Solver-Methoden
@@ -398,11 +434,9 @@ def solver_page() -> None:
                 solver = Solver(instance, vars)
                 solver_method = getattr(solver, method_name)
                 if method_config.get("requires_solution", False):
-                    solution = solver_method(
-                        solution=state.get_solution(), **method_config["params"]
-                    )
+                    solution = solver_method(solution=state.get_solution(), **params)
                 else:
-                    solution = solver_method(**method_config["params"])
+                    solution = solver_method(**params)
 
             # Schließe Write-Ende der Pipe
             os.close(write_pipe)
@@ -469,7 +503,8 @@ def solver_page() -> None:
             solution: Die gefundene Lösung
             start_time: Startzeit des Solvers
         """
-        state.set_solution(solution)
+        state.add_solution(solution)
+        solution.to_json_file(solution.instance.name)
         state.set_solver_end_time(time.time())
 
         elapsed = time.time() - start_time
@@ -491,7 +526,17 @@ def solver_page() -> None:
         state.set_solver_end_time(time.time())
         state.set_solver_status("ERROR")
         state.update_solver_statistics("error", str(error))
-        add_log_message(f"❌ Fehler: {str(error)}")
+
+        # Formatiere Fehler mit Traceback-Informationen
+        tb_lines = traceback.format_exception(type(error), error, error.__traceback__)
+        tb_str = "".join(tb_lines)
+
+        add_log_message(f"❌ Fehler: {type(error).__name__}: {str(error)}")
+        add_log_message("Traceback:")
+        for line in tb_str.split("\n"):
+            if line.strip():
+                add_log_message(line)
+
         update_log_content()
 
     def _cleanup_solver_thread(old_stdout) -> None:
@@ -625,6 +670,10 @@ def solver_page() -> None:
 
         ui.notify("Solver wurde gestoppt", type="warning")
 
+    # Initialisierung: Setze Default-Timeout falls noch nicht gesetzt
+    if state.get_solver_timeout() == None:  # Default-Wert aus state.py
+        state.set_solver_timeout(DEFAULT_TIMEOUT_SECONDS)
+
     # UI-Aufbau
     with ui.card().classes("w-full mb-4"):
         ui.label("Solver").classes("text-2xl font-bold mb-4")
@@ -633,6 +682,11 @@ def solver_page() -> None:
         with ui.column().classes("w-full gap-2"):
             instance_info()
             solution_info()
+
+        ui.separator()
+
+        # Timeout-Konfiguration
+        timeout_config()
 
         ui.separator()
 

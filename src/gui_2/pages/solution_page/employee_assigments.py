@@ -12,7 +12,6 @@ from . import components
 COLOR_CORRECT_COUNT = "background-color: #d1fae5;"  # Green
 COLOR_TOO_FEW = "background-color: #fee2e2;"  # Red
 COLOR_TOO_MANY = "background-color: #fed7aa;"  # Orange
-COLOR_SEARCH_HIGHLIGHT = "#ff9800"  # Orange for search highlight
 
 # Weight adjustment constant for soft buttons
 SOFT_WEIGHT_ADJUSTMENT = 10
@@ -36,15 +35,6 @@ def employee_assignments(solution: Solution) -> None:
 
         columns = _build_table_columns(days)
         rows, shift_mapping = _build_table_rows(solution, days, shift_types)
-
-        # Search input for employee highlighting
-        search_value = {"term": ""}
-
-        search_input = (
-            ui.input(label="Mitarbeiter suchen", placeholder="Name eingeben...")
-            .classes("w-64 mb-4")
-            .props("clearable outlined dense")
-        )
 
         table = (
             ui.table(columns=columns, rows=rows, row_key="row_key")
@@ -77,26 +67,6 @@ def employee_assignments(solution: Solution) -> None:
             </q-td>
         """,
         )
-
-        def update_search_highlights(event) -> None:
-            """Update badge colors based on search term."""
-            search_term = event.args.lower() if isinstance(event.args, str) else ""
-            search_value["term"] = search_term
-
-            # Update badge colors via JavaScript for exact match highlighting
-            ui.run_javascript(f"""
-                const searchTerm = '{search_term}';
-                document.querySelectorAll('.q-badge').forEach(badge => {{
-                    const name = badge.textContent.trim().toLowerCase();
-                    if (searchTerm && name === searchTerm) {{
-                        badge.style.backgroundColor = '{COLOR_SEARCH_HIGHLIGHT}';
-                    }} else {{
-                        badge.style.backgroundColor = '';
-                    }}
-                }});
-            """)
-
-        search_input.on("update:model-value", update_search_highlights)
 
         table.on(
             "cell_click",
