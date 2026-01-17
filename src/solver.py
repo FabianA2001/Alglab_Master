@@ -905,7 +905,7 @@ class Solver:
         instance: instace.Instance,
         disabled_constraints: list[SolverConstraints] = [],
         max_time_in_seconds: float = 60.0,
-        log_search_progress: bool = True,
+        log_search_progress: bool = False,
     ) -> Solution:
         scheduler = SequentialGreedyScheduler(instance)
         binary_matrix = scheduler.get_assignment_matrix()  # für direkte Verwendung
@@ -935,7 +935,7 @@ class Solver:
         instance: instace.Instance,
         disabled_constraints: list[SolverConstraints] = [],
         max_time_in_seconds: float = 60.0,
-        log_search_progress: bool = True,
+        log_search_progress: bool = False,
     ) -> Solution:
         scheduler = SequentialGreedyScheduler2(instance)
         binary_matrix = scheduler.get_assignment_matrix()  # für direkte Verwendung
