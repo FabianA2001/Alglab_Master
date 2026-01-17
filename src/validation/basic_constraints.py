@@ -27,11 +27,10 @@ def check_cover_requirements_constraint(sol: "Solution") -> Tuple[bool, List[str
                 violations.append(
                     f"Tag {day}, Schicht {shift_name}: Erwartet {expected}, tatsächlich {actual}"
                 )
-                
-            if (
-                sol.below_threshold_vars[(day, type_uid)]
-                < (2 / 3 * sol.instance.shifts[day][type_uid].preffert_number_employees) - sum(assigned_shifts)
-            ):
+
+            if sol.below_threshold_vars[(day, type_uid)] < (
+                2 / 3 * sol.instance.shifts[day][type_uid].preffert_number_employees
+            ) - sum(assigned_shifts):
                 shift_name = sol.instance.shift_types[type_uid].name
                 violations.append(
                     f"Tag {day}, Schicht {shift_name}: Untergrenze nicht erfüllt"

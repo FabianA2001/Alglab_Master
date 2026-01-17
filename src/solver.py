@@ -386,7 +386,7 @@ class Solver:
                 #         weekend_value = hint_solution.weekend_vars.get((weekend, employee_uid)) == 1  # Assuming 0 means "not on weekend"
                 #         self.vars.model.AddHint(self.vars.get_weekend_var(weekend, employee_uid), weekend_value)
 
-            # Adding hints for weekend_vars
+                # Adding hints for weekend_vars
                 for weekend in range(round(self.instance.number_of_days / 7)):
                     if (weekend, employee_uid) in hint_solution.weekend_vars.keys():
                         var_value = (
@@ -404,13 +404,13 @@ class Solver:
                         self.vars.model.AddHint(
                             self.vars.get_above_prefferd_var(day, type_uid), var_value
                         )
-            # Adding hints for below_prefferd_vars
+                    # Adding hints for below_prefferd_vars
                     if (day, type_uid) in hint_solution.below_prefferd_vars.keys():
                         var_value = hint_solution.below_prefferd_vars[(day, type_uid)]
                         self.vars.model.AddHint(
                             self.vars.get_below_prefferd_var(day, type_uid), var_value
                         )
-            # Adding hints for below_threshold_vars
+                    # Adding hints for below_threshold_vars
                     if (day, type_uid) in hint_solution.below_threshold_vars.keys():
                         var_value = hint_solution.below_threshold_vars[(day, type_uid)]
                         self.vars.model.AddHint(
@@ -473,52 +473,103 @@ class Solver:
                 for employee_uid in self.instance.employees.keys():
                     for day in range(self.instance.number_of_days):
                         for type_uid, _ in self.instance.shifts[day].items():
-                            if (day, type_uid, employee_uid) in hard_constraint_solution.vars.keys():
-                                var_value = hard_constraint_solution.vars[(day, type_uid, employee_uid)] == 1
+                            if (
+                                day,
+                                type_uid,
+                                employee_uid,
+                            ) in hard_constraint_solution.vars.keys():
+                                var_value = (
+                                    hard_constraint_solution.vars[
+                                        (day, type_uid, employee_uid)
+                                    ]
+                                    == 1
+                                )
                                 self.vars.model.Add(
-                                    self.vars.get_var(day, type_uid, employee_uid) == var_value
+                                    self.vars.get_var(day, type_uid, employee_uid)
+                                    == var_value
                                 )
 
-                            if (day, employee_uid) in hard_constraint_solution.work_vars.keys():
-                                var_value = hard_constraint_solution.work_vars[(day, employee_uid)] == 1
+                            if (
+                                day,
+                                employee_uid,
+                            ) in hard_constraint_solution.work_vars.keys():
+                                var_value = (
+                                    hard_constraint_solution.work_vars[
+                                        (day, employee_uid)
+                                    ]
+                                    == 1
+                                )
                                 self.vars.model.Add(
-                                    self.vars.get_work_vars(day, employee_uid) == var_value
+                                    self.vars.get_work_vars(day, employee_uid)
+                                    == var_value
                                 )
 
                     # Adding hard constraints for weekend_vars
                     for weekend in range(round(self.instance.number_of_days / 7)):
-                        if (weekend, employee_uid) in hard_constraint_solution.weekend_vars.keys():
-                            var_value = hard_constraint_solution.weekend_vars[(weekend, employee_uid)] == 1
+                        if (
+                            weekend,
+                            employee_uid,
+                        ) in hard_constraint_solution.weekend_vars.keys():
+                            var_value = (
+                                hard_constraint_solution.weekend_vars[
+                                    (weekend, employee_uid)
+                                ]
+                                == 1
+                            )
                             self.vars.model.Add(
-                                self.vars.get_weekend_var(weekend, employee_uid) == var_value
+                                self.vars.get_weekend_var(weekend, employee_uid)
+                                == var_value
                             )
 
                     # Adding hard constraints for above_prefferd_vars
                     for day in range(self.instance.number_of_days):
                         for type_uid in self.instance.shifts[day].keys():
-                            if (day, type_uid) in hard_constraint_solution.above_prefferd_vars.keys():
-                                var_value = hard_constraint_solution.above_prefferd_vars[(day, type_uid)]
+                            if (
+                                day,
+                                type_uid,
+                            ) in hard_constraint_solution.above_prefferd_vars.keys():
+                                var_value = (
+                                    hard_constraint_solution.above_prefferd_vars[
+                                        (day, type_uid)
+                                    ]
+                                )
                                 self.vars.model.Add(
-                                    self.vars.get_above_prefferd_var(day, type_uid) == var_value
+                                    self.vars.get_above_prefferd_var(day, type_uid)
+                                    == var_value
                                 )
                                 # print("get_above_prefferd_var")
 
                             # Adding hard constraints for below_prefferd_vars
-                            if (day, type_uid) in hard_constraint_solution.below_prefferd_vars.keys():
-                                var_value = hard_constraint_solution.below_prefferd_vars[(day, type_uid)]
+                            if (
+                                day,
+                                type_uid,
+                            ) in hard_constraint_solution.below_prefferd_vars.keys():
+                                var_value = (
+                                    hard_constraint_solution.below_prefferd_vars[
+                                        (day, type_uid)
+                                    ]
+                                )
                                 self.vars.model.Add(
-                                    self.vars.get_below_prefferd_var(day, type_uid) == var_value
+                                    self.vars.get_below_prefferd_var(day, type_uid)
+                                    == var_value
                                 )
                                 # print("get_below_prefferd_var")
 
                             # Adding hard constraints for below_threshold_vars
-                            if (day, type_uid) in hard_constraint_solution.below_threshold_vars.keys():
-                                var_value = hard_constraint_solution.below_threshold_vars[(day, type_uid)]
+                            if (
+                                day,
+                                type_uid,
+                            ) in hard_constraint_solution.below_threshold_vars.keys():
+                                var_value = (
+                                    hard_constraint_solution.below_threshold_vars[
+                                        (day, type_uid)
+                                    ]
+                                )
                                 self.vars.model.Add(
-                                    self.vars.get_below_threshold_var(day, type_uid) == var_value
+                                    self.vars.get_below_threshold_var(day, type_uid)
+                                    == var_value
                                 )
                                 # print("get_below_threshold_var")
-
 
         return self.solve_callback_with_solution(
             disabled_constraints=disabled_constraints,
@@ -527,7 +578,7 @@ class Solver:
             objective_function=objective_function,
             stop_after_first_solution=stop_after_first_solution,
             callback=callback,
-            constraint_set=constraint_set
+            constraint_set=constraint_set,
         )
 
     def objective_value_weight_changes(
@@ -790,7 +841,6 @@ class Solver:
             ban_employee_day_shift.Ban_employee_day_shift().build(
                 self.instance, self.vars
             )
-
 
     def objective_value_new(self):
         objective_value = 0

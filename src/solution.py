@@ -607,17 +607,19 @@ class Solution(BaseModel):
             for type_uid in self.instance.shifts[day]:
                 # Calculate sum of assigned shifts for the specific day and type
                 assigned_shifts = sum(
-                    self.vars[(day, type_uid, emp_uid)] 
+                    self.vars[(day, type_uid, emp_uid)]
                     for emp_uid in self.instance.employees
                 )
 
-                preferred_number = self.instance.shifts[day][type_uid].preffert_number_employees
+                preferred_number = self.instance.shifts[day][
+                    type_uid
+                ].preffert_number_employees
                 import math
+
                 # Calculate below threshold vars
-                below_threshold = math.ceil(max(
-                    0,
-                    (2 / 3 * preferred_number) - assigned_shifts
-                ))
+                below_threshold = math.ceil(
+                    max(0, (2 / 3 * preferred_number) - assigned_shifts)
+                )
                 self.below_threshold_vars[(day, type_uid)] = below_threshold
 
                 # Calculate above preferred vars
@@ -634,29 +636,33 @@ class Solution(BaseModel):
         for employee_uid in self.instance.employees:
             for day in range(self.instance.number_of_days):
                 for type_uid in self.instance.shifts[day]:
-                    objective_value += (
-                        self.instance.get_shift(day=day, type_uid=type_uid)
-                        .penalty_assigned_day_employee.get(employee_uid, 0) * (1 - self.vars[(day, type_uid, employee_uid)])
+                    objective_value += self.instance.get_shift(
+                        day=day, type_uid=type_uid
+                    ).penalty_assigned_day_employee.get(employee_uid, 0) * (
+                        1 - self.vars[(day, type_uid, employee_uid)]
                     )
                     objective_value += (
-                        self.instance.shifts[day][type_uid]
-                        .penalty_not_assigned_day_employee.get(employee_uid, 0) * self.vars[(day, type_uid, employee_uid)]
+                        self.instance.shifts[day][
+                            type_uid
+                        ].penalty_not_assigned_day_employee.get(employee_uid, 0)
+                        * self.vars[(day, type_uid, employee_uid)]
                     )
 
         for day in range(self.instance.number_of_days):
             for type_uid in self.instance.shifts[day]:
                 objective_value += (
-                    self.below_prefferd_vars[(day, type_uid)] 
+                    self.below_prefferd_vars[(day, type_uid)]
                     * self.instance.shifts[day][type_uid].weight_below_preferred
                 )
                 objective_value += (
-                    self.below_threshold_vars[(day, type_uid)] 
-                    * self.instance.shifts[day][type_uid].weight_below_preferred * 2
+                    self.below_threshold_vars[(day, type_uid)]
+                    * self.instance.shifts[day][type_uid].weight_below_preferred
+                    * 2
                 )
 
                 # Uncomment if needed
                 objective_value += (
-                    self.above_prefferd_vars[(day, type_uid)] 
+                    self.above_prefferd_vars[(day, type_uid)]
                     * self.instance.shifts[day][type_uid].weight_above_preferred
                 )
         self.objective_value = objective_value
@@ -744,7 +750,8 @@ class Solution(BaseModel):
                 # else:
                 #     print(f"key work var {(day_, employee_uid)} is not a key in the to be copied solution")
 
-    def calculate_work_vars(self,
+    def calculate_work_vars(
+        self,
     ):
         self.work_vars = {}
         for day in range(self.instance.number_of_days):
