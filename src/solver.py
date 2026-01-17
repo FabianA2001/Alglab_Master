@@ -324,7 +324,7 @@ class Solver:
         disabled_constraints: list[SolverConstraints] = [],
         max_time_in_seconds: float = 60.0,
         objective_function: Callable[[], cp_model.ObjLinearExprT] | None = None,
-        log_search_progress: bool = True,
+        log_search_progress: bool = False,
         stop_after_first_solution: bool = False,
         callback: cp_model.CpSolverSolutionCallback | None = None,
         constraint_set: int = 2,
