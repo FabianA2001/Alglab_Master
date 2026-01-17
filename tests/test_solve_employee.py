@@ -51,6 +51,8 @@ def test_validity_of_produced_solution_one_shift_method_after_time_lns(instance)
         print(solution.objective_value)
         print(f"lns time passed: {time.time()-start_time}")
 
+        assert solution.checkt_constraints[0]
+
         vars = Shift_vars(instance.model_copy(deep = True), model)
         solver = Solver(instance.model_copy(deep = True), vars)
         solution = solver.warm_start_generalized(hard_constraint_solution=solution.model_copy(deep=True), hint_solution=solution.model_copy(deep=True), Test_solution=True, max_time_in_seconds=450)
@@ -78,6 +80,8 @@ def test_validity_of_produced_solution_one_shift_method_first_solution(instance)
         solve_employee_obj = solve_employee(instance=instance.model_copy(deep = True))
         solution = solve_employee_obj.solve_instance_one_shift(one_shift_max_time=0, fixed_work_var_opt_max_time=0, general_optimization_max_time=0)
 
+        assert solution.checkt_constraints[0]
+
         vars = Shift_vars(instance.model_copy(deep = True), model)
         solver = Solver(instance.model_copy(deep = True), vars)
         solution = solver.warm_start_generalized(hard_constraint_solution=solution.model_copy(deep=True), hint_solution=solution.model_copy(deep=True), Test_solution=True, max_time_in_seconds=450)
@@ -102,6 +106,8 @@ def test_validity_of_produced_solution_one_shift_method_after_time_solution(inst
         vars = Shift_vars(instance.model_copy(deep = True))
         solve_employee_obj = solve_employee(instance=instance.model_copy(deep = True))
         solution = solve_employee_obj.solve_instance_one_shift(one_shift_max_time=45, fixed_work_var_opt_max_time=45, general_optimization_max_time=0)
+
+        assert solution.checkt_constraints[0]
         
         vars = Shift_vars(instance.model_copy(deep = True), model)
         solver = Solver(instance.model_copy(deep = True), vars)
@@ -126,6 +132,9 @@ def test_validity_of_produced_solution_one_shift_method_not_enough_time_case_wor
         solution = solve_employee_obj.solve_instance_one_shift(one_shift_max_time=45, fixed_work_var_opt_max_time=2, general_optimization_max_time=0)
         vars = Shift_vars(instance.model_copy(deep = True), model)
         solver = Solver(instance.model_copy(deep = True), vars)
+
+        assert solution.checkt_constraints[0]
+
         solution = solver.warm_start_generalized(hard_constraint_solution=solution.model_copy(deep=True), hint_solution=solution.model_copy(deep=True), Test_solution=True, max_time_in_seconds=450)
         print(solution.objective_value)
         print(f"time passed: {time.time()-start_time}")
@@ -145,6 +154,9 @@ def test_validity_of_produced_solution_one_shift_method_not_enough_time_case_las
         vars = Shift_vars(instance.model_copy(deep = True))
         solve_employee_obj = solve_employee(instance=instance.model_copy(deep = True))
         solution = solve_employee_obj.solve_instance_one_shift(one_shift_max_time=45, fixed_work_var_opt_max_time=2, general_optimization_max_time=2)
+
+        assert solution.checkt_constraints[0]
+
         vars = Shift_vars(instance.model_copy(deep = True), model)
         solver = Solver(instance.model_copy(deep = True), vars)
         solution = solver.warm_start_generalized(hard_constraint_solution=solution.model_copy(deep=True), hint_solution=solution.model_copy(deep=True), Test_solution=True, max_time_in_seconds=450)
