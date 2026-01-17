@@ -17,8 +17,6 @@ from .parseData import parseTXT
 from .shift_vars import Shift_vars
 from .solver import Solver
 
-from .solve_employees import solve_employee
-
 # Logging konfigurieren
 logging.basicConfig(
     level=logging.INFO,
@@ -58,7 +56,7 @@ def load_solution_from_first_threshold(instance_name: str) -> Solution:
 
 def get_tes_data() -> instace.Instance:
     test_file = Path.joinpath(
-        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance24.txt"
+        Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance9.txt"
     )
     # test_file = Path.joinpath(
     #     Path(__file__).resolve().parent.parent, "data", "instance_raw", "Instance13.txt"
@@ -192,11 +190,6 @@ def print_some_infos():
 
         print()
 
-def test_solve_employee():
-    instance_9 = get_tes_data()
-    solve_employee_obj = solve_employee(instance=instance_9)
-    #solve_employee_obj.solve_all_employees_subprocess(incrementally=True,soft_max_time_in_seconds=15*60)
-    solve_employee_obj.solve_instance_one_shift()
 
 def try_compare_multiple_solutions():
     test_file = Path.joinpath(
@@ -301,7 +294,9 @@ def main() -> None:
     # run_lns_minimal_change_example()
     # run_one_instance()
     # run_lns_example()
-    #calculate_all_instancen()
+    # try_compare_multiple_solutions()
+    # try_warmstart_callback()
+    # calculate_all_instancen()
     # print_some_infos()
     # test_minimal_changes_lns()
     test_double_lns()
