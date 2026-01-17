@@ -661,7 +661,7 @@ class Solution(BaseModel):
                 )
         self.objective_value = objective_value
 
-    # TODO instead of updating below_prefferd_vars and above_prefferd_vars calculating using the self and the extra solution
+    # TODO Maybe instead of updating below_prefferd_vars and above_prefferd_vars calculating using the self and the extra solution
     def copy_solution(self, solution: "Solution"):
         self.vars.update(solution.vars)
         self.weekend_vars.update(solution.weekend_vars)

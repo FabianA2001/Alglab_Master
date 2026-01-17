@@ -3,7 +3,7 @@ from datetime import datetime
 from ortools.sat.python import cp_model
 from pydantic import BaseModel, Field, model_validator
 
-from typing import Callable
+from typing import Callable, Tuple
 
 from . import shift_vars
 from .callback_early_stop import Callback_Early_Stop
@@ -20,6 +20,7 @@ from pathlib import Path
 from src.parseData import parseTXT
 from src.shift_vars import Shift_vars
 
+#TODO add a logger instead of all prints
 class solve_employee():
     def __init__(self, instance: instace.Instance):
         self.instance = instance
@@ -209,6 +210,8 @@ class solve_employee():
         counter = 0
         start_time = time.time()
         solution = Solution(instance=self.instance)
+        
+        # A loop that enforce finding a first solution unless the created one_shift instance is invalid
         while counter <= 1:
             instance = self.instance.instance_to_one_shift_type()
             solver = Solver(instance, shift_vars.Shift_vars(instance))
@@ -234,16 +237,16 @@ class solve_employee():
         
 
         # See if any employee does not have a solution with the given work days and repair their shifts if so.
-        employee_uids = []
+        employees_uid = []
         count_ = 0
         invalid_employees = []
         for employee_uid in self.instance.employees:
             count_ = count_ + 1
-            employee_uids.append(employee_uid)            
-            solution_temp = self.solve_employee_with_work_var(employee_uid=employee_uid, soft_max_time_in_seconds=30)
+            employees_uid.append(employee_uid)            
+            solution_temp, employee_work_var_was_invalid = self.solve_employee_with_work_var(employee_uid=employee_uid, soft_max_time_in_seconds=30)
             self.hint_solution.copy_solution(solution=solution_temp.model_copy())
-            if solution_temp.solve_status not in [cp_model.INFEASIBLE]:
-                if solution_temp.solve_status in [cp_model.UNKNOWN]:
+            if solution_temp.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
+                if employee_work_var_was_invalid:
                     invalid_employees.append(self.instance.employees[employee_uid].name)
                     for day in range(self.instance.number_of_days):
                             self.solution.work_vars.pop((day, employee_uid))
@@ -251,64 +254,58 @@ class solve_employee():
                 print(f"Error solving for employee {employee_uid}: ")
 
         employee_verification_time=time.time()
+        self.hint_solution.solve_time = employee_verification_time-start_time
         print("verification time: " , employee_verification_time-one_shift_time_end) # type: ignore
         self.hint_solution.set_preferred_vars()
-        self.hint_solution.solve_time = employee_verification_time-start_time
         self.hint_solution.objective_value_new()
+        self.hint_solution.calculate_work_vars()
         self.hint_solution.solve_status = cp_model.FEASIBLE
         self.hint_solution.timestamp = datetime.now()
-        if fixed_work_var_opt_max_time <= 0:
-            self.hint_solution.instance.name = self.instance.name+"_seedxxxxxxxx"
-            self.solution = self.hint_solution.model_copy()
-        stop_after_first_solution=False
+
         instance_name_=self.instance.name+""
 
         if fixed_work_var_opt_max_time > 0:
             fixed_work_var_opt_max_time = fixed_work_var_opt_max_time+input_tupel[0]-int(time.time()-start_time)
 
-        counter = 0
-        while fixed_work_var_opt_max_time > 0 and counter <= 1:
+        if fixed_work_var_opt_max_time > 0:
             self.instance.name = instance_name_
             solver = Solver(self.instance, shift_vars.Shift_vars(self.instance))
-            solution_temp = solver.warm_start_generalized(hard_constraint_solution=self.solution ,hint_solution=self.hint_solution, max_time_in_seconds=fixed_work_var_opt_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution, callback=fixed_work_var_opt_callback, constraint_set=constraint_set_opt)
+            solution_temp = solver.warm_start_generalized(hard_constraint_solution=self.solution ,hint_solution=self.hint_solution, max_time_in_seconds=fixed_work_var_opt_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=False, callback=fixed_work_var_opt_callback, constraint_set=constraint_set_opt)
             if solution_temp.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
                 self.solution=solution_temp
-                break
+            #Return the Hint because we could not find solution and optimize using normal solve with work_var
             elif solution_temp.solve_status in [cp_model.UNKNOWN]:
-                fixed_work_var_opt_max_time=1200
-                stop_after_first_solution=True
+                self.solution=self.hint_solution.model_copy()
+                print("Set Work_var: No solution found in the desired time, passing last found valid solution")
             elif solution_temp.solve_status in [cp_model.INFEASIBLE, cp_model.MODEL_INVALID]:
                 print("Something went wrong and the model is infeasible or invalid")
                 return solution_temp
-            if counter == 1:
-                return solution_temp
-            counter = counter + 1
+        else:
+            print("Set Work_var: Solution wanted in less than 0 seconds, Keeping last valid solution")
+            self.hint_solution.instance.name = self.instance.name+"_seedxxxxxxxx"
+            self.solution = self.hint_solution.model_copy()
             
         work_var_opt_time = time.time()
         print("work_var time", work_var_opt_time - employee_verification_time)
 
-        #Because we have input_tupel[0]+input_tupel[1]-int(time.time()-start_time)>0, this method may take more time than was wanted
+        #Because we have input_tupel[0]+input_tupel[1]-int(time.time()-start_time)>0, this method may take more time than was initially desired but still in the desired time of the full function
         if general_optimization_max_time > 0 and input_tupel[0]+input_tupel[1]-int(time.time()-start_time)>0:
             general_optimization_max_time = general_optimization_max_time+input_tupel[0]+input_tupel[1]-int(time.time()-start_time)
 
-        stop_after_first_solution=False
-        counter = 0
-        while general_optimization_max_time > 0 and counter <= 1:
+        if general_optimization_max_time > 0:
             self.instance.name = instance_name_
             solver = Solver(self.instance, shift_vars.Shift_vars(self.instance))
-            solution_temp = solver.warm_start_generalized(hint_solution=self.solution, max_time_in_seconds=general_optimization_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=stop_after_first_solution, callback=optimization_callback, constraint_set=constraint_set_opt)
+            solution_temp = solver.warm_start_generalized(hint_solution=self.solution, max_time_in_seconds=general_optimization_max_time, objective_function=solver.objective_value_new, stop_after_first_solution=False, callback=optimization_callback, constraint_set=constraint_set_opt)
             if solution_temp.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
                 self.solution=solution_temp
-                break
             elif solution_temp.solve_status in [cp_model.UNKNOWN]:
-                general_optimization_max_time=1200
-                stop_after_first_solution=True
+                print("Opt: No solution was found in the desired time keeping last valid solution found")
             elif solution_temp.solve_status in [cp_model.INFEASIBLE, cp_model.MODEL_INVALID]:
                 print("Something went wrong and the model is infeasible or invalid")
                 return solution_temp
-            if counter == 1:
-                return solution_temp
-            counter = counter + 1
+        else:
+            print("Opt: No general optimization desired, keeping last valid solution")
+            
         # if len(invalid_employees)>0 or True:
         #     with open('invalid_employees_count.txt', 'a') as file:
         #         invalid_employees_string=f"\n{self.instance.name}_1S{input_tupel[0]}_wv{input_tupel[1]}_o{input_tupel[2]}: "+str(len(invalid_employees))+"/" +str(len(self.instance.employees.keys())) + f": {str(invalid_employees)} - time for employee verification is {employee_verification_time-one_shift_time_end} - time for opt work_var after employee verification is {work_var_opt_time-employee_verification_time}\n-{str(len(invalid_employees))},{employee_verification_time-one_shift_time_end},{work_var_opt_time-employee_verification_time}, {one_shift_time_end-start_time}, {time.time()-work_var_opt_time}"
@@ -326,7 +323,8 @@ class solve_employee():
         return solution_copy
 
 
-    def solve_employee_with_work_var(self, employee_uid, soft_max_time_in_seconds:int=60):
+    def solve_employee_with_work_var(self, employee_uid, soft_max_time_in_seconds:int=60) -> Tuple[Solution, bool]:
+        
         start_time=time.time()
         
         instance = self.instance.model_copy()
@@ -353,6 +351,7 @@ class solve_employee():
             solve_normally = True
         
         if solve_normally:
+            # If we did not find a solution with the help of work_var, try to without them and only search for a first solution
             solver_x = Solver(instance, Shift_vars(instance))
             solution1 = solver_x.solve_callback_with_solution(
                 objective_function=solver_x.objective_value_only_wishes,
@@ -360,8 +359,5 @@ class solve_employee():
                 max_time_in_seconds=450,
                 stop_after_first_solution=True
             )
-            #TODO Unknown to check if an employee was bad (should find a better way in the feature)
-            solution1.solve_status = cp_model.UNKNOWN
-            end_time=time.time()
-            return solution1
-        return solution
+            return (solution1, True)
+        return (solution, False)

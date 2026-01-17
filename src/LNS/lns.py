@@ -1,3 +1,4 @@
+from datetime import datetime
 import logging
 import random
 import time
@@ -287,6 +288,8 @@ class LNS:
             sol = self.merge_solutions(sol)
             sol.calculate_work_vars()
             sol.set_preferred_vars()
+            #TODO Maybe also add this
+            #sol.objective_value_new()
             if not sol.checkt_constraints[0]:
                 self.old_solution.to_json_file(
                     f"error_lns_merge_old_start_{self.start_day}_end_{self.end_day}"
@@ -341,7 +344,7 @@ class LNS:
             f"total time: {total_time:.2f}s, final objective: {self.old_solution.objective_value}, "
             f"start objective: {self.start_objective}, improvement: {self.start_objective - self.old_solution.objective_value}"
         )
-
+        self.old_solution.timestamp = datetime.now()
         assert (
             self.old_solution.solve_status == cp_model.OPTIMAL
             or self.old_solution.solve_status == cp_model.FEASIBLE

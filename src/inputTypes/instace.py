@@ -127,6 +127,7 @@ class Instance(BaseModel):
     
     # 4, 5, 6, 7, 8, 9, 10
     #TODO I think i did not consider ban and other stuff
+    # Although never encountered, I believe it is possible that the created instance could be invalid
     def instance_to_one_shift_type(self):
         from ..help_functions import hash_string
         # number_of_days: int,
