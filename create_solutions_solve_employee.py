@@ -254,12 +254,12 @@ def main():
                             time.time() - lns_start_time
                         ) + first_opt_time
                         if solution_opt.solve_status in [cp_model.OPTIMAL]:
-                            filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_alt_opt_{x}"
+                            filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_lns_alt_opt_{x}"
                             solution_opt.to_json_file(filename)
                         if solution_opt.solve_status in [
                             cp_model.FEASIBLE
                         ] or solution_opt.solve_status in [cp_model.OPTIMAL]:
-                            filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_alt_time_out_30_{x}"
+                            filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_lns_alt_time_out_30_{x}"
                             solution_opt.to_json_file(filename)
                         else:
                             error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_lns_alt_opt_{x}"
