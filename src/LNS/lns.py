@@ -291,7 +291,7 @@ class LNS:
             sol.calculate_work_vars()
             sol.set_preferred_vars()
             # TODO Maybe also add this
-            # sol.objective_value_new()
+            sol.objective_value_new()
             if not sol.checkt_constraints[0]:
                 self.old_solution.to_json_file(
                     f"error_lns_merge_old_start_{self.start_day}_end_{self.end_day}"
