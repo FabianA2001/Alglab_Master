@@ -52,7 +52,7 @@ class Solver:
 
     def solve(
         self,
-        log_search_progress: bool = False,
+        log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
         disabled_constraints: list[SolverConstraints] = [],
         stop_after_first_solution: bool = False,
@@ -76,7 +76,7 @@ class Solver:
 
     def solve_with_early_stop(
         self,
-        log_search_progress: bool = False,
+        log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
         constraint_set: int = 2,
         stop_after_first_solution: bool = False,
@@ -120,7 +120,7 @@ class Solver:
 
     def solve_callback_with_solution(
         self,
-        log_search_progress: bool = False,
+        log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
         disabled_constraints: list[SolverConstraints] = [],
         stop_after_first_solution: bool = False,
@@ -189,7 +189,6 @@ class Solver:
         # TODO instead of looking which class it is make it so that a parameter is given or each callback class should have a parameter that say if it should continue or stop at first good enough solution
         if isinstance(callback, Callback_Top_Solutions):
             if callback.best_solution is not None:
-                del solver
                 return callback.best_solution  # Return the best solution if it exists
         solution = Solution(self.instance)  # Create a new Solution instance
         solution.solve_status = status
@@ -200,22 +199,18 @@ class Solver:
             solution.disabled_constraints = self.disabled_constraints
             solution.solve_time = self.solve_time
             solution.timestamp = datetime.now()
-            del solver
             return solution  # Return the populated solution
 
         elif status == cp_model.INFEASIBLE:
             self.process_infeasible_solution()
-            del solver
             return solution
 
         elif status == cp_model.UNKNOWN:
             self.process_unknown_status()
-            del solver
             return solution
 
         elif status == cp_model.MODEL_INVALID:
             self.process_invalid_model()
-            del solver
             return solution
 
         return solution  # Return an empty solution for cases where no valid solution was found
@@ -329,7 +324,7 @@ class Solver:
         disabled_constraints: list[SolverConstraints] = [],
         max_time_in_seconds: float = 60.0,
         objective_function: Callable[[], cp_model.ObjLinearExprT] | None = None,
-        log_search_progress: bool = False,
+        log_search_progress: bool = True,
         stop_after_first_solution: bool = False,
         callback: cp_model.CpSolverSolutionCallback | None = None,
         constraint_set: int = 2,
@@ -860,7 +855,7 @@ class Solver:
         instance: instace.Instance,
         disabled_constraints: list[SolverConstraints] = [],
         max_time_in_seconds: float = 60.0,
-        log_search_progress: bool = False,
+        log_search_progress: bool = True,
     ) -> Solution:
         scheduler = SequentialGreedyScheduler(instance)
         binary_matrix = scheduler.get_assignment_matrix()  # für direkte Verwendung
@@ -890,7 +885,7 @@ class Solver:
         instance: instace.Instance,
         disabled_constraints: list[SolverConstraints] = [],
         max_time_in_seconds: float = 60.0,
-        log_search_progress: bool = False,
+        log_search_progress: bool = True,
     ) -> Solution:
         scheduler = SequentialGreedyScheduler2(instance)
         binary_matrix = scheduler.get_assignment_matrix()  # für direkte Verwendung
