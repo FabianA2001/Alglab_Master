@@ -1,3 +1,4 @@
+import os
 from cpsat_utils.testing import AssertModelFeasible, AssertModelInfeasible
 from ortools.sat.python import cp_model
 
@@ -26,12 +27,22 @@ def test_validity_of_produced_solution_one_shift_method_after_time_lns(instance)
     """Test if the returned solution is valid by testing if the original instance with the solution as hard constraint is valid"""
     with AssertModelFeasible() as model:
         start_time = time.time()
-        test_file = Path.joinpath(
-            Path(__file__).resolve().parent.parent,
+        # Get the script directory
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+
+        # Construct the file path as a string
+        test_file_str = os.path.join(
+            script_dir,
             "data",
             "instance_raw",
-            f"{instance}.txt",
+            f"{instance}.txt"
         )
+        print(test_file_str)
+        exit()
+        # Convert the string path to a Path object
+        test_file = Path(test_file_str)
+
+        # Call the function with the Path object
         instance = parseTXT.parse_txt(test_file)
         vars = Shift_vars(instance.model_copy(deep=True))
         solve_employee_obj = solve_employee(instance=instance.model_copy(deep=True))
