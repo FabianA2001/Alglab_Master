@@ -602,7 +602,72 @@ class Solution(BaseModel):
         else:  # Even number of elements
             return (percentages[mid - 1] + percentages[mid]) / 2
 
-    # TODO instead of updating below_prefferd_vars and above_prefferd_vars calculating using the self and the extra solution
+    def set_preferred_vars(self):
+        for day in self.instance.shifts:
+            for type_uid in self.instance.shifts[day]:
+                # Calculate sum of assigned shifts for the specific day and type
+                assigned_shifts = sum(
+                    self.vars[(day, type_uid, emp_uid)]
+                    for emp_uid in self.instance.employees
+                )
+
+                preferred_number = self.instance.shifts[day][
+                    type_uid
+                ].preffert_number_employees
+                import math
+
+                # Calculate below threshold vars
+                below_threshold = math.ceil(
+                    max(0, (2 / 3 * preferred_number) - assigned_shifts)
+                )
+                self.below_threshold_vars[(day, type_uid)] = below_threshold
+
+                # Calculate above preferred vars
+                above_preferred = max(0, assigned_shifts - preferred_number)
+                self.above_prefferd_vars[(day, type_uid)] = above_preferred
+
+                # Calculate below preferred vars
+                below_preferred = max(0, preferred_number - assigned_shifts)
+                self.below_prefferd_vars[(day, type_uid)] = below_preferred
+
+    def objective_value_new(self):
+        objective_value = 0
+
+        for employee_uid in self.instance.employees:
+            for day in range(self.instance.number_of_days):
+                for type_uid in self.instance.shifts[day]:
+                    objective_value += self.instance.get_shift(
+                        day=day, type_uid=type_uid
+                    ).penalty_assigned_day_employee.get(employee_uid, 0) * (
+                        1 - self.vars[(day, type_uid, employee_uid)]
+                    )
+                    objective_value += (
+                        self.instance.shifts[day][
+                            type_uid
+                        ].penalty_not_assigned_day_employee.get(employee_uid, 0)
+                        * self.vars[(day, type_uid, employee_uid)]
+                    )
+
+        for day in range(self.instance.number_of_days):
+            for type_uid in self.instance.shifts[day]:
+                objective_value += (
+                    self.below_prefferd_vars[(day, type_uid)]
+                    * self.instance.shifts[day][type_uid].weight_below_preferred
+                )
+                objective_value += (
+                    self.below_threshold_vars[(day, type_uid)]
+                    * self.instance.shifts[day][type_uid].weight_below_preferred
+                    * 2
+                )
+
+                # Uncomment if needed
+                objective_value += (
+                    self.above_prefferd_vars[(day, type_uid)]
+                    * self.instance.shifts[day][type_uid].weight_above_preferred
+                )
+        self.objective_value = objective_value
+
+    # TODO Maybe instead of updating below_prefferd_vars and above_prefferd_vars calculating using the self and the extra solution
     def copy_solution(self, solution: "Solution"):
         self.vars.update(solution.vars)
         self.weekend_vars.update(solution.weekend_vars)
@@ -684,6 +749,19 @@ class Solution(BaseModel):
                     )
                 # else:
                 #     print(f"key work var {(day_, employee_uid)} is not a key in the to be copied solution")
+
+    def calculate_work_vars(
+        self,
+    ):
+        self.work_vars = {}
+        for day in range(self.instance.number_of_days):
+            for employee_uid in self.instance.employees:
+                for type_uid in self.instance.shifts[day]:
+                    if self.vars[(day, type_uid, employee_uid)] == 1:
+                        self.work_vars[(day, employee_uid)] = 1
+                        break
+                    elif self.vars[(day, type_uid, employee_uid)] == 0:
+                        self.work_vars[(day, employee_uid)] = 0
 
 
 # Standalone constraint checking functions

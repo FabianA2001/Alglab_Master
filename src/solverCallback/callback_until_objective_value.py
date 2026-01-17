@@ -23,11 +23,10 @@ from ..solution import Solution
 
 
 class callback_until_objective_value(cp_model.CpSolverSolutionCallback):
-
     def __init__(self, desired_objective_value):
         super().__init__()
         self.desired_objective_value = desired_objective_value
-    
+
     def on_solution_callback(self):
         if self.objective_value <= self.desired_objective_value:
             self.StopSearch()

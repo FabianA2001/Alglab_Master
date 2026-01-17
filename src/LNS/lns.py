@@ -1,3 +1,4 @@
+from datetime import datetime
 import logging
 import random
 import time
@@ -227,7 +228,7 @@ class LNS:
             disabled_for_window=self.disabled_for_window,
         )
 
-    def solve(self) -> solution.Solution:
+    def solve(self, not_better_break_after: int = 60) -> solution.Solution:
         self.logger.info("Starting LNS solve process")
         start_time = time.time()
         iteration = 0
@@ -235,7 +236,14 @@ class LNS:
 
         # TODO early stop statt runtime im while loop hier
         early_stop = False
+        time_of_last_improvement = time.time()
         while (time.time() - start_time < self.timeout_seconds) and not early_stop:
+            print(f" time is {time.time() - time_of_last_improvement}")
+            if time.time() - time_of_last_improvement >= not_better_break_after:
+                print(
+                    f"exiting because no solution was better since {not_better_break_after} seconds"
+                )
+                break
             assert self.end_day > self.start_day
             iteration += 1
             elapsed_time = time.time() - start_time
@@ -280,6 +288,10 @@ class LNS:
                 continue
             old_sol_debugg = sol.model_copy()
             sol = self.merge_solutions(sol)
+            sol.calculate_work_vars()
+            sol.set_preferred_vars()
+            # TODO Maybe also add this
+            # sol.objective_value_new()
             if not sol.checkt_constraints[0]:
                 self.old_solution.to_json_file(
                     f"error_lns_merge_old_start_{self.start_day}_end_{self.end_day}"
@@ -302,6 +314,7 @@ class LNS:
                 ##########
                 continue
 
+            sol.solve_status = cp_model.FEASIBLE
             self.logger.debug(
                 f"Iteration {iteration}: Found solution with objective {sol.objective_value}"
             )
@@ -317,14 +330,14 @@ class LNS:
                     f"Improvement: {improvement}"
                 )
                 self.old_solution = sol
+                time_of_last_improvement = time.time()
             else:
                 self.logger.debug(
                     f"Iteration {iteration}: No improvement (current best: {self.old_solution.objective_value})"
                 )
                 improvement = -1
             # Lösung ist gut genug
-            early_stop = self.lns_early_stop(sol)
-
+            # early_stop = self.lns_early_stop(sol)
             self.update_search_window(improvement)
 
         total_time = time.time() - start_time
@@ -333,7 +346,7 @@ class LNS:
             f"total time: {total_time:.2f}s, final objective: {self.old_solution.objective_value}, "
             f"start objective: {self.start_objective}, improvement: {self.start_objective - self.old_solution.objective_value}"
         )
-
+        self.old_solution.timestamp = datetime.now()
         assert (
             self.old_solution.solve_status == cp_model.OPTIMAL
             or self.old_solution.solve_status == cp_model.FEASIBLE
