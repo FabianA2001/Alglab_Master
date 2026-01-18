@@ -328,7 +328,7 @@ def main():
                                 error_file.write(error_filename + "\n")
 
                     
-                    for not_better_stop_timer in [3]:
+                    for not_better_stop_timer in [0.5, 3]:
                         lns_start_time = time.time()
                         solution_lns = lns.LNS(
                             sol_or_instance=solution.model_copy(deep=True),
