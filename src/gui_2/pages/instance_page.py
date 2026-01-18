@@ -46,7 +46,13 @@ def render_instance_info() -> None:
             ui.label(f"Anzahl Tage: {instance.number_of_days}")
             ui.label(f"Anzahl Schichttypen: {len(instance.shift_types)}")
             ui.label(f"Anzahl Mitarbeiter: {len(instance.employees)}")
-            ui.label(f"Wochenendtage: {len(instance.weekend_days)}")
+
+        # Zeige Wochenend-Tage an
+        if instance.weekend_days:
+            weekend_list = ", ".join(str(day) for day in sorted(instance.weekend_days))
+            ui.label(f"Wochenenden: Tag {weekend_list}").classes(
+                "text-sm text-gray-600"
+            )
 
 
 def render_shift_type_details(refresh_callback=None) -> None:
