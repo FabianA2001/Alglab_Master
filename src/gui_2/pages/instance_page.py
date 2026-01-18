@@ -261,40 +261,97 @@ def render_shifts_table() -> None:
     with ui.card().classes("w-full mb-4"):
         ui.label("Schichten Übersicht").classes("text-xl font-bold mb-2")
 
-        days = sorted(instance.shifts.keys())
+        all_days = sorted(instance.shifts.keys())
         shift_types = sorted(instance.shift_types.keys())
 
-        columns = _build_shifts_table_columns(days)
-        rows, shift_cell_mapping = _build_shifts_table_rows(instance, days, shift_types)
+        # Calculate weeks (7 days per week)
+        num_weeks = (len(all_days) + 6) // 7  # Round up
+        weeks = []
+        for week_idx in range(num_weeks):
+            start_idx = week_idx * 7
+            end_idx = min(start_idx + 7, len(all_days))
+            week_days = all_days[start_idx:end_idx]
+            weeks.append((week_idx + 1, week_days))
 
-        table = (
-            ui.table(columns=columns, rows=rows, row_key="row_key")
-            .classes("w-full")
-            .props("flat hide-selected-banner dense")
-        )
+        # State for current week
+        current_week = {"value": 0}  # Index in weeks list
 
-        # Custom cell rendering with clickable elements
-        table.add_slot(
-            "body-cell",
-            """
-            <q-td :props="props">
-                <div v-if="props.col.name === 'shift_type'" class="text-weight-medium">
-                    {{ props.value }}
-                </div>
-                <div v-else class="q-pa-xs cursor-pointer hover:bg-gray-100" 
-                     @click="() => $parent.$emit('cell_click', props.row.row_key, props.col.name)">
-                    <div class="text-xs text-gray-600">{{ props.value }}</div>
-                </div>
-            </q-td>
-        """,
-        )
+        @ui.refreshable
+        def render_table():
+            """Render the table for the current week."""
+            week_num, days = weeks[current_week["value"]]
 
-        table.on(
-            "cell_click",
-            lambda e: _display_shift_details_dialog(
-                e.args[0], e.args[1], instance, shift_cell_mapping
-            ),
-        )
+            ui.label(f"Woche {week_num} (Tage {days[0]} - {days[-1]})").classes(
+                "text-lg font-semibold mb-2"
+            )
+
+            columns = _build_shifts_table_columns(days)
+            rows, shift_cell_mapping = _build_shifts_table_rows(
+                instance, days, shift_types
+            )
+
+            table = (
+                ui.table(columns=columns, rows=rows, row_key="row_key")
+                .classes("w-full")
+                .props("flat hide-selected-banner dense")
+            )
+
+            # Custom cell rendering with clickable elements
+            table.add_slot(
+                "body-cell",
+                """
+                <q-td :props="props">
+                    <div v-if="props.col.name === 'shift_type'" class="text-weight-medium">
+                        {{ props.value }}
+                    </div>
+                    <div v-else class="q-pa-xs cursor-pointer hover:bg-gray-100" 
+                         @click="() => $parent.$emit('cell_click', props.row.row_key, props.col.name)">
+                        <div class="text-xs text-gray-600">{{ props.value }}</div>
+                    </div>
+                </q-td>
+            """,
+            )
+
+            table.on(
+                "cell_click",
+                lambda e: _display_shift_details_dialog(
+                    e.args[0], e.args[1], instance, shift_cell_mapping
+                ),
+            )
+
+        # Week navigation
+        if num_weeks > 1:
+            with ui.row().classes("gap-2 items-center mb-4"):
+                ui.button(
+                    icon="chevron_left",
+                    on_click=lambda: [
+                        current_week.update(value=max(0, current_week["value"] - 1)),
+                        render_table.refresh(),
+                    ],
+                ).props("flat").bind_enabled_from(
+                    current_week, "value", lambda v: v > 0
+                )
+
+                ui.label().bind_text_from(
+                    current_week,
+                    "value",
+                    lambda v: f"Woche {weeks[v][0]} von {num_weeks}",
+                ).classes("font-medium")
+
+                ui.button(
+                    icon="chevron_right",
+                    on_click=lambda: [
+                        current_week.update(
+                            value=min(num_weeks - 1, current_week["value"] + 1)
+                        ),
+                        render_table.refresh(),
+                    ],
+                ).props("flat").bind_enabled_from(
+                    current_week, "value", lambda v: v < num_weeks - 1
+                )
+
+        # Render table
+        render_table()
 
 
 def _build_shifts_table_columns(days: List[int]) -> List[Dict[str, str]]:
