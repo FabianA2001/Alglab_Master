@@ -1,9 +1,24 @@
 import hashlib
-from typing import List, Tuple, Dict, Optional, TYPE_CHECKING
+import re
+from typing import Dict, List, Optional, Tuple
 
-
-from src.solution import Solution
 from src.inputTypes import instace
+from src.solution import Solution
+
+
+def natural_sort_key(text: str) -> list:
+    """Erzeugt einen Sortierschlüssel für natürliche Sortierung.
+
+    Konvertiert Zahlen in Strings zu Integers für korrekte numerische Sortierung.
+    Beispiel: 'instance_2' < 'instance_13' < 'instance_20'
+
+    Args:
+        text: Der zu sortierende Text
+
+    Returns:
+        list: Liste von Strings und Integers für die Sortierung
+    """
+    return [int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", text)]
 
 
 def find_best_solution_for_modified_instance(

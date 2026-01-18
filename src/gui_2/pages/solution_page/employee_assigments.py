@@ -12,13 +12,14 @@ from . import components
 COLOR_CORRECT_COUNT = "background-color: #d1fae5;"  # Green
 COLOR_TOO_FEW = "background-color: #fee2e2;"  # Red
 COLOR_TOO_MANY = "background-color: #fed7aa;"  # Orange
-COLOR_SEARCH_HIGHLIGHT = "#ff9800"  # Orange for search highlight
 
 # Weight adjustment constant for soft buttons
 SOFT_WEIGHT_ADJUSTMENT = 10
 
 
-def employee_assignments(solution: Solution) -> None:
+def employee_assignments(
+    solution: Solution, current_week: dict, comparison_refresh_callback=None
+) -> None:
     """
     Display employee assignments in a table format.
 
@@ -27,83 +28,113 @@ def employee_assignments(solution: Solution) -> None:
 
     Args:
         solution: The Solution object containing shift assignments.
+        current_week: Dictionary mit 'value' key für die aktuelle Woche (shared)
+        comparison_refresh_callback: Optional callback to refresh comparison table
     """
     with ui.card().classes("w-full mb-4"):
         ui.label("Mitarbeiter-Zuordnung").classes("text-xl font-bold mb-2")
 
-        days = _extract_days(solution)
+        all_days = _extract_days(solution)
         shift_types = _extract_shift_types(solution)
 
-        columns = _build_table_columns(days)
-        rows, shift_mapping = _build_table_rows(solution, days, shift_types)
+        # Calculate weeks (7 days per week)
+        num_weeks = (len(all_days) + 6) // 7  # Round up
+        weeks = []
+        for week_idx in range(num_weeks):
+            start_idx = week_idx * 7
+            end_idx = min(start_idx + 7, len(all_days))
+            week_days = all_days[start_idx:end_idx]
+            weeks.append((week_idx + 1, week_days))
 
-        # Search input for employee highlighting
-        search_value = {"term": ""}
+        @ui.refreshable
+        def render_table():
+            """Render the table for the current week."""
+            week_num, days = weeks[current_week["value"]]
 
-        search_input = (
-            ui.input(label="Mitarbeiter suchen", placeholder="Name eingeben...")
-            .classes("w-64 mb-4")
-            .props("clearable outlined dense")
-        )
+            ui.label(f"Woche {week_num} (Tage {days[0]} - {days[-1]})").classes(
+                "text-lg font-semibold mb-2"
+            )
 
-        table = (
-            ui.table(columns=columns, rows=rows, row_key="row_key")
-            .classes("w-full")
-            .props("flat hide-selected-banner")
-        )
+            columns = _build_table_columns(days)
+            rows, shift_mapping = _build_table_rows(solution, days, shift_types)
 
-        # Add custom cell rendering with clickable elements and color coding
-        table.add_slot(
-            "body-cell",
-            """
-            <q-td :props="props">
-                <div v-if="props.col.name === 'shift_type'" class="text-weight-medium">
-                    {{ props.value }}
-                </div>
-                <div v-else-if="props.value === '-'" class="text-grey-5 text-center">
-                    —
-                </div>
-                <div v-else class="q-pa-xs cursor-pointer" 
-                     :style="props.row['_color_' + props.col.name] || ''"
-                     @click="() => $parent.$emit('cell_click', props.row.row_key, props.col.name)">
-                    <q-badge v-for="(name, index) in props.value.split(', ')" 
-                             :key="index"
-                             color="primary" 
-                             text-color="white"
-                             class="q-ma-xs">
-                        {{ name }}
-                    </q-badge>
-                </div>
-            </q-td>
-        """,
-        )
+            table = (
+                ui.table(columns=columns, rows=rows, row_key="row_key")
+                .classes("w-full")
+                .props("flat hide-selected-banner")
+            )
 
-        def update_search_highlights(event) -> None:
-            """Update badge colors based on search term."""
-            search_term = event.args.lower() if isinstance(event.args, str) else ""
-            search_value["term"] = search_term
+            # Add custom cell rendering with clickable elements and color coding
+            table.add_slot(
+                "body-cell",
+                """
+                <q-td :props="props">
+                    <div v-if="props.col.name === 'shift_type'" class="text-weight-medium">
+                        {{ props.value }}
+                    </div>
+                    <div v-else-if="props.value === '-'" class="text-grey-5 text-center">
+                        —
+                    </div>
+                    <div v-else class="q-pa-xs cursor-pointer" 
+                         :style="props.row['_color_' + props.col.name] || ''"
+                         @click="() => $parent.$emit('cell_click', props.row.row_key, props.col.name)">
+                        <q-badge v-for="(name, index) in props.value.split(', ')" 
+                                 :key="index"
+                                 color="primary" 
+                                 text-color="white"
+                                 class="q-ma-xs">
+                            {{ name }}
+                        </q-badge>
+                    </div>
+                </q-td>
+            """,
+            )
 
-            # Update badge colors via JavaScript for exact match highlighting
-            ui.run_javascript(f"""
-                const searchTerm = '{search_term}';
-                document.querySelectorAll('.q-badge').forEach(badge => {{
-                    const name = badge.textContent.trim().toLowerCase();
-                    if (searchTerm && name === searchTerm) {{
-                        badge.style.backgroundColor = '{COLOR_SEARCH_HIGHLIGHT}';
-                    }} else {{
-                        badge.style.backgroundColor = '';
-                    }}
-                }});
-            """)
+            table.on(
+                "cell_click",
+                lambda e: _display_details_dialog(
+                    e.args[0], e.args[1], solution, shift_mapping
+                ),
+            )
 
-        search_input.on("update:model-value", update_search_highlights)
+        # Week navigation
+        if num_weeks > 1:
+            with ui.row().classes("gap-2 items-center mb-4"):
 
-        table.on(
-            "cell_click",
-            lambda e: _display_details_dialog(
-                e.args[0], e.args[1], solution, shift_mapping
-            ),
-        )
+                def on_week_change(new_value):
+                    """Handle week change and refresh both tables."""
+                    current_week.update(value=new_value)
+                    render_table.refresh()
+                    if comparison_refresh_callback:
+                        try:
+                            comparison_refresh_callback()
+                        except (RuntimeError, AttributeError):
+                            pass
+
+                ui.button(
+                    icon="chevron_left",
+                    on_click=lambda: on_week_change(max(0, current_week["value"] - 1)),
+                ).props("flat").bind_enabled_from(
+                    current_week, "value", lambda v: v > 0
+                )
+
+                ui.label().bind_text_from(
+                    current_week,
+                    "value",
+                    lambda v: f"Woche {weeks[v][0]} von {num_weeks}",
+                ).classes("font-medium")
+
+                ui.button(
+                    icon="chevron_right",
+                    on_click=lambda: on_week_change(
+                        min(num_weeks - 1, current_week["value"] + 1)
+                    ),
+                ).props("flat").bind_enabled_from(
+                    current_week, "value", lambda v: v < num_weeks - 1
+                )
+
+        # Render table
+        render_table()
 
         # Color legend
         with ui.row().classes("mt-4 gap-4"):
@@ -189,8 +220,12 @@ def _build_table_rows(
         row_key = f"shift_{idx}"
         shift_mapping[row_key] = shift_type
 
+        shift_type_obj = solution.instance.shift_types.get(shift_type)
+        if shift_type_obj is None:
+            continue
+
         row = {
-            "shift_type": f"Schicht {solution.instance.shift_types[shift_type].name}",
+            "shift_type": f"Schicht {shift_type_obj.name}",
             "row_key": row_key,
         }
 
@@ -229,11 +264,13 @@ def _get_assigned_employees(solution: Solution, day: int, shift_type: Any) -> Li
     Returns:
         List of employee names assigned to the shift.
     """
-    return [
-        solution.instance.employees[emp_uid].name
-        for emp_uid in solution.instance.employees.keys()
-        if solution.is_employee_assigned(day, shift_type, emp_uid)
-    ]
+    result = []
+    for emp_uid in solution.instance.employees.keys():
+        if solution.is_employee_assigned(day, shift_type, emp_uid):
+            emp = solution.instance.employees.get(emp_uid)
+            if emp:
+                result.append(emp.name)
+    return result
 
 
 def _display_details_dialog(
@@ -256,8 +293,16 @@ def _display_details_dialog(
         return
 
     day = int(col_name.replace("day_", ""))
-    shift_type_id = shift_mapping[row_key]
-    shift_name = solution.instance.shift_types[shift_type_id].name
+    shift_type_id = shift_mapping.get(row_key)
+    if shift_type_id is None:
+        ui.notify("Schichttyp nicht gefunden.", type="negative")
+        return
+
+    shift_type_obj = solution.instance.shift_types.get(shift_type_id)
+    if shift_type_obj is None:
+        ui.notify("Schichttyp nicht gefunden.", type="negative")
+        return
+    shift_name = shift_type_obj.name
 
     assigned_employees = _get_assigned_employees(solution, day, shift_type_id)
     actual_count = len(assigned_employees)
@@ -404,7 +449,7 @@ def _render_employee_modification_section(
                 # Aktualisiere Instance im State
                 state.set_instance(solution.instance)
 
-                emp_name = all_employees[selected_uid]
+                emp_name = all_employees.get(selected_uid, "Unbekannt")
                 ui.notify(
                     f"Soft: Strafe für {emp_name} erhöht auf {current_penalty + SOFT_WEIGHT_ADJUSTMENT}",
                     type="positive",
@@ -426,7 +471,7 @@ def _render_employee_modification_section(
                 # Aktualisiere Instance im State
                 state.set_instance(solution.instance)
 
-                emp_name = all_employees[selected_uid]
+                emp_name = all_employees.get(selected_uid, "Unbekannt")
                 ui.notify(
                     f"Hard: {emp_name} wurde zur Sperrliste hinzugefügt",
                     type="positive",
@@ -476,7 +521,7 @@ def _render_employee_modification_section(
                 # Aktualisiere Instance im State
                 state.set_instance(solution.instance)
 
-                emp_name = all_employees[selected_uid]
+                emp_name = all_employees.get(selected_uid, "Unbekannt")
                 ui.notify(
                     f"Soft: Strafe für Nicht-Zuweisung von {emp_name} erhöht auf {current_penalty + SOFT_WEIGHT_ADJUSTMENT}",
                     type="positive",
@@ -498,7 +543,7 @@ def _render_employee_modification_section(
                 # Aktualisiere Instance im State
                 state.set_instance(solution.instance)
 
-                emp_name = all_employees[selected_uid]
+                emp_name = all_employees.get(selected_uid, "Unbekannt")
                 ui.notify(
                     f"Hard: {emp_name} wurde zur Zuweisungsliste hinzugefügt",
                     type="positive",

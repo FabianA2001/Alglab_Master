@@ -1,14 +1,14 @@
+import random
 from datetime import datetime
+from functools import partial
 from typing import Callable
 
 from ortools.sat.python import cp_model
 
 from src.greedy_scheduler import SequentialGreedyScheduler, SequentialGreedyScheduler2
 
-from functools import partial
-
 from . import shift_vars
-from .callback_early_stop import Callback_Early_Stop, Callback_Early_Stop_immediate
+from .callback_early_stop import Callback_Early_Stop
 from .solverCallback.callback_three_best_solutions import Callback_Top_Solutions
 from .inputTypes import instace
 from .module import (
@@ -19,10 +19,10 @@ from .module import (
     limited_shifts_per_type_validation,
     max_Cons_shifts_new,
     max_weekend_days,
-    minimum_consecutive_shifts_new,
-    minimum_consecutove_days_off_new,
     minimum_consecutive_days_off,
     minimum_consecutive_shifts,
+    minimum_consecutive_shifts_new,
+    minimum_consecutove_days_off_new,
     minMaxWorkTime,
     shift_assignment_single_day_validation,
     shift_rotation_constraint,
@@ -33,7 +33,6 @@ from .solution import Solution
 from .solverCallback.callback_collect_all_solutions import CollectAllSolutions
 from .solverCallback.callback_three_best_solutions import Callback_Top_Solutions
 
-import random
 
 class Solver:
     def __init__(
@@ -53,47 +52,42 @@ class Solver:
 
     def solve(
         self,
-        log_search_progress: bool = False,
+        log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
         disabled_constraints: list[SolverConstraints] = [],
         stop_after_first_solution: bool = False,
         callback: cp_model.CpSolverSolutionCallback | None = None,
-        constraint_set = 1,
+        constraint_set=2,
         automaton: bool = False,
     ) -> Solution:
-        objective_function = partial(self.objective_value_new,)
-        return self.solve_callback_with_solution(log_search_progress=log_search_progress, max_time_in_seconds=max_time_in_seconds, disabled_constraints=disabled_constraints, stop_after_first_solution=stop_after_first_solution, callback=callback, constraint_set=constraint_set, automaton=automaton, objective_function=objective_function)
+        objective_function = partial(
+            self.objective_value_new,
+        )
+        return self.solve_callback_with_solution(
+            log_search_progress=log_search_progress,
+            max_time_in_seconds=max_time_in_seconds,
+            disabled_constraints=disabled_constraints,
+            stop_after_first_solution=stop_after_first_solution,
+            callback=callback,
+            constraint_set=constraint_set,
+            automaton=automaton,
+            objective_function=objective_function,
+        )
 
     def solve_with_early_stop(
         self,
-        log_search_progress: bool = False,
+        log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
-        disabled_constraints: list[SolverConstraints] = [],
-        constraint_set = 0,
+        constraint_set: int = 2,
+        stop_after_first_solution: bool = False,
     ):
         callback = Callback_Early_Stop(self.instance, self.vars)
         return self.solve(
             log_search_progress,
             max_time_in_seconds,
             callback=callback,
-            constraint_set=constraint_set
-        )
-    
-    def solve_with_early_stop_immediate(
-        self,
-        log_search_progress: bool = True,
-        max_time_in_seconds: float = 60.0,
-        disabled_constraints: list[SolverConstraints] = [],
-        constraint_set = 0,
-        **solver_params,
-    ):
-        callback = Callback_Early_Stop_immediate(self.instance, self.vars)
-        return self.solve(
-            log_search_progress,
-            max_time_in_seconds,
-            disabled_constraints,
-            callback=callback,
-            constraint_set=constraint_set
+            constraint_set=constraint_set,
+            stop_after_first_solution=stop_after_first_solution,
         )
 
     def objevtive_value(self):
@@ -126,18 +120,19 @@ class Solver:
 
     def solve_callback_with_solution(
         self,
-        log_search_progress: bool = False,
+        log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
         disabled_constraints: list[SolverConstraints] = [],
         stop_after_first_solution: bool = False,
         callback: cp_model.CpSolverSolutionCallback | None = None,
-        objective_function: Callable[[], cp_model.ObjLinearExprT] | None = None,  # Accept a callable
-        constraint_set = 1,
+        objective_function: Callable[[], cp_model.ObjLinearExprT]
+        | None = None,  # Accept a callable
+        constraint_set=2,
         automaton: bool = False,
     ) -> Solution:
         """
         A function to handle diverse needs, like different objective functions and callbacks
-        
+
         :param self: Description
         :param log_search_progress: print Solve log?
         :type log_search_progress: bool
@@ -159,7 +154,7 @@ class Solver:
         """
         if len(disabled_constraints) > 0:
             self.disabled_constraints = disabled_constraints
-        self.set_constraints(constraint_set = constraint_set, automaton=automaton)
+        self.set_constraints(constraint_set=constraint_set, automaton=automaton)
         solver = cp_model.CpSolver()
         solver.parameters.random_seed = random.randint(0, 9999999)
         solver.parameters.log_search_progress = log_search_progress
@@ -173,7 +168,7 @@ class Solver:
             objective_function = self.objective_value_new
 
         self.vars.model.Minimize(objective_function())
-        
+
         self.start_solve_time = datetime.now()
         if callback is not None:
             status = solver.SolveWithSolutionCallback(self.vars.model, callback)
@@ -181,7 +176,7 @@ class Solver:
             status = solver.Solve(self.vars.model)
         self.solve_time = (datetime.now() - self.start_solve_time).total_seconds()
         return self.handle_results(status, solver, callback)
-    
+
     def handle_results(
         self,
         status,
@@ -189,12 +184,11 @@ class Solver:
         callback: cp_model.CpSolverSolutionCallback | None = None,
     ) -> Solution:
         """Handles the different results returned by the solver and returns a solution."""
-        
+
         # Check for the best solution stored in the callback
-        #TODO instead of looking which class it is make it so that a parameter is given or each callback class should have a parameter that say if it should continue or stop at first good enough solution
+        # TODO instead of looking which class it is make it so that a parameter is given or each callback class should have a parameter that say if it should continue or stop at first good enough solution
         if isinstance(callback, Callback_Top_Solutions):
             if callback.best_solution is not None:
-                del solver
                 return callback.best_solution  # Return the best solution if it exists
         solution = Solution(self.instance)  # Create a new Solution instance
         solution.solve_status = status
@@ -205,22 +199,18 @@ class Solver:
             solution.disabled_constraints = self.disabled_constraints
             solution.solve_time = self.solve_time
             solution.timestamp = datetime.now()
-            del solver
             return solution  # Return the populated solution
 
         elif status == cp_model.INFEASIBLE:
             self.process_infeasible_solution()
-            del solver
             return solution
 
         elif status == cp_model.UNKNOWN:
             self.process_unknown_status()
-            del solver
             return solution
 
         elif status == cp_model.MODEL_INVALID:
             self.process_invalid_model()
-            del solver
             return solution
 
         return solution  # Return an empty solution for cases where no valid solution was found
@@ -259,10 +249,16 @@ class Solver:
                 below_value = solver.Value(
                     self.vars.get_below_prefferd_var(day, type_uid)
                 )
+                below_threshold_value = solver.Value(
+                    self.vars.get_below_threshold_var(day, type_uid)
+                )
                 solution.set_above_prefferd_var(day, type_uid, above_value)
                 solution.set_below_prefferd_var(day, type_uid, below_value)
-                
-        solution.instance.name = solution.instance.name + "_" + f"seed{solver.parameters.random_seed}"
+                solution.set_below_threshold_var(day, type_uid, below_threshold_value)
+
+        solution.instance.name = (
+            solution.instance.name + "_" + f"seed{solver.parameters.random_seed}"
+        )
 
     def process_infeasible_solution(self) -> None:
         """Handles the case when no feasible solution exists."""
@@ -278,7 +274,6 @@ class Solver:
         """Handles the case when the model is invalid."""
         print("The model provided is invalid and cannot be solved.")
         print("The model provided is invalid and cannot be solved.")
-    
     def warm_start(
         self,
         solution: Solution,
@@ -287,11 +282,17 @@ class Solver:
         """Warm starts the solver with a given solution."""
 
         # Create a callable for the objective_function
-        objective_function = partial(self.objective_value_weight_changes,
-                                    solution=solution,)
+        objective_function = partial(
+            self.objective_value_weight_changes,
+            solution=solution,
+        )
         callback = Callback_Early_Stop(self.instance, self.vars)
-        return self.warm_start_generalized(hint_solution=solution, max_time_in_seconds=max_time_in_seconds, objective_function=objective_function, callback=callback)
-
+        return self.warm_start_generalized(
+            hint_solution=solution,
+            max_time_in_seconds=max_time_in_seconds,
+            objective_function=objective_function,
+            callback=callback,
+        )
 
     def warm_start_multi(
         self,
@@ -325,10 +326,12 @@ class Solver:
         log_search_progress: bool = False,
         stop_after_first_solution: bool = False,
         callback: cp_model.CpSolverSolutionCallback | None = None,
+        constraint_set: int = 2,
+        Test_solution: bool = False,
     ) -> Solution:
         """
         A function that allow to give a solution as hint and another solution as hard constraints (only work_var and var are considered)
-        
+
         :param self: Description
         :param hint_solution: Solution to add as a hint
         :type hint_solution: Solution | None
@@ -346,6 +349,8 @@ class Solver:
         :type stop_after_first_solution: bool
         :param callback: Description
         :type callback: cp_model.CpSolverSolutionCallback | None
+        :param Test_solution: If set to True hard constraint will be added for all instance variable
+        :type Test_solution: bool
         :return: Description
         :rtype: Solution
         """
@@ -356,9 +361,12 @@ class Solver:
                 for day in range(self.instance.number_of_days):
                     for type_uid, _ in self.instance.shifts[day].items():
                         if (day, type_uid, employee_uid) in hint_solution.vars.keys():
-                            var_value = hint_solution.vars[(day, type_uid, employee_uid)] == 1
+                            var_value = (
+                                hint_solution.vars[(day, type_uid, employee_uid)] == 1
+                            )
                             self.vars.model.AddHint(
-                                self.vars.get_var(day, type_uid, employee_uid), var_value
+                                self.vars.get_var(day, type_uid, employee_uid),
+                                var_value,
                             )
                         # elif employee_uid_ != employee_uid:
                         #     employee_uid_ = employee_uid
@@ -377,32 +385,190 @@ class Solver:
                 #         weekend_value = hint_solution.weekend_vars.get((weekend, employee_uid)) == 1  # Assuming 0 means "not on weekend"
                 #         self.vars.model.AddHint(self.vars.get_weekend_var(weekend, employee_uid), weekend_value)
 
+                # Adding hints for weekend_vars
+                for weekend in range(round(self.instance.number_of_days / 7)):
+                    if (weekend, employee_uid) in hint_solution.weekend_vars.keys():
+                        var_value = (
+                            hint_solution.weekend_vars[(weekend, employee_uid)] == 1
+                        )
+                        self.vars.model.AddHint(
+                            self.vars.get_weekend_var(weekend, employee_uid), var_value
+                        )
+
+            # Adding hints for above_prefferd_vars
+            for day in range(self.instance.number_of_days):
+                for type_uid in self.instance.shifts[day].keys():
+                    if (day, type_uid) in hint_solution.above_prefferd_vars.keys():
+                        var_value = hint_solution.above_prefferd_vars[(day, type_uid)]
+                        self.vars.model.AddHint(
+                            self.vars.get_above_prefferd_var(day, type_uid), var_value
+                        )
+                    # Adding hints for below_prefferd_vars
+                    if (day, type_uid) in hint_solution.below_prefferd_vars.keys():
+                        var_value = hint_solution.below_prefferd_vars[(day, type_uid)]
+                        self.vars.model.AddHint(
+                            self.vars.get_below_prefferd_var(day, type_uid), var_value
+                        )
+                    # Adding hints for below_threshold_vars
+                    if (day, type_uid) in hint_solution.below_threshold_vars.keys():
+                        var_value = hint_solution.below_threshold_vars[(day, type_uid)]
+                        self.vars.model.AddHint(
+                            self.vars.get_below_threshold_var(day, type_uid), var_value
+                        )
+
         if hard_constraint_solution is not None:
             for employee_uid in self.instance.employees.keys():
                 for day in range(self.instance.number_of_days):
                     for type_uid, _ in self.instance.shifts[day].items():
-                        if (day, type_uid, employee_uid) in hard_constraint_solution.vars.keys():
-                            var_value = hard_constraint_solution.vars[(day, type_uid, employee_uid)] == 1
-                            if hint_solution is None or (day, type_uid, employee_uid) not in hint_solution.vars.keys():
+                        if (
+                            day,
+                            type_uid,
+                            employee_uid,
+                        ) in hard_constraint_solution.vars.keys():
+                            var_value = (
+                                hard_constraint_solution.vars[
+                                    (day, type_uid, employee_uid)
+                                ]
+                                == 1
+                            )
+                            if (
+                                hint_solution is None
+                                or (day, type_uid, employee_uid)
+                                not in hint_solution.vars.keys()
+                            ):
                                 self.vars.model.AddHint(
-                                    self.vars.get_var(day, type_uid, employee_uid), var_value
+                                    self.vars.get_var(day, type_uid, employee_uid),
+                                    var_value,
                                 )
-                            self.vars.model.add(self.vars.get_var(day, type_uid, employee_uid) == var_value)
+                            self.vars.model.add(
+                                self.vars.get_var(day, type_uid, employee_uid)
+                                == var_value
+                            )
                         # elif employee_uid_ != employee_uid:
                         #     employee_uid_ = employee_uid
                         #     print(f"var not found in hard_constraint solution {employee_uid}")
             for employee_uid, _ in self.instance.employees.items():
                 for day in range(self.instance.number_of_days):
                     if (day, employee_uid) in hard_constraint_solution.work_vars.keys():
-                        var_value = hard_constraint_solution.work_vars[(day, employee_uid)] == 1
-                        if hint_solution is None or (day, employee_uid) not in hint_solution.work_vars.keys():
+                        var_value = (
+                            hard_constraint_solution.work_vars[(day, employee_uid)] == 1
+                        )
+                        if (
+                            hint_solution is None
+                            or (day, employee_uid) not in hint_solution.work_vars.keys()
+                        ):
                             self.vars.model.AddHint(
                                 self.vars.get_work_vars(day, employee_uid), var_value
                             )
-                        self.vars.model.add(self.vars.get_work_vars(day, employee_uid) == var_value)
+                        self.vars.model.add(
+                            self.vars.get_work_vars(day, employee_uid) == var_value
+                        )
                     # elif employee_uid_ != employee_uid:
                     #     employee_uid_ = employee_uid
                     #     print(f"work var not found in hard_constraint solution {employee_uid}")
+
+            # Readd the following lines to test the full solutions
+            if Test_solution:
+                for employee_uid in self.instance.employees.keys():
+                    for day in range(self.instance.number_of_days):
+                        for type_uid, _ in self.instance.shifts[day].items():
+                            if (
+                                day,
+                                type_uid,
+                                employee_uid,
+                            ) in hard_constraint_solution.vars.keys():
+                                var_value = (
+                                    hard_constraint_solution.vars[
+                                        (day, type_uid, employee_uid)
+                                    ]
+                                    == 1
+                                )
+                                self.vars.model.Add(
+                                    self.vars.get_var(day, type_uid, employee_uid)
+                                    == var_value
+                                )
+
+                            if (
+                                day,
+                                employee_uid,
+                            ) in hard_constraint_solution.work_vars.keys():
+                                var_value = (
+                                    hard_constraint_solution.work_vars[
+                                        (day, employee_uid)
+                                    ]
+                                    == 1
+                                )
+                                self.vars.model.Add(
+                                    self.vars.get_work_vars(day, employee_uid)
+                                    == var_value
+                                )
+
+                    # Adding hard constraints for weekend_vars
+                    for weekend in range(round(self.instance.number_of_days / 7)):
+                        if (
+                            weekend,
+                            employee_uid,
+                        ) in hard_constraint_solution.weekend_vars.keys():
+                            var_value = (
+                                hard_constraint_solution.weekend_vars[
+                                    (weekend, employee_uid)
+                                ]
+                                == 1
+                            )
+                            self.vars.model.Add(
+                                self.vars.get_weekend_var(weekend, employee_uid)
+                                == var_value
+                            )
+
+                    # Adding hard constraints for above_prefferd_vars
+                    for day in range(self.instance.number_of_days):
+                        for type_uid in self.instance.shifts[day].keys():
+                            if (
+                                day,
+                                type_uid,
+                            ) in hard_constraint_solution.above_prefferd_vars.keys():
+                                var_value = (
+                                    hard_constraint_solution.above_prefferd_vars[
+                                        (day, type_uid)
+                                    ]
+                                )
+                                self.vars.model.Add(
+                                    self.vars.get_above_prefferd_var(day, type_uid)
+                                    == var_value
+                                )
+                                # print("get_above_prefferd_var")
+
+                            # Adding hard constraints for below_prefferd_vars
+                            if (
+                                day,
+                                type_uid,
+                            ) in hard_constraint_solution.below_prefferd_vars.keys():
+                                var_value = (
+                                    hard_constraint_solution.below_prefferd_vars[
+                                        (day, type_uid)
+                                    ]
+                                )
+                                self.vars.model.Add(
+                                    self.vars.get_below_prefferd_var(day, type_uid)
+                                    == var_value
+                                )
+                                # print("get_below_prefferd_var")
+
+                            # Adding hard constraints for below_threshold_vars
+                            if (
+                                day,
+                                type_uid,
+                            ) in hard_constraint_solution.below_threshold_vars.keys():
+                                var_value = (
+                                    hard_constraint_solution.below_threshold_vars[
+                                        (day, type_uid)
+                                    ]
+                                )
+                                self.vars.model.Add(
+                                    self.vars.get_below_threshold_var(day, type_uid)
+                                    == var_value
+                                )
+                                # print("get_below_threshold_var")
 
         return self.solve_callback_with_solution(
             disabled_constraints=disabled_constraints,
@@ -410,9 +576,10 @@ class Solver:
             log_search_progress=log_search_progress,
             objective_function=objective_function,
             stop_after_first_solution=stop_after_first_solution,
-            callback=callback
+            callback=callback,
+            constraint_set=constraint_set,
         )
-    
+
     def objective_value_weight_changes(
         self,
         solution: Solution,
@@ -440,16 +607,38 @@ class Solver:
                     # If the assignment has changed, add the change weight
 
                     objective_value += changes_weight * changed
+
         return objective_value + self.objective_value_new()
+
+    def solve_min_changes(
+        self,
+        solution: Solution,
+        log_search_progress: bool = True,
+        max_time_in_seconds: float = 60.0,
+    ) -> Solution:
+        self.set_constraints(automaton=False)
+        solver = cp_model.CpSolver()
+        solver.parameters.log_search_progress = log_search_progress
+        solver.parameters.max_time_in_seconds = max_time_in_seconds
+
+        self.vars.model.Minimize(self.objective_value_weight_changes(solution=solution))
+        self.start_solve_time = datetime.now()
+        # status = solver.Solve(self.vars.model)
+        ##mit Callback
+        callback = Callback_Early_Stop(self.instance, self.vars)
+        status = solver.SolveWithSolutionCallback(self.vars.model, callback)
+        ###
+        self.solve_time = (datetime.now() - self.start_solve_time).total_seconds()
+        return self.handle_results(status, solver)
 
     def set_constraints(
         self,
-        constraint_set = 1,
+        constraint_set=2,
         automaton: bool = False,
     ):
         """
         Docstring for set_constraints
-        
+
         :param self: Description
         :param log_search_progress: Description
         :type log_search_progress: bool
@@ -483,91 +672,153 @@ class Solver:
                 self.instance, self.vars
             )
         if SolverConstraints.max_Cons_Shifts not in self.disabled_constraints:
-            max_Cons_shifts_new.Max_Cons_Shifts_new().build(
-                self.instance, self.vars
-            )
+            max_Cons_shifts_new.Max_Cons_Shifts_new().build(self.instance, self.vars)
         if SolverConstraints.max_weekend_days not in self.disabled_constraints:
             max_weekend_days.Max_weekend_days().build(self.instance, self.vars)
-        if SolverConstraints.minimum_consecutive_days_off not in self.disabled_constraints and constraint_set == 0:
+        if (
+            SolverConstraints.minimum_consecutive_days_off
+            not in self.disabled_constraints
+            and constraint_set == 0
+        ):
             minimum_consecutive_days_off.Minimum_consecutive_days_off().build(
                 self.instance, self.vars
             )
-            #print("Minimum_consecutive_days_off")
-        if SolverConstraints.minimum_consecutive_shifts not in self.disabled_constraints and constraint_set == 0:
+            # print("Minimum_consecutive_days_off")
+        if (
+            SolverConstraints.minimum_consecutive_shifts
+            not in self.disabled_constraints
+            and constraint_set == 0
+        ):
             minimum_consecutive_shifts.Minimum_consecutive_shifts().build(
                 self.instance, self.vars
             )
-            #print("Minimum_consecutive_shifts")
-        if SolverConstraints.minimum_consecutive_days_off not in self.disabled_constraints and constraint_set == 1:
+            # print("Minimum_consecutive_shifts")
+        if (
+            SolverConstraints.minimum_consecutive_days_off
+            not in self.disabled_constraints
+            and constraint_set == 1
+        ):
             minimum_consecutove_days_off_new.Minimum_consecutive_days_off_new().build(
                 self.instance, self.vars
-            ) 
-            #print("Minimum_consecutive_days_off_new")
-        if SolverConstraints.minimum_consecutive_shifts not in self.disabled_constraints and constraint_set == 1:
+            )
+            # print("Minimum_consecutive_days_off_new")
+        if (
+            SolverConstraints.minimum_consecutive_shifts
+            not in self.disabled_constraints
+            and constraint_set == 1
+        ):
             minimum_consecutive_shifts_new.Minimum_consecutive_shifts_new().build(
                 self.instance, self.vars
             )
-            #print("Minimum_consecutive_shifts_new")
-        if SolverConstraints.minimum_consecutive_days_off not in self.disabled_constraints and constraint_set == 2:
+            # print("Minimum_consecutive_shifts_new")
+        if (
+            SolverConstraints.minimum_consecutive_days_off
+            not in self.disabled_constraints
+            and constraint_set == 2
+        ):
             minimum_consecutove_days_off_new.Min_Cons_Days_Off_Alternative().build(
                 self.instance, self.vars
             )
-            #print("Min_Cons_Days_Off_Alternative")
-        if SolverConstraints.minimum_consecutive_shifts not in self.disabled_constraints and constraint_set == 2:
+            # print("Min_Cons_Days_Off_Alternative")
+        if (
+            SolverConstraints.minimum_consecutive_shifts
+            not in self.disabled_constraints
+            and constraint_set == 2
+        ):
             minimum_consecutive_shifts_new.Min_Cons_Shifts_Alternative().build(
                 self.instance, self.vars
             )
-            #print("Min_Cons_Shifts_Alternative")
-        if SolverConstraints.minimum_consecutive_days_off not in self.disabled_constraints and constraint_set == 3:
+            # print("Min_Cons_Shifts_Alternative")
+        if (
+            SolverConstraints.minimum_consecutive_days_off
+            not in self.disabled_constraints
+            and constraint_set == 3
+        ):
             minimum_consecutove_days_off_new.Min_Cons_Days_Off_Alternative_Enforce_If().build(
                 self.instance, self.vars
             )
-            #print("Min_Cons_Days_Off_Alternative_Enforce_If")
-        if SolverConstraints.minimum_consecutive_shifts not in self.disabled_constraints and constraint_set == 3:
+            # print("Min_Cons_Days_Off_Alternative_Enforce_If")
+        if (
+            SolverConstraints.minimum_consecutive_shifts
+            not in self.disabled_constraints
+            and constraint_set == 3
+        ):
             minimum_consecutive_shifts_new.Min_Cons_Shifts_Alternative_Enforce_If().build(
                 self.instance, self.vars
             )
-            #print("Min_Cons_Shifts_Alternative_Enforce_If")
-        if SolverConstraints.minimum_consecutive_days_off not in self.disabled_constraints and constraint_set == 4:
+            # print("Min_Cons_Shifts_Alternative_Enforce_If")
+        if (
+            SolverConstraints.minimum_consecutive_days_off
+            not in self.disabled_constraints
+            and constraint_set == 4
+        ):
             minimum_consecutove_days_off_new.Min_Cons_Days_Off_Alternative_exact().build(
                 self.instance, self.vars
             )
-            #print("Min_Cons_Days_Off_Alternative_exact")
-        if SolverConstraints.minimum_consecutive_shifts not in self.disabled_constraints and constraint_set == 4:
+            # print("Min_Cons_Days_Off_Alternative_exact")
+        if (
+            SolverConstraints.minimum_consecutive_shifts
+            not in self.disabled_constraints
+            and constraint_set == 4
+        ):
             minimum_consecutive_shifts_new.Min_Cons_Shifts_Alternative_exact().build(
                 self.instance, self.vars
             )
-            #print("Min_Cons_Shifts_Alternative_exact")
-        if SolverConstraints.minimum_consecutive_days_off not in self.disabled_constraints and constraint_set == 5:
+            # print("Min_Cons_Shifts_Alternative_exact")
+        if (
+            SolverConstraints.minimum_consecutive_days_off
+            not in self.disabled_constraints
+            and constraint_set == 5
+        ):
             minimum_consecutove_days_off_new.Min_Cons_Days_Off_Alternative_exact_Enforce_If().build(
                 self.instance, self.vars
             )
-            #print("Min_Cons_Days_Off_Alternative_exact_Enforce_If")
-        if SolverConstraints.minimum_consecutive_shifts not in self.disabled_constraints and constraint_set == 5:
+            # print("Min_Cons_Days_Off_Alternative_exact_Enforce_If")
+        if (
+            SolverConstraints.minimum_consecutive_shifts
+            not in self.disabled_constraints
+            and constraint_set == 5
+        ):
             minimum_consecutive_shifts_new.Min_Cons_Shifts_Alternative_exact_Enforce_If().build(
                 self.instance, self.vars
             )
-            #print("Min_Cons_Shifts_Alternative_exact_Enforce_If")
-        if SolverConstraints.minimum_consecutive_days_off not in self.disabled_constraints and constraint_set == 6:
+            # print("Min_Cons_Shifts_Alternative_exact_Enforce_If")
+        if (
+            SolverConstraints.minimum_consecutive_days_off
+            not in self.disabled_constraints
+            and constraint_set == 6
+        ):
             minimum_consecutove_days_off_new.Min_Cons_Days_Off_Automaton().build(
                 self.instance, self.vars
             )
-            #print("Min_Cons_Days_Off_Automaton")
-        if SolverConstraints.minimum_consecutive_shifts not in self.disabled_constraints and constraint_set == 6:
+            # print("Min_Cons_Days_Off_Automaton")
+        if (
+            SolverConstraints.minimum_consecutive_shifts
+            not in self.disabled_constraints
+            and constraint_set == 6
+        ):
             minimum_consecutive_shifts_new.Min_Cons_Shifts_Automaton().build(
                 self.instance, self.vars
             )
-            #print("Min_Cons_Shifts_Automaton")
-        if SolverConstraints.minimum_consecutive_days_off not in self.disabled_constraints and constraint_set == 7:
+            # print("Min_Cons_Shifts_Automaton")
+        if (
+            SolverConstraints.minimum_consecutive_days_off
+            not in self.disabled_constraints
+            and constraint_set == 7
+        ):
             minimum_consecutove_days_off_new.Min_Cons_Days_Off_Alternative_exact_original().build(
                 self.instance, self.vars
             )
-            #print("Min_Cons_Days_Off_Alternative_exact_original")
-        if SolverConstraints.minimum_consecutive_shifts not in self.disabled_constraints and constraint_set == 7:
+            # print("Min_Cons_Days_Off_Alternative_exact_original")
+        if (
+            SolverConstraints.minimum_consecutive_shifts
+            not in self.disabled_constraints
+            and constraint_set == 7
+        ):
             minimum_consecutive_shifts_new.Min_Cons_Shifts_Alternative_exact_original().build(
                 self.instance, self.vars
             )
-            #print("Min_Cons_Shifts_Alternative_exact_original")
+            # print("Min_Cons_Shifts_Alternative_exact_original")
         if SolverConstraints.minMaxWorkTime not in self.disabled_constraints:
             minMaxWorkTime.MinMaxWorkTime().build(self.instance, self.vars)
         if SolverConstraints.shift_rotation_constraint not in self.disabled_constraints:
@@ -589,7 +840,6 @@ class Solver:
             ban_employee_day_shift.Ban_employee_day_shift().build(
                 self.instance, self.vars
             )
-
 
     def objective_value_new(self):
         objective_value = 0
@@ -613,18 +863,18 @@ class Solver:
                     self.vars.below_prefferd_vars[(day, type_uid)]
                     * self.instance.shifts[day][type_uid].weight_below_preferred
                 )
+
+                objective_value += self.vars.above_prefferd_vars[(day, type_uid)] * (
+                    self.instance.shifts[day][type_uid].weight_above_preferred
+                )
                 objective_value += (
                     self.vars.below_threshold_vars[(day, type_uid)]
                     * self.instance.shifts[day][type_uid].weight_below_preferred
                     * 2
                 )
 
-                # objective_value += (
-                #     self.vars.above_prefferd_vars[(day, type_uid)]
-                #     * self.instance.shifts[day][type_uid].weight_above_preferred
-                # )
         return objective_value
-    
+
     def objective_value_only_wishes(self) -> cp_model.ObjLinearExprT:
         objective_value = 0
         for employee_uid in self.instance.employees:
@@ -647,7 +897,6 @@ class Solver:
                 #     * self.instance.shifts[day][type_uid].weight_above_preferred
                 # )
         return objective_value
-
 
     def warm_start_greedy(
         self,
@@ -720,8 +969,8 @@ class Solver:
 
         Returns a list of Solution objects collected by the callback (may be empty).
         """
-        if len(disabled_constraints)>0:
-            self.disabled_constraints=disabled_constraints
+        if len(disabled_constraints) > 0:
+            self.disabled_constraints = disabled_constraints
         self.set_constraints()
         solver = cp_model.CpSolver()
         solver.parameters.log_search_progress = log_search_progress

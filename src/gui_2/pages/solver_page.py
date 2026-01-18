@@ -9,14 +9,17 @@ import os
 import sys
 import threading
 import time
+import traceback
 from datetime import datetime
 from typing import Any
 
 from nicegui import ui
 
 from ...LNS import lns, minimal_change_lns
+from ...solve_employees import solve_employee
 from ...shift_vars import Shift_vars
 from ...solver import Solver
+from ...callback_early_stop import Callback_Early_Stop
 from .. import state
 
 # Konstanten
@@ -95,10 +98,55 @@ def solver_page() -> None:
             "color": "warning",
             "params": {
                 "max_solve_time": DEFAULT_TIMEOUT_SECONDS,
-                "log_search_progress": False,
+                "log_search_progress": True,
             },
             "requires_solution": True,
         },
+        {
+            "name": "Minimal Changes Warm Start",
+            "description": "Minimal Changes with hints from previous solution",
+            "icon": "build",
+            "method": "warm_start",
+            "color": "warning",
+            "params": {
+                "max_time_in_seconds": DEFAULT_TIMEOUT_SECONDS,
+            },
+            "requires_solution": True,
+        },
+        {
+            "name": "First Solution",
+            "description": "Use one shift method to find a first solution quickly",
+            "icon": "build",
+            "method": "solve_instance_one_shift(first)",
+            "color": "warning",
+            "params": {
+                "max_time_in_seconds": DEFAULT_TIMEOUT_SECONDS,
+            },
+            "requires_solution": False,
+        },
+        {
+            "name": "First OK Solution",
+            "description": "Use one shift method to find an OK solution quickly",
+            "icon": "build",
+            "method": "solve_instance_one_shift(first OK)",
+            "color": "warning",
+            "params": {
+                "max_time_in_seconds": DEFAULT_TIMEOUT_SECONDS,
+            },
+            "requires_solution": False,
+        },
+        {
+            "name": "First good Solution",
+            "description": "Use one shift method to find an OK solution quickly",
+            "icon": "build",
+            "method": "solve_instance_one_shift(first OK then Solve)",
+            "color": "warning",
+            "params": {
+                "max_time_in_seconds": DEFAULT_TIMEOUT_SECONDS,
+            },
+            "requires_solution": False,
+        },
+        # TODO add first solution fast, and ok and warm_start without minimal changes,
     ]
 
     @ui.refreshable
@@ -116,6 +164,29 @@ def solver_page() -> None:
             ).classes("text-green-600")
         else:
             ui.label("✗ Keine Instance geladen").classes("text-orange-500")
+
+    @ui.refreshable
+    def timeout_config() -> None:
+        """Zeigt die Timeout-Konfiguration an."""
+        current_timeout = state.get_solver_timeout()
+        assert current_timeout is not None
+
+        with ui.row().classes("items-center gap-4"):
+            ui.label("Timeout:").classes("font-semibold")
+            timeout_input = ui.number(
+                label="Sekunden",
+                value=current_timeout,
+                min=1,
+                max=3600,
+                step=10,
+                format="%.0f",
+                on_change=lambda e: state.set_solver_timeout(
+                    e.value if e.value else DEFAULT_TIMEOUT_SECONDS
+                ),
+            ).classes("w-32")
+            ui.label(f"({current_timeout / 60:.1f} Minuten)").classes(
+                "text-sm text-gray-600"
+            )
 
     @ui.refreshable
     def solution_info() -> None:
@@ -348,12 +419,24 @@ def solver_page() -> None:
             # Führe Solver-Methode aus
             method_name = method_config["method"]
 
+            # Hole aktuelles Timeout aus State und überschreibe Parameter
+            current_timeout = state.get_solver_timeout()
+            params = method_config["params"].copy()
+
+            # Setze timeout je nach Methode mit richtigem Parameter-Namen
+            if "max_time_in_seconds" in params:
+                params["max_time_in_seconds"] = current_timeout
+            elif "timeout_seconds" in params:
+                params["timeout_seconds"] = current_timeout
+            elif "max_solve_time" in params:
+                params["max_solve_time"] = current_timeout
+
             if method_name == "lns":
                 # LNS-Solver
                 inst_sol = state.get_solution()
                 if inst_sol is None:
                     inst_sol = instance
-                lns_solver = lns.LNS(inst_sol, **method_config["params"])
+                lns_solver = lns.LNS(inst_sol, **params)
                 solution = lns_solver.solve()
             elif method_name == "minimal_change_lns":
                 # Minimal Changes LNS - benötigt existierende Lösung
@@ -374,19 +457,38 @@ def solver_page() -> None:
                     add_log_message(
                         f"ℹ️ Verwende {len(days_with_change)} geänderte Tage: {sorted(days_with_change)}"
                     )
-
+                lokal_solution = old_solution.model_copy(deep=True)
+                lokal_solution.instance = instance.model_copy(deep=True)
                 solution = minimal_change_lns.solve_changes(
-                    old_solution=old_solution,
-                    new_instanc=instance,
+                    old_solution=lokal_solution,
                     days_with_change=list(days_with_change),
-                    **method_config["params"],
+                    **params,
+                )
+            elif method_name == "solve_instance_one_shift(first)":
+                solution = solve_employee(instance=instance).solve_instance_one_shift()
+            elif method_name == "solve_instance_one_shift(first OK)":
+                solution = solve_employee(instance=instance).solve_instance_one_shift(
+                    one_shift_max_time=10 * 60, fixed_work_var_opt_max_time=10 * 60
+                )
+            elif method_name == "solve_instance_one_shift(first OK then Solve)":
+                optimization_callback = Callback_Early_Stop(
+                    instance, Shift_vars(instance)
+                )
+                solution = solve_employee(instance=instance).solve_instance_one_shift(
+                    one_shift_max_time=10 * 60,
+                    fixed_work_var_opt_max_time=10 * 60,
+                    general_optimization_max_time=10 * 60,
+                    optimization_callback=optimization_callback,
                 )
             else:
                 # Standard Solver-Methoden
                 vars = Shift_vars(instance)
                 solver = Solver(instance, vars)
                 solver_method = getattr(solver, method_name)
-                solution = solver_method(**method_config["params"])
+                if method_config.get("requires_solution", False):
+                    solution = solver_method(solution=state.get_solution(), **params)
+                else:
+                    solution = solver_method(**params)
 
             # Schließe Write-Ende der Pipe
             os.close(write_pipe)
@@ -453,7 +555,8 @@ def solver_page() -> None:
             solution: Die gefundene Lösung
             start_time: Startzeit des Solvers
         """
-        state.set_solution(solution)
+        state.add_solution(solution)
+        solution.to_json_file(solution.instance.name)
         state.set_solver_end_time(time.time())
 
         elapsed = time.time() - start_time
@@ -475,7 +578,17 @@ def solver_page() -> None:
         state.set_solver_end_time(time.time())
         state.set_solver_status("ERROR")
         state.update_solver_statistics("error", str(error))
-        add_log_message(f"❌ Fehler: {str(error)}")
+
+        # Formatiere Fehler mit Traceback-Informationen
+        tb_lines = traceback.format_exception(type(error), error, error.__traceback__)
+        tb_str = "".join(tb_lines)
+
+        add_log_message(f"❌ Fehler: {type(error).__name__}: {str(error)}")
+        add_log_message("Traceback:")
+        for line in tb_str.split("\n"):
+            if line.strip():
+                add_log_message(line)
+
         update_log_content()
 
     def _cleanup_solver_thread(old_stdout) -> None:
@@ -609,6 +722,10 @@ def solver_page() -> None:
 
         ui.notify("Solver wurde gestoppt", type="warning")
 
+    # Initialisierung: Setze Default-Timeout falls noch nicht gesetzt
+    if state.get_solver_timeout() == None:  # Default-Wert aus state.py
+        state.set_solver_timeout(DEFAULT_TIMEOUT_SECONDS)
+
     # UI-Aufbau
     with ui.card().classes("w-full mb-4"):
         ui.label("Solver").classes("text-2xl font-bold mb-4")
@@ -617,6 +734,11 @@ def solver_page() -> None:
         with ui.column().classes("w-full gap-2"):
             instance_info()
             solution_info()
+
+        ui.separator()
+
+        # Timeout-Konfiguration
+        timeout_config()
 
         ui.separator()
 

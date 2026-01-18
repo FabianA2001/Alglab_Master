@@ -12,14 +12,18 @@ class Slice_instance:
         sol: solution.Solution,
         start: int,
         end: int,
-        inst: instace.Instance | None = None,
+        slice_solution: solution.Solution | None = None,
     ):
         self.sol = sol
-        self.inst: instace.Instance = sol.instance if inst is None else inst
         self.start_day = start
         self.end_day = end
 
         self.window_instance = self.create_window_instance()
+
+        # Erstelle slice_solution basierend auf den Tagen im Fenster
+        self.slice_solution = (
+            self.create_slice_solution() if slice_solution is None else slice_solution
+        )
 
         self.config = defaultdict(solver_for_window.Config_for_employee)
         for emp_uid, emp in self.window_instance.employees.items():
@@ -74,7 +78,7 @@ class Slice_instance:
                     else:
                         self.solvr.vars.model.Add(var == 0)
 
-        if self.end_day != self.inst.number_of_days - 1:
+        if self.end_day != self.sol.instance.number_of_days - 1:
             last_day_in_window = self.solvr.instance.number_of_days - 1
             for shift_type_uid in self.solvr.instance.shift_types:
                 for emp_id in self.solvr.instance.employees:
@@ -141,6 +145,51 @@ class Slice_instance:
 
         return window_instance
 
+    def create_slice_solution(self) -> solution.Solution:
+        """Erstellt eine Solution für die Tage des Fensters aus der Original-Solution.
+
+        Die neue Solution enthält nur die Variablenwerte für die Tage zwischen
+        start_day und end_day, umindexiert auf das Fenster-Koordinatensystem (0-basiert).
+        """
+        # Erstelle eine neue Solution basierend auf der window_instance
+        slice_sol = solution.Solution(self.window_instance)
+
+        # Kopiere die Variablenwerte für die Tage im Fenster
+        for day_in_window in range(self.window_instance.number_of_days):
+            old_day = self.start_day + day_in_window
+            for shift_type_uid in self.window_instance.shift_types:
+                for emp_uid in self.window_instance.employees:
+                    # Hole den Wert aus der Original-Solution
+                    value = self.sol.vars.get((old_day, shift_type_uid, emp_uid), 0)
+                    # Setze den Wert in der neuen Solution mit neuem Tag-Index
+                    slice_sol.set_var(day_in_window, shift_type_uid, emp_uid, value)
+
+        # Kopiere auch Weekend-Variablen falls vorhanden
+        for day_in_window in range(self.window_instance.number_of_days):
+            old_day = self.start_day + day_in_window
+            for emp_uid in self.window_instance.employees:
+                value = self.sol.weekend_vars.get((old_day, emp_uid), 0)
+                if value != 0:
+                    slice_sol.weekend_vars[(day_in_window, emp_uid)] = value
+
+        # Kopiere auch die below_prefferd_vars
+        for day_in_window in range(self.window_instance.number_of_days):
+            old_day = self.start_day + day_in_window
+            for emp_uid in self.window_instance.employees:
+                value = self.sol.below_prefferd_vars.get((old_day, emp_uid), 0)
+                if value != 0:
+                    slice_sol.below_prefferd_vars[(day_in_window, emp_uid)] = value
+
+        # kopiere auch die below_threshold_vars
+        for day_in_window in range(self.window_instance.number_of_days):
+            old_day = self.start_day + day_in_window
+            for emp_uid in self.window_instance.employees:
+                value = self.sol.below_threshold_vars.get((old_day, emp_uid), 0)
+                if value != 0:
+                    slice_sol.below_threshold_vars[(day_in_window, emp_uid)] = value
+
+        return slice_sol
+
     def edit_max_numbers_of_shifts_for_emploeey(
         self, uid: employee.EmployeeUid, old_emp: employee.Employee
     ) -> employee.Employee:
@@ -148,14 +197,14 @@ class Slice_instance:
 
         # Zähle Shifts außerhalb des Windows für jeden Shift-Typ
         shifts_outside_window = {
-            shift_type_uid: 0 for shift_type_uid in self.inst.shift_types
+            shift_type_uid: 0 for shift_type_uid in self.sol.instance.shift_types
         }
 
         # Iteriere durch alle Tage außerhalb des Windows
-        for day in range(self.inst.number_of_days):
+        for day in range(self.sol.instance.number_of_days):
             if day < self.start_day or day > self.end_day:
                 # Tag liegt außerhalb des Windows
-                for shift_type_uid in self.inst.shift_types:
+                for shift_type_uid in self.sol.instance.shift_types:
                     if self.sol.is_employee_assigned(day, shift_type_uid, uid):
                         shifts_outside_window[shift_type_uid] += 1
 
@@ -183,13 +232,13 @@ class Slice_instance:
         minutes_outside = 0
 
         # Iteriere durch alle Tage außerhalb des Windows
-        for day in range(self.inst.number_of_days):
+        for day in range(self.sol.instance.number_of_days):
             if day < self.start_day or day > self.end_day:
                 # Tag liegt außerhalb des Windows
-                for shift_type_uid in self.inst.shift_types:
+                for shift_type_uid in self.sol.instance.shift_types:
                     if self.sol.is_employee_assigned(day, shift_type_uid, uid):
                         # Hole die Länge des Shift-Typs
-                        shift_type = self.inst.shift_types[shift_type_uid]
+                        shift_type = self.sol.instance.shift_types[shift_type_uid]
                         minutes_outside += shift_type.length
 
         # Passe max_minutes_assigned an
@@ -237,15 +286,15 @@ class Slice_instance:
         old_emp: employee.Employee,
     ) -> employee.Employee:
         new_emp = old_emp.model_copy()
-        for day in self.inst.weekend_days:
+        for day in self.sol.instance.weekend_days:
             if day < self.start_day or day > self.end_day:
                 if self.sol.is_employee_assigned_ad_weekend(day, uid):
                     new_emp.max_number_weekends -= 1
 
         # TODO check if self.start_day == 1 needs special treatment
-        if self.start_day > 0 and self.start_day in self.inst.weekend_days:
+        if self.start_day > 0 and self.start_day in self.sol.instance.weekend_days:
             assigned = []
-            for shift_type_uid in self.inst.shift_types:
+            for shift_type_uid in self.sol.instance.shift_types:
                 if self.sol.is_employee_assigned(
                     self.start_day - 1, shift_type_uid, uid
                 ) and not self.sol.is_employee_assigned(
@@ -389,7 +438,7 @@ class Slice_instance:
                 start_needed = -1
             elif start_free == 0:
                 shifts = []
-                for shift_type_uid in self.inst.shift_types:
+                for shift_type_uid in self.sol.instance.shift_types:
                     if self.sol.is_employee_assigned(
                         self.start_day, shift_type_uid, emp_uid
                     ):
@@ -405,13 +454,13 @@ class Slice_instance:
         else:
             start_needed = 0
 
-        if self.end_day != self.inst.number_of_days - 1:
+        if self.end_day != self.sol.instance.number_of_days - 1:
             end_free = self.count_not_assigned_shifts_end(emp_uid)
             if end_free < 0:
                 end_needed = -1
             elif end_free == 0:
                 shifts = []
-                for shift_type_uid in self.inst.shift_types:
+                for shift_type_uid in self.sol.instance.shift_types:
                     if self.sol.is_employee_assigned(
                         self.end_day, shift_type_uid, emp_uid
                     ):
@@ -435,7 +484,7 @@ class Slice_instance:
             return -1
         for day in range(self.start_day - 1, -1, -1):
             assigneds = []
-            for shift_type_uid in self.inst.shift_types:
+            for shift_type_uid in self.sol.instance.shift_types:
                 assigneds.append(
                     self.sol.is_employee_assigned(day, shift_type_uid, emp_uid)
                 )  # None bedeutet beliebiger Shift-Typ
@@ -453,7 +502,7 @@ class Slice_instance:
             return current_free_consecutive_shifts
         for day in range(self.start_day - 1, -1, -1):
             not_assigneds = []
-            for shift_type_uid in self.inst.shift_types:
+            for shift_type_uid in self.sol.instance.shift_types:
                 not_assigneds.append(
                     self.sol.is_employee_assigned(day, shift_type_uid, emp_uid)
                 )  # None bedeutet beliebiger Shift-Typ
@@ -467,11 +516,11 @@ class Slice_instance:
 
     def count_assigned_shifts_end(self, emp_uid: employee.EmployeeUid) -> int:
         current_consecutive_shifts = 0
-        if self.inst.number_of_days - 2 < self.end_day:
+        if self.sol.instance.number_of_days - 2 < self.end_day:
             return -1
         for day in range(self.end_day + 1, self.sol.instance.number_of_days):
             assigneds = []
-            for shift_type_uid in self.inst.shift_types:
+            for shift_type_uid in self.sol.instance.shift_types:
                 assigneds.append(
                     self.sol.is_employee_assigned(day, shift_type_uid, emp_uid)
                 )  # None bedeutet beliebiger Shift-Typ
@@ -485,11 +534,11 @@ class Slice_instance:
 
     def count_not_assigned_shifts_end(self, emp_uid: employee.EmployeeUid) -> int:
         current_free_consecutive_shifts = 0
-        if self.inst.number_of_days - 2 < self.end_day:
+        if self.sol.instance.number_of_days - 2 < self.end_day:
             return current_free_consecutive_shifts
         for day in range(self.end_day + 1, self.sol.instance.number_of_days):
             assigneds = []
-            for shift_type_uid in self.inst.shift_types:
+            for shift_type_uid in self.sol.instance.shift_types:
                 assigneds.append(
                     self.sol.is_employee_assigned(day, shift_type_uid, emp_uid)
                 )  # None bedeutet beliebiger Shift-Typ

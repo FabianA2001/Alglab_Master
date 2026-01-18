@@ -20,7 +20,7 @@ varibalen in der reseter funktion hinzufügen, damit diese zurückgesetzt werden
 
 # Globale Variablen für den Application State
 _current_instance: Optional[Instance] = None
-_current_solution: Optional[Solution] = None
+_current_solution: list[Solution] = []
 _solver_running: bool = False
 _solver_start_time: Optional[float] = None
 _solver_end_time: Optional[float] = None
@@ -29,6 +29,7 @@ _solver_statistics: dict = {}
 _last_objective_value: Optional[float] = None
 _solver_status: Optional[str] = None
 _changed_days: set[int] = set()
+_solver_timeout: float | None = None  # Default timeout in Sekunden
 
 # UI-Referenzen (für Background-Updates)
 solver_log_html_element = None
@@ -55,14 +56,20 @@ def get_instance() -> Optional[Instance]:
     return _current_instance
 
 
-def set_solution(solution: Optional[Solution]) -> None:
+def add_solution(solution: Solution) -> None:
     """Setzt die aktuelle Solution.
 
     Args:
         solution: Die neue Solution oder None
     """
     global _current_solution
-    _current_solution = solution
+    _current_solution.append(solution)
+
+
+def clear_solutions():
+    """Löscht alle gespeicherten Solutions."""
+    global _current_solution
+    _current_solution = []
 
 
 def get_solution() -> Optional[Solution]:
@@ -70,6 +77,17 @@ def get_solution() -> Optional[Solution]:
 
     Returns:
         Optional[Solution]: Die aktuelle Solution oder None
+    """
+    if len(_current_solution) == 0:
+        return None
+    return _current_solution[-1]
+
+
+def get_all_solutions() -> list[Solution]:
+    """Holt alle gespeicherten Solutions.
+
+    Returns:
+        Optional[list[Solution]]: Liste aller Solutions oder None
     """
     return _current_solution
 
@@ -279,11 +297,36 @@ def clear_changed_days() -> None:
     _changed_days = set()
 
 
+def set_solver_timeout(timeout: float) -> None:
+    """Setzt das Solver-Timeout.
+
+    Args:
+        timeout: Timeout in Sekunden
+    """
+    global _solver_timeout
+    _solver_timeout = max(1.0, timeout)  # Mindestens 1 Sekunde
+
+
+def get_solver_timeout() -> float | None:
+    """Holt das Solver-Timeout.
+
+    Returns:
+        float: Timeout in Sekunden
+    """
+    return _solver_timeout
+
+
+def rest_solutions() -> None:
+    clear_changed_days()
+    clear_solutions()
+
+
 def reset_solver_state() -> None:
     """Setzt alle Solver-bezogenen State-Variablen zurück."""
     global _solver_running, _solver_start_time, _solver_end_time
     global _solver_logs, _solver_statistics, _last_objective_value, _solver_status
     global solver_log_html_element, solver_log_scroll_area, solver_runtime_task
+    # Hinweis: _solver_timeout wird NICHT zurückgesetzt, da es eine Benutzereinstellung ist
 
     _solver_running = False
     _solver_start_time = None
@@ -304,9 +347,3 @@ def reset_solver_state() -> None:
     solver_log_html_element = None
     solver_log_scroll_area = None
     solver_runtime_task = None
-
-
-def reset_all() -> None:
-    reset_solver_state()
-    global _changed_days
-    _changed_days = set()

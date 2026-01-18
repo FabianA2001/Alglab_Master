@@ -1,3 +1,4 @@
+from datetime import datetime
 import logging
 import random
 import time
@@ -26,16 +27,16 @@ class StopAfterMinTimeAndFirstSolution(cp_model.CpSolverSolutionCallback):
 
 # TODO disabled_constraints erlauben
 class LNS:
-    MIN_SMALL_SEARCH_TIME: float = 2.0  # sec
+    MIN_SMALL_SEARCH_TIME: float = 5.0  # sec
 
     def __init__(
         self,
         sol_or_instance: solution.Solution | instace.Instance,
         percent_search_time_first_solution: float = 0.1,
-        timeout_seconds: float = 180,
+        timeout_seconds: float = 300.0,
         small_runtime_base: float = 0.01,  # * number_of_days * (number_of_shift_types + number_of_employees)
         ####################
-        start_search_window_size: int = 7,
+        start_search_window_size: int = 10,
         search_window_size_min: int = 3,
         window_increase_factor: float = 1.3,
         window_decrease_factor: float = 0.7,
@@ -60,6 +61,7 @@ class LNS:
                 timeout_seconds,
             )
         )
+        self.start_objective = self.old_solution.objective_value
         self.NUMBER_OF_SHIFT_TYPES = len(self.old_solution.instance.shift_types)
         self.NUMBER_OF_EMPLOYEES = len(self.old_solution.instance.employees)
 
@@ -90,9 +92,11 @@ class LNS:
         # time parameters
         self.timeout_seconds: float = timeout_seconds
         self.small_runtime_milliseconds_base: float = small_runtime_base
-        self.timeout_seconds: float = max(
-            0.0, timeout_seconds - create_time_first_solution
-        )
+        # TODO test if this was important
+        # self.timeout_seconds: float = max(
+        #     0.0, timeout_seconds - create_time_first_solution
+        # )
+        self.timeout_seconds = timeout_seconds
         self.disabled_for_window = []
         # logging info
         self.logger.info(
@@ -110,8 +114,7 @@ class LNS:
         timeout_seconds: float,
     ) -> tuple[solution.Solution, float]:
         if isinstance(sol_or_instance, solution.Solution):
-            # TODO calc objective value
-            return sol_or_instance, 0.0
+            return sol_or_instance, sol_or_instance.objective_value
         elif isinstance(sol_or_instance, instace.Instance):
             start_time = time.time()
             vars = solver.shift_vars.Shift_vars(sol_or_instance)
@@ -162,7 +165,7 @@ class LNS:
                         f"Strong improvement ({relative_improvement:.2%}): "
                         f"Decreasing window size from {old_window_size} to {new_window_size}"
                     )
-            else:
+            elif improvement == 0:
                 # Keine Verbesserung -> Fenster vergrößern
                 new_window_size = min(
                     self.MAX_DAY,
@@ -171,6 +174,13 @@ class LNS:
                 self.logger.debug(
                     f"No improvement: Increasing window size from {old_window_size} to {new_window_size}"
                 )
+            else:
+                # negative improvement - fenster verschieben
+                new_window_size = max(old_window_size, 5)
+                self.logger.debug(
+                    f"Negative improvement: Keeping window size at {new_window_size} and shifting"
+                )
+
             return new_window_size
 
         new_window_size = __calculate_new_window_size()
@@ -194,7 +204,16 @@ class LNS:
                 self.MIN_DAY, self.start_day - (increase - shift_start)
             )
             self.end_day = min(self.MAX_DAY, self.start_day + new_window_size)
-        # else: Fenster bleibt gleich groß
+        else:
+            # Fenster bleibt gleich groß
+            self.start_day = random.randint(
+                self.MIN_DAY,
+                max(
+                    self.MIN_DAY,
+                    self.MAX_DAY - self.start_search_window_size,
+                ),
+            )
+            self.end_day = min(self.MAX_DAY, self.start_day + new_window_size)
 
         assert self.end_day - self.start_day >= self.search_window_size_min
         assert self.start_day >= self.MIN_DAY
@@ -209,14 +228,22 @@ class LNS:
             disabled_for_window=self.disabled_for_window,
         )
 
-    def solve(self) -> solution.Solution:
+    def solve(self, not_better_break_after: int = 60, enable_early_stop: bool = True) -> solution.Solution:
         self.logger.info("Starting LNS solve process")
         start_time = time.time()
         iteration = 0
         improvements = 0
 
-        # TODO stop with erly stop
-        while time.time() - start_time < self.timeout_seconds:
+        # TODO early stop statt runtime im while loop hier
+        early_stop = False
+        time_of_last_improvement = time.time()
+        while (time.time() - start_time < self.timeout_seconds) and not early_stop:
+            print(f" time is {time.time() - time_of_last_improvement}")
+            if time.time() - time_of_last_improvement >= not_better_break_after:
+                print(
+                    f"exiting because no solution was better since {not_better_break_after} seconds"
+                )
+                break
             assert self.end_day > self.start_day
             iteration += 1
             elapsed_time = time.time() - start_time
@@ -236,7 +263,7 @@ class LNS:
                 start=self.start_day,
                 end=self.end_day,
             ).get_solver()
-
+            infeasible = False
             sol = solvr.solve_window(
                 log_search_progress=False,
                 max_time_in_seconds=small_max_solve_time,
@@ -249,26 +276,31 @@ class LNS:
                 self.logger.debug(
                     f"Iteration {iteration}: No feasible solution found (status: {sol.solve_status})"
                 )
-                self.old_solution.to_json_file(
-                    f"error_lns_infeasible_start_{self.start_day}_end_{self.end_day}"
-                )
+                # self.old_solution.to_json_file(
+                #     f"error_lns_infeasible_start_{self.start_day}_end_{self.end_day}"
+                # )
                 # HACK
                 # import sys
 
                 # sys.exit(1)
                 #############
+                self.update_search_window(improvement=-1)  # oder spezieller Wert
                 continue
             old_sol_debugg = sol.model_copy()
             sol = self.merge_solutions(sol)
+            sol.calculate_work_vars()
+            sol.set_preferred_vars()
+            # TODO Maybe also add this
+            sol.objective_value_new()
             if not sol.checkt_constraints[0]:
                 self.old_solution.to_json_file(
-                    f"error_lns_merge_old_start_{self.start_day}_end_{self.end_day}"
+                    f"{self.old_solution.instance.name}_error_lns_merge_old_start_{self.start_day}_end_{self.end_day}"
                 )
                 old_sol_debugg.to_json_file(
-                    f"error_lns_merge_bevor_start_{self.start_day}_end_{self.end_day}"
+                    f"{self.old_solution.instance.name}_error_lns_merge_bevor_start_{self.start_day}_end_{self.end_day}"
                 )
                 sol.to_json_file(
-                    f"error_lns_merge_after_start_{self.start_day}_end_{self.end_day}"
+                    f"{self.old_solution.instance.name}_error_lns_merge_after_start_{self.start_day}_end_{self.end_day}"
                 )
 
                 self.logger.debug(
@@ -282,6 +314,7 @@ class LNS:
                 ##########
                 continue
 
+            sol.solve_status = cp_model.FEASIBLE
             self.logger.debug(
                 f"Iteration {iteration}: Found solution with objective {sol.objective_value}"
             )
@@ -297,21 +330,68 @@ class LNS:
                     f"Improvement: {improvement}"
                 )
                 self.old_solution = sol
+                time_of_last_improvement = time.time()
             else:
                 self.logger.debug(
                     f"Iteration {iteration}: No improvement (current best: {self.old_solution.objective_value})"
                 )
-
+                improvement = -1
+            # Lösung ist gut genug
+            if enable_early_stop:
+                early_stop = self.lns_early_stop(sol)
             self.update_search_window(improvement)
 
         total_time = time.time() - start_time
         self.logger.info(
             f"LNS completed: {iteration} iterations, {improvements} improvements, "
-            f"total time: {total_time:.2f}s, final objective: {self.old_solution.objective_value}"
+            f"total time: {total_time:.2f}s, final objective: {self.old_solution.objective_value}, "
+            f"start objective: {self.start_objective}, improvement: {self.start_objective - self.old_solution.objective_value}"
         )
-
+        self.old_solution.timestamp = datetime.now()
         assert (
             self.old_solution.solve_status == cp_model.OPTIMAL
             or self.old_solution.solve_status == cp_model.FEASIBLE
         )
         return self.old_solution
+
+    def lns_early_stop(self, sol: solution.Solution) -> bool:
+        total_weights = 0
+        satisfied_wishes = 0
+        # TODO Wunsch-Rate muss ggf angepasst werden, wie lange wir wollen, dass gelöst wird
+        ratio_wishes = 0.8
+        reatio_below_pref = 0.5
+
+        # Über alle Schichten der Instanz iterieren
+        for day, day_shift_dict in sol.instance.shifts.items():
+            for type_uid, shift in day_shift_dict.items():
+                # Beispiel: preferred employees check
+                pref = shift.preffert_number_employees
+
+                below = sol.below_prefferd_vars[(day, type_uid)]
+                if below > pref * reatio_below_pref:
+                    return False  # schlechte Lösung -> sofort abbrechen
+
+                # Wünsche
+                for emp in sol.instance.employees:
+                    weight_pos = shift.penalty_assigned_day_employee.get(emp, 0)
+                    weight_neg = shift.penalty_not_assigned_day_employee.get(emp, 0)
+
+                    if weight_pos > 0:
+                        total_weights += 1
+                        if sol.vars[(day, type_uid, emp)] == 1:
+                            satisfied_wishes += 1
+
+                    if weight_neg > 0:
+                        total_weights += 1
+                        if sol.vars[(day, type_uid, emp)] == 0:
+                            satisfied_wishes += 1
+
+        if total_weights == 0:
+            return False
+
+        ratio = satisfied_wishes / total_weights
+
+        if ratio >= ratio_wishes:
+            print("Stopping LNS: Gute Lösung gefunden.")
+            return True  # Gute Lösung -> StopSearch()
+        return False
