@@ -177,7 +177,7 @@ class LNS:
                 )
             else:
                 # negative improvement - fenster verschieben
-                new_window_size = max(old_window_size, self.deafult_search_window_size)
+                new_window_size = self.deafult_search_window_size
                 self.logger.debug(
                     f"Negative improvement: Keeping window size at {new_window_size} and shifting"
                 )
