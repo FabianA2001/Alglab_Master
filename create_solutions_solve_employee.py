@@ -326,7 +326,8 @@ def main():
                             error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_lns_alt_opt_{x}"
                             with open("error_log.txt", "a") as error_file:
                                 error_file.write(error_filename + "\n")
-
+                    if one_shift_time == 10:
+                        continue
                     
                     for not_better_stop_timer in [0.5, 3]:
                         lns_start_time = time.time()
