@@ -145,10 +145,14 @@ def render_statistics(solution: Solution) -> None:
         ui.label(f"Gesamt erfüllte Wünsche: {solution.total_fulfilled_wishes()}")
 
 
-def render_employee_assignments(solution: Solution) -> None:
+def render_employee_assignments(
+    solution: Solution, current_week: dict, comparison_refresh_callback=None
+) -> None:
     """Rendert die Mitarbeiter-Zuordnungen pro Tag.
 
     Args:
         solution: Die Solution mit den Zuordnungen
+        current_week: Dictionary mit 'value' key für die aktuelle Woche (shared)
+        comparison_refresh_callback: Optional callback to refresh comparison table
     """
-    employee_assignments(solution)
+    employee_assignments(solution, current_week, comparison_refresh_callback)

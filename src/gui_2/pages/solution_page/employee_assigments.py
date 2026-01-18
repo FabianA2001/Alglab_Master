@@ -17,7 +17,9 @@ COLOR_TOO_MANY = "background-color: #fed7aa;"  # Orange
 SOFT_WEIGHT_ADJUSTMENT = 10
 
 
-def employee_assignments(solution: Solution) -> None:
+def employee_assignments(
+    solution: Solution, current_week: dict, comparison_refresh_callback=None
+) -> None:
     """
     Display employee assignments in a table format.
 
@@ -26,54 +28,113 @@ def employee_assignments(solution: Solution) -> None:
 
     Args:
         solution: The Solution object containing shift assignments.
+        current_week: Dictionary mit 'value' key für die aktuelle Woche (shared)
+        comparison_refresh_callback: Optional callback to refresh comparison table
     """
     with ui.card().classes("w-full mb-4"):
         ui.label("Mitarbeiter-Zuordnung").classes("text-xl font-bold mb-2")
 
-        days = _extract_days(solution)
+        all_days = _extract_days(solution)
         shift_types = _extract_shift_types(solution)
 
-        columns = _build_table_columns(days)
-        rows, shift_mapping = _build_table_rows(solution, days, shift_types)
+        # Calculate weeks (7 days per week)
+        num_weeks = (len(all_days) + 6) // 7  # Round up
+        weeks = []
+        for week_idx in range(num_weeks):
+            start_idx = week_idx * 7
+            end_idx = min(start_idx + 7, len(all_days))
+            week_days = all_days[start_idx:end_idx]
+            weeks.append((week_idx + 1, week_days))
 
-        table = (
-            ui.table(columns=columns, rows=rows, row_key="row_key")
-            .classes("w-full")
-            .props("flat hide-selected-banner")
-        )
+        @ui.refreshable
+        def render_table():
+            """Render the table for the current week."""
+            week_num, days = weeks[current_week["value"]]
 
-        # Add custom cell rendering with clickable elements and color coding
-        table.add_slot(
-            "body-cell",
-            """
-            <q-td :props="props">
-                <div v-if="props.col.name === 'shift_type'" class="text-weight-medium">
-                    {{ props.value }}
-                </div>
-                <div v-else-if="props.value === '-'" class="text-grey-5 text-center">
-                    —
-                </div>
-                <div v-else class="q-pa-xs cursor-pointer" 
-                     :style="props.row['_color_' + props.col.name] || ''"
-                     @click="() => $parent.$emit('cell_click', props.row.row_key, props.col.name)">
-                    <q-badge v-for="(name, index) in props.value.split(', ')" 
-                             :key="index"
-                             color="primary" 
-                             text-color="white"
-                             class="q-ma-xs">
-                        {{ name }}
-                    </q-badge>
-                </div>
-            </q-td>
-        """,
-        )
+            ui.label(f"Woche {week_num} (Tage {days[0]} - {days[-1]})").classes(
+                "text-lg font-semibold mb-2"
+            )
 
-        table.on(
-            "cell_click",
-            lambda e: _display_details_dialog(
-                e.args[0], e.args[1], solution, shift_mapping
-            ),
-        )
+            columns = _build_table_columns(days)
+            rows, shift_mapping = _build_table_rows(solution, days, shift_types)
+
+            table = (
+                ui.table(columns=columns, rows=rows, row_key="row_key")
+                .classes("w-full")
+                .props("flat hide-selected-banner")
+            )
+
+            # Add custom cell rendering with clickable elements and color coding
+            table.add_slot(
+                "body-cell",
+                """
+                <q-td :props="props">
+                    <div v-if="props.col.name === 'shift_type'" class="text-weight-medium">
+                        {{ props.value }}
+                    </div>
+                    <div v-else-if="props.value === '-'" class="text-grey-5 text-center">
+                        —
+                    </div>
+                    <div v-else class="q-pa-xs cursor-pointer" 
+                         :style="props.row['_color_' + props.col.name] || ''"
+                         @click="() => $parent.$emit('cell_click', props.row.row_key, props.col.name)">
+                        <q-badge v-for="(name, index) in props.value.split(', ')" 
+                                 :key="index"
+                                 color="primary" 
+                                 text-color="white"
+                                 class="q-ma-xs">
+                            {{ name }}
+                        </q-badge>
+                    </div>
+                </q-td>
+            """,
+            )
+
+            table.on(
+                "cell_click",
+                lambda e: _display_details_dialog(
+                    e.args[0], e.args[1], solution, shift_mapping
+                ),
+            )
+
+        # Week navigation
+        if num_weeks > 1:
+            with ui.row().classes("gap-2 items-center mb-4"):
+
+                def on_week_change(new_value):
+                    """Handle week change and refresh both tables."""
+                    current_week.update(value=new_value)
+                    render_table.refresh()
+                    if comparison_refresh_callback:
+                        try:
+                            comparison_refresh_callback()
+                        except (RuntimeError, AttributeError):
+                            pass
+
+                ui.button(
+                    icon="chevron_left",
+                    on_click=lambda: on_week_change(max(0, current_week["value"] - 1)),
+                ).props("flat").bind_enabled_from(
+                    current_week, "value", lambda v: v > 0
+                )
+
+                ui.label().bind_text_from(
+                    current_week,
+                    "value",
+                    lambda v: f"Woche {weeks[v][0]} von {num_weeks}",
+                ).classes("font-medium")
+
+                ui.button(
+                    icon="chevron_right",
+                    on_click=lambda: on_week_change(
+                        min(num_weeks - 1, current_week["value"] + 1)
+                    ),
+                ).props("flat").bind_enabled_from(
+                    current_week, "value", lambda v: v < num_weeks - 1
+                )
+
+        # Render table
+        render_table()
 
         # Color legend
         with ui.row().classes("mt-4 gap-4"):
