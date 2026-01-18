@@ -228,7 +228,7 @@ class LNS:
             disabled_for_window=self.disabled_for_window,
         )
 
-    def solve(self, not_better_break_after: int = 60) -> solution.Solution:
+    def solve(self, not_better_break_after: int = 60, enable_early_stop: bool = True) -> solution.Solution:
         self.logger.info("Starting LNS solve process")
         start_time = time.time()
         iteration = 0
@@ -337,7 +337,8 @@ class LNS:
                 )
                 improvement = -1
             # Lösung ist gut genug
-            early_stop = self.lns_early_stop(sol)
+            if enable_early_stop:
+                early_stop = self.lns_early_stop(sol)
             self.update_search_window(improvement)
 
         total_time = time.time() - start_time
