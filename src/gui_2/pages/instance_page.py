@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 
 from nicegui import ui
 
-from ...help_functions import hash_string
+from ...help_functions import hash_string, natural_sort_key
 from ...inputTypes.instace import Instance
 from ...parseData import parseTXT
 from .. import state
@@ -25,7 +25,7 @@ def load_available_instances() -> list[str]:
     if not DATA_DIR.exists():
         return []
 
-    txt_files = sorted([f.name for f in DATA_DIR.glob("*.txt")])
+    txt_files = sorted([f.name for f in DATA_DIR.glob("*.txt")], key=natural_sort_key)
     return txt_files
 
 
