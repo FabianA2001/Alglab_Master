@@ -74,6 +74,7 @@ class LNS:
         self.MAX_DAY: int = self.old_solution.instance.number_of_days - 1
         self.start_search_window_size: int = start_search_window_size
         self.search_window_size_min = search_window_size_min
+        self.deafult_search_window_size: int = 5
         self.start_day: int = random.randint(
             self.MIN_DAY,
             max(
@@ -176,7 +177,7 @@ class LNS:
                 )
             else:
                 # negative improvement - fenster verschieben
-                new_window_size = max(old_window_size, 5)
+                new_window_size = max(old_window_size, self.deafult_search_window_size)
                 self.logger.debug(
                     f"Negative improvement: Keeping window size at {new_window_size} and shifting"
                 )
@@ -240,10 +241,11 @@ class LNS:
         while (time.time() - start_time < self.timeout_seconds) and not early_stop:
             print(f" time is {time.time() - time_of_last_improvement}")
             if time.time() - time_of_last_improvement >= not_better_break_after:
-                print(
-                    f"exiting because no solution was better since {not_better_break_after} seconds"
-                )
-                break
+                # print(
+                #     f"exiting because no solution was better since {not_better_break_after} seconds"
+                # )
+                # break
+                self.deafult_search_window_size = self.deafult_search_window_size * 2
             assert self.end_day > self.start_day
             iteration += 1
             elapsed_time = time.time() - start_time
@@ -284,7 +286,7 @@ class LNS:
 
                 # sys.exit(1)
                 #############
-                self.update_search_window(improvement=-1)  # oder spezieller Wert
+                self.update_search_window(improvement=0)  # oder spezieller Wert
                 continue
             old_sol_debugg = sol.model_copy()
             sol = self.merge_solutions(sol)
