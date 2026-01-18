@@ -126,7 +126,7 @@ def render_shift_type_details(refresh_callback=None) -> None:
                     ui.label("Blockierte Schichten danach:").classes("font-semibold")
                     if shift_type.blocked_shifts_after:
                         blocked_names = [
-                            instance.shift_types.get(uid).name
+                            instance.shift_types.get(uid).name  # type: ignore
                             for uid in shift_type.blocked_shifts_after
                             if instance.shift_types.get(uid) is not None
                         ]
