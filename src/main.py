@@ -308,6 +308,7 @@ def main() -> None:
     # print_some_infos()
     t_minimal_changes_lns()
     # test_double_lns()
+    # t_slice_window
 
 
 if __name__ == "__main__":
