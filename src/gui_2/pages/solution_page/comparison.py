@@ -1,6 +1,6 @@
 """Comparison view for comparing two solutions."""
 
-from typing import Any, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from nicegui import ui
 
@@ -8,13 +8,20 @@ from ....help_functions import compare_solutions
 from ....solution import Solution
 
 
-def render_solution_comparison(solution_a: Solution, solution_b: Solution) -> None:
+def render_solution_comparison(
+    solution_a: Solution,
+    solution_b: Solution,
+    current_week: dict,
+    register_refresh_callback: Optional[Callable] = None,
+) -> None:
     """
     Rendert eine Vergleichsansicht zweier Solutions.
 
     Args:
         solution_a: Erste (Haupt-)Solution
         solution_b: Zweite Solution zum Vergleich
+        current_week: Dictionary mit 'value' key für die aktuelle Woche (shared)
+        register_refresh_callback: Optional callback to register refresh function
     """
     # Vergleich durchführen
     comparison_result = compare_solutions(solution_a, solution_b, include_details=True)
@@ -44,11 +51,21 @@ def render_solution_comparison(solution_a: Solution, solution_b: Solution) -> No
             "text-sm text-gray-600 mb-2"
         )
 
-        _render_comparison_table(solution_a, solution_b, comparison_result)
+        _render_comparison_table(
+            solution_a,
+            solution_b,
+            comparison_result,
+            current_week,
+            register_refresh_callback,
+        )
 
 
 def _render_comparison_table(
-    solution_a: Solution, solution_b: Solution, comparison_result: dict
+    solution_a: Solution,
+    solution_b: Solution,
+    comparison_result: dict,
+    current_week: dict,
+    register_refresh_callback: Optional[Callable] = None,
 ) -> None:
     """
     Rendert die Vergleichstabelle mit markierten Änderungen.
@@ -57,53 +74,80 @@ def _render_comparison_table(
         solution_a: Erste Solution (Referenz)
         solution_b: Zweite Solution (wird angezeigt)
         comparison_result: Ergebnis von compare_solutions
+        current_week: Dictionary mit 'value' key für die aktuelle Woche (shared)
+        register_refresh_callback: Optional callback to register refresh function
     """
-    days = _extract_days(solution_b)
+    all_days = _extract_days(solution_b)
     shift_types = _extract_shift_types(solution_b)
 
-    columns = _build_table_columns(days)
-    rows, shift_mapping, change_info = _build_comparison_rows(
-        solution_a, solution_b, days, shift_types
-    )
+    # Calculate weeks (7 days per week) - same logic as employee_assignments
+    num_weeks = (len(all_days) + 6) // 7  # Round up
+    weeks = []
+    for week_idx in range(num_weeks):
+        start_idx = week_idx * 7
+        end_idx = min(start_idx + 7, len(all_days))
+        week_days = all_days[start_idx:end_idx]
+        weeks.append((week_idx + 1, week_days))
 
-    table = (
-        ui.table(columns=columns, rows=rows, row_key="row_key")
-        .classes("w-full")
-        .props("flat hide-selected-banner")
-    )
+    @ui.refreshable
+    def render_table():
+        """Render the comparison table for the current week."""
+        week_num, days = weeks[current_week["value"]]
 
-    # Custom cell rendering mit Hervorhebung von Änderungen
-    table.add_slot(
-        "body-cell",
-        """
-        <q-td :props="props">
-            <div v-if="props.col.name === 'shift_type'" class="text-weight-medium">
-                {{ props.value }}
-            </div>
-            <div v-else-if="props.value === '-'" class="text-grey-5 text-center">
-                —
-            </div>
-            <div v-else class="q-pa-xs cursor-pointer" 
-                 :style="props.row['_color_' + props.col.name] || ''"
-                 @click="() => $parent.$emit('cell_click', props.row.row_key, props.col.name)">
-                <q-badge v-for="(badge, index) in props.row['_badges_' + props.col.name]" 
-                         :key="index"
-                         :color="badge.color" 
-                         text-color="white"
-                         class="q-ma-xs">
-                    {{ badge.name }}
-                </q-badge>
-            </div>
-        </q-td>
-    """,
-    )
+        ui.label(f"Woche {week_num} (Tage {days[0]} - {days[-1]})").classes(
+            "text-lg font-semibold mb-2"
+        )
 
-    table.on(
-        "cell_click",
-        lambda e: _display_change_dialog(
-            e.args[0], e.args[1], solution_a, solution_b, shift_mapping, change_info
-        ),
-    )
+        columns = _build_table_columns(days)
+        rows, shift_mapping, change_info = _build_comparison_rows(
+            solution_a, solution_b, days, shift_types
+        )
+
+        table = (
+            ui.table(columns=columns, rows=rows, row_key="row_key")
+            .classes("w-full")
+            .props("flat hide-selected-banner")
+        )
+
+        # Custom cell rendering mit Hervorhebung von Änderungen
+        table.add_slot(
+            "body-cell",
+            """
+            <q-td :props="props">
+                <div v-if="props.col.name === 'shift_type'" class="text-weight-medium">
+                    {{ props.value }}
+                </div>
+                <div v-else-if="props.value === '-'" class="text-grey-5 text-center">
+                    —
+                </div>
+                <div v-else class="q-pa-xs cursor-pointer" 
+                     :style="props.row['_color_' + props.col.name] || ''"
+                     @click="() => $parent.$emit('cell_click', props.row.row_key, props.col.name)">
+                    <q-badge v-for="(badge, index) in props.row['_badges_' + props.col.name]" 
+                             :key="index"
+                             :color="badge.color" 
+                             text-color="white"
+                             class="q-ma-xs">
+                        {{ badge.name }}
+                    </q-badge>
+                </div>
+            </q-td>
+        """,
+        )
+
+        table.on(
+            "cell_click",
+            lambda e: _display_change_dialog(
+                e.args[0], e.args[1], solution_a, solution_b, shift_mapping, change_info
+            ),
+        )
+
+    # Register refresh function if callback provided
+    if register_refresh_callback:
+        register_refresh_callback(render_table.refresh)
+
+    # Render table
+    render_table()
 
     # Legende
     with ui.row().classes("mt-4 gap-4"):
