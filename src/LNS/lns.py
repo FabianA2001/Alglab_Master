@@ -38,7 +38,7 @@ class LNS:
         ####################
         start_search_window_size: int = 10,
         search_window_size_min: int = 3,
-        window_increase_factor: float = 1.3,
+        window_increase_factor: float = 1.5,
         window_decrease_factor: float = 0.7,
         strong_improvement_threshold: float = 0.01,
         logger=logging.getLogger(__name__),
