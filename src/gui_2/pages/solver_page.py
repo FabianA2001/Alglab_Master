@@ -16,8 +16,10 @@ from typing import Any
 from nicegui import ui
 
 from ...LNS import lns, minimal_change_lns
+from ...solve_employees import solve_employee
 from ...shift_vars import Shift_vars
 from ...solver import Solver
+from ...callback_early_stop import Callback_Early_Stop
 from .. import state
 
 # Konstanten
@@ -111,6 +113,40 @@ def solver_page() -> None:
             },
             "requires_solution": True,
         },
+        {
+            "name": "First Solution",
+            "description": "Use one shift method to find a first solution quickly",
+            "icon": "build",
+            "method": "solve_instance_one_shift(first)",
+            "color": "warning",
+            "params": {
+                "max_time_in_seconds": DEFAULT_TIMEOUT_SECONDS,
+            },
+            "requires_solution": False,
+        },
+        {
+            "name": "First OK Solution",
+            "description": "Use one shift method to find an OK solution quickly",
+            "icon": "build",
+            "method": "solve_instance_one_shift(first OK)",
+            "color": "warning",
+            "params": {
+                "max_time_in_seconds": DEFAULT_TIMEOUT_SECONDS,
+            },
+            "requires_solution": False,
+        },
+        {
+            "name": "First good Solution",
+            "description": "Use one shift method to find an OK solution quickly",
+            "icon": "build",
+            "method": "solve_instance_one_shift(first OK then Solve)",
+            "color": "warning",
+            "params": {
+                "max_time_in_seconds": DEFAULT_TIMEOUT_SECONDS,
+            },
+            "requires_solution": False,
+        },
+        # TODO add first solution fast, and ok and warm_start without minimal changes,
     ]
 
     @ui.refreshable
@@ -427,6 +463,22 @@ def solver_page() -> None:
                     old_solution=lokal_solution,
                     days_with_change=list(days_with_change),
                     **params,
+                )
+            elif method_name == "solve_instance_one_shift(first)":
+                solution = solve_employee(instance=instance).solve_instance_one_shift()
+            elif method_name == "solve_instance_one_shift(first OK)":
+                solution = solve_employee(instance=instance).solve_instance_one_shift(
+                    one_shift_max_time=10 * 60, fixed_work_var_opt_max_time=10 * 60
+                )
+            elif method_name == "solve_instance_one_shift(first OK then Solve)":
+                optimization_callback = Callback_Early_Stop(
+                    instance, Shift_vars(instance)
+                )
+                solution = solve_employee(instance=instance).solve_instance_one_shift(
+                    one_shift_max_time=10 * 60,
+                    fixed_work_var_opt_max_time=10 * 60,
+                    general_optimization_max_time=10 * 60,
+                    optimization_callback=optimization_callback,
                 )
             else:
                 # Standard Solver-Methoden
