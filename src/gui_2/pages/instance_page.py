@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 
 from nicegui import ui
 
-from ...help_functions import hash_string
+from ...help_functions import hash_string, natural_sort_key
 from ...inputTypes.instace import Instance
 from ...parseData import parseTXT
 from .. import state
@@ -25,7 +25,7 @@ def load_available_instances() -> list[str]:
     if not DATA_DIR.exists():
         return []
 
-    txt_files = sorted([f.name for f in DATA_DIR.glob("*.txt")])
+    txt_files = sorted([f.name for f in DATA_DIR.glob("*.txt")], key=natural_sort_key)
     return txt_files
 
 
@@ -46,7 +46,13 @@ def render_instance_info() -> None:
             ui.label(f"Anzahl Tage: {instance.number_of_days}")
             ui.label(f"Anzahl Schichttypen: {len(instance.shift_types)}")
             ui.label(f"Anzahl Mitarbeiter: {len(instance.employees)}")
-            ui.label(f"Wochenendtage: {len(instance.weekend_days)}")
+
+        # Zeige Wochenend-Tage an
+        if instance.weekend_days:
+            weekend_list = ", ".join(str(day) for day in sorted(instance.weekend_days))
+            ui.label(f"Wochenenden: Tag {weekend_list}").classes(
+                "text-sm text-gray-600"
+            )
 
 
 def render_shift_type_details(refresh_callback=None) -> None:
@@ -95,7 +101,9 @@ def render_shift_type_details(refresh_callback=None) -> None:
             if shift_type_uid is None:
                 return
 
-            shift_type = instance.shift_types[shift_type_uid]
+            shift_type = instance.shift_types.get(shift_type_uid)
+            if shift_type is None:
+                return
 
             with detail_container:
                 with ui.row().classes("w-full items-center justify-between mb-2"):
@@ -124,9 +132,9 @@ def render_shift_type_details(refresh_callback=None) -> None:
                     ui.label("Blockierte Schichten danach:").classes("font-semibold")
                     if shift_type.blocked_shifts_after:
                         blocked_names = [
-                            instance.shift_types[uid].name
+                            instance.shift_types.get(uid).name  # type: ignore
                             for uid in shift_type.blocked_shifts_after
-                            if uid in instance.shift_types
+                            if instance.shift_types.get(uid) is not None
                         ]
                         ui.label(", ".join(blocked_names) if blocked_names else "Keine")
                     else:
@@ -182,7 +190,9 @@ def render_employee_details(refresh_callback=None) -> None:
             if employee_uid is None:
                 return
 
-            employee = instance.employees[employee_uid]
+            employee = instance.employees.get(employee_uid)
+            if employee is None:
+                return
 
             with detail_container:
                 with ui.row().classes("w-full items-center justify-between mb-2"):
@@ -387,7 +397,9 @@ def _build_shifts_table_rows(
 
     for idx, shift_type_uid in enumerate(shift_types):
         row_key = f"shift_{idx}"
-        shift_type = instance.shift_types[shift_type_uid]
+        shift_type = instance.shift_types.get(shift_type_uid)
+        if not shift_type:
+            continue
 
         row = {
             "shift_type": shift_type.name,
@@ -572,6 +584,7 @@ def _show_employee_dialog(
                 )
 
             # Speichere geänderte Instance
+            state.clear_solutions()
             state.set_instance(instance)
 
             ui.notify(success_msg, type="positive")
@@ -940,7 +953,8 @@ def _show_shift_type_dialog(
                         instance.shifts[day] = {}
 
                     # Prüfe ob Shift für diesen Tag und Typ bereits existiert
-                    if new_uid not in instance.shifts[day]:
+                    day_shifts = instance.shifts.get(day, {})
+                    if new_uid not in day_shifts:
                         # Bestimme ob Wochenende
                         is_weekend = day in instance.weekend_days
 
@@ -967,6 +981,7 @@ def _show_shift_type_dialog(
                 )
 
             # Speichere geänderte Instance
+            state.clear_solutions()
             state.set_instance(instance)
 
             ui.notify(success_msg, type="positive")
@@ -1086,8 +1101,14 @@ def _display_shift_details_dialog(
         return
 
     day, shift_type_uid = shift_cell_mapping[cell_key]
-    shift = instance.shifts[day][shift_type_uid]
-    shift_type = instance.shift_types[shift_type_uid]
+    shift = instance.shifts.get(day, {}).get(shift_type_uid)
+    if shift is None:
+        ui.notify("Schichtdaten nicht gefunden.", type="negative")
+        return
+    shift_type = instance.shift_types.get(shift_type_uid)
+    if shift_type is None:
+        ui.notify("Schichttyp nicht gefunden.", type="negative")
+        return
 
     # Form data für Edit-Modus
     form_data = {
@@ -1163,6 +1184,7 @@ def _display_shift_details_dialog(
             instance.shifts[day][shift_type_uid] = shift
 
             # Speichere geänderte Instance
+            state.clear_solutions()
             state.set_instance(instance)
 
             ui.notify("Schicht erfolgreich aktualisiert", type="positive")
