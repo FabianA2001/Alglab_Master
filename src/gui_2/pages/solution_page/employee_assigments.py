@@ -159,8 +159,12 @@ def _build_table_rows(
         row_key = f"shift_{idx}"
         shift_mapping[row_key] = shift_type
 
+        shift_type_obj = solution.instance.shift_types.get(shift_type)
+        if shift_type_obj is None:
+            continue
+
         row = {
-            "shift_type": f"Schicht {solution.instance.shift_types[shift_type].name}",
+            "shift_type": f"Schicht {shift_type_obj.name}",
             "row_key": row_key,
         }
 
@@ -199,11 +203,13 @@ def _get_assigned_employees(solution: Solution, day: int, shift_type: Any) -> Li
     Returns:
         List of employee names assigned to the shift.
     """
-    return [
-        solution.instance.employees[emp_uid].name
-        for emp_uid in solution.instance.employees.keys()
-        if solution.is_employee_assigned(day, shift_type, emp_uid)
-    ]
+    result = []
+    for emp_uid in solution.instance.employees.keys():
+        if solution.is_employee_assigned(day, shift_type, emp_uid):
+            emp = solution.instance.employees.get(emp_uid)
+            if emp:
+                result.append(emp.name)
+    return result
 
 
 def _display_details_dialog(
@@ -226,8 +232,16 @@ def _display_details_dialog(
         return
 
     day = int(col_name.replace("day_", ""))
-    shift_type_id = shift_mapping[row_key]
-    shift_name = solution.instance.shift_types[shift_type_id].name
+    shift_type_id = shift_mapping.get(row_key)
+    if shift_type_id is None:
+        ui.notify("Schichttyp nicht gefunden.", type="negative")
+        return
+
+    shift_type_obj = solution.instance.shift_types.get(shift_type_id)
+    if shift_type_obj is None:
+        ui.notify("Schichttyp nicht gefunden.", type="negative")
+        return
+    shift_name = shift_type_obj.name
 
     assigned_employees = _get_assigned_employees(solution, day, shift_type_id)
     actual_count = len(assigned_employees)
@@ -374,7 +388,7 @@ def _render_employee_modification_section(
                 # Aktualisiere Instance im State
                 state.set_instance(solution.instance)
 
-                emp_name = all_employees[selected_uid]
+                emp_name = all_employees.get(selected_uid, "Unbekannt")
                 ui.notify(
                     f"Soft: Strafe für {emp_name} erhöht auf {current_penalty + SOFT_WEIGHT_ADJUSTMENT}",
                     type="positive",
@@ -396,7 +410,7 @@ def _render_employee_modification_section(
                 # Aktualisiere Instance im State
                 state.set_instance(solution.instance)
 
-                emp_name = all_employees[selected_uid]
+                emp_name = all_employees.get(selected_uid, "Unbekannt")
                 ui.notify(
                     f"Hard: {emp_name} wurde zur Sperrliste hinzugefügt",
                     type="positive",
@@ -446,7 +460,7 @@ def _render_employee_modification_section(
                 # Aktualisiere Instance im State
                 state.set_instance(solution.instance)
 
-                emp_name = all_employees[selected_uid]
+                emp_name = all_employees.get(selected_uid, "Unbekannt")
                 ui.notify(
                     f"Soft: Strafe für Nicht-Zuweisung von {emp_name} erhöht auf {current_penalty + SOFT_WEIGHT_ADJUSTMENT}",
                     type="positive",
@@ -468,7 +482,7 @@ def _render_employee_modification_section(
                 # Aktualisiere Instance im State
                 state.set_instance(solution.instance)
 
-                emp_name = all_employees[selected_uid]
+                emp_name = all_employees.get(selected_uid, "Unbekannt")
                 ui.notify(
                     f"Hard: {emp_name} wurde zur Zuweisungsliste hinzugefügt",
                     type="positive",

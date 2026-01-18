@@ -172,8 +172,12 @@ def _build_comparison_rows(
         row_key = f"shift_{idx}"
         shift_mapping[row_key] = shift_type
 
+        shift_type_obj = solution_b.instance.shift_types.get(shift_type)
+        if shift_type_obj is None:
+            continue
+
         row = {
-            "shift_type": f"Schicht {solution_b.instance.shift_types[shift_type].name}",
+            "shift_type": f"Schicht {shift_type_obj.name}",
             "row_key": row_key,
         }
 
@@ -210,7 +214,7 @@ def _build_comparison_rows(
             # Erstelle Badge-Informationen
             badges = []
             for emp_uid in employees_b.keys():
-                emp_name = employees_b[emp_uid]
+                emp_name = employees_b.get(emp_uid, "Unbekannt")
                 # Grün wenn neu hinzugefügt, normal wenn unverändert
                 color = "green" if emp_uid not in employees_a else "primary"
                 badges.append({"name": emp_name, "color": color})
@@ -218,7 +222,7 @@ def _build_comparison_rows(
             # Füge entfernte Mitarbeiter als rote Badges hinzu
             for emp_uid in employees_a.keys():
                 if emp_uid not in employees_b:
-                    emp_name = employees_a[emp_uid]
+                    emp_name = employees_a.get(emp_uid, "Unbekannt")
                     badges.append({"name": f"{emp_name} (entfernt)", "color": "red"})
 
             row[f"_badges_{col_name}"] = badges  # type: ignore
@@ -255,7 +259,9 @@ def _get_assigned_employees_dict(
     result = {}
     for emp_uid in solution.instance.employees.keys():
         if solution.is_employee_assigned(day, shift_type, emp_uid):
-            result[emp_uid] = solution.instance.employees[emp_uid].name
+            emp = solution.instance.employees.get(emp_uid)
+            if emp:
+                result[emp_uid] = emp.name
     return result
 
 
@@ -282,8 +288,16 @@ def _display_change_dialog(
         return
 
     day = int(col_name.replace("day_", ""))
-    shift_type_id = shift_mapping[row_key]
-    shift_name = solution_b.instance.shift_types[shift_type_id].name
+    shift_type_id = shift_mapping.get(row_key)
+    if shift_type_id is None:
+        ui.notify("Schichttyp nicht gefunden.", type="negative")
+        return
+
+    shift_type_obj = solution_b.instance.shift_types.get(shift_type_id)
+    if shift_type_obj is None:
+        ui.notify("Schichttyp nicht gefunden.", type="negative")
+        return
+    shift_name = shift_type_obj.name
 
     info_key = (row_key, col_name)
     info = change_info.get(info_key)
