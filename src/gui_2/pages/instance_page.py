@@ -515,6 +515,7 @@ def _show_employee_dialog(
                 )
 
             # Speichere geänderte Instance
+            state.clear_solutions()
             state.set_instance(instance)
 
             ui.notify(success_msg, type="positive")
@@ -910,6 +911,7 @@ def _show_shift_type_dialog(
                 )
 
             # Speichere geänderte Instance
+            state.clear_solutions()
             state.set_instance(instance)
 
             ui.notify(success_msg, type="positive")
@@ -1106,6 +1108,7 @@ def _display_shift_details_dialog(
             instance.shifts[day][shift_type_uid] = shift
 
             # Speichere geänderte Instance
+            state.clear_solutions()
             state.set_instance(instance)
 
             ui.notify("Schicht erfolgreich aktualisiert", type="positive")
