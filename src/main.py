@@ -12,7 +12,7 @@ from src.help_functions import (
 from src.solution import Solution
 
 from .inputTypes import employee, instace, shiftType
-from .LNS import lns, minimal_change_lns
+from .LNS import lns, minimal_change_lns, slice_instance
 from .parseData import parseTXT
 from .shift_vars import Shift_vars
 from .solver import Solver
@@ -248,7 +248,7 @@ def run_one_instance():
         return
 
 
-def test_minimal_changes_lns():
+def t_minimal_changes_lns():
     sol = Solution.from_json_file("Instance4_bearbeitet")
     minimal_change_lns.solve_changes(
         old_solution=sol,
@@ -258,7 +258,15 @@ def test_minimal_changes_lns():
     )
 
 
-def test_double_lns():
+def t_slice_window():
+    sol = Solution.from_json_file("error_lns_merge_old_start_6_end_11")
+    si = slice_instance.Slice_instance(sol, 6, 11)
+    solver = si.get_solver()
+    new_sol = solver.solve()
+    new_sol.to_json_file("sliced_instance_test")
+
+
+def t_double_lns():
     sol = Solution.from_json_file("Instance4_bearbeitet")
 
     ###################
@@ -298,7 +306,7 @@ def main() -> None:
     # try_warmstart_callback()
     # calculate_all_instancen()
     # print_some_infos()
-    test_minimal_changes_lns()
+    t_minimal_changes_lns()
     # test_double_lns()
 
 
