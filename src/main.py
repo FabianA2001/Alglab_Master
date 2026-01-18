@@ -298,8 +298,8 @@ def main() -> None:
     # try_warmstart_callback()
     # calculate_all_instancen()
     # print_some_infos()
-    # test_minimal_changes_lns()
-    test_double_lns()
+    test_minimal_changes_lns()
+    # test_double_lns()
 
 
 if __name__ == "__main__":
