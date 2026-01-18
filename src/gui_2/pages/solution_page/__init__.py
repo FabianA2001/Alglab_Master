@@ -29,7 +29,7 @@ def solution_page():
         try:
             solution = Solution.from_json_file(solution_name)
             # Setze Solution im globalen State (verfügbar für alle Seiten)
-            state.clear_solutions()
+            state.rest_solutions()
             state.add_solution(solution)
             state.set_instance(solution.instance)
             state.clear_changed_days()  # Zurücksetzen bei neuer Solution
@@ -121,13 +121,32 @@ def solution_page():
             render_constraint_validation(current_solution)
             render_statistics(current_solution)
 
-            render_employee_assignments(current_solution)
+            # Shared current_week dictionary für beide Tabellen
+            current_week = {"value": 0}
 
+            # Container für comparison refresh callback
+            comparison_refresh_container = {"refresh": None}
+
+            def register_comparison_refresh(refresh_func):
+                """Callback um die Refresh-Funktion der Vergleichstabelle zu speichern."""
+                comparison_refresh_container["refresh"] = refresh_func
+
+            # Rendere Haupttabelle und übergebe comparison refresh callback
+            render_employee_assignments(
+                current_solution,
+                current_week,
+                lambda: comparison_refresh_container["refresh"]()
+                if comparison_refresh_container["refresh"]
+                else None,
+            )
             # Vergleichsansicht anzeigen wenn zweite Solution vorhanden
             if comparison_solution["value"] is not None:
                 # A = Vergleichslösung (alt), B = aktuelle Lösung (neu)
                 render_solution_comparison(
-                    comparison_solution["value"], current_solution
+                    comparison_solution["value"],
+                    current_solution,
+                    current_week,
+                    register_comparison_refresh,
                 )
 
     # UI Layout

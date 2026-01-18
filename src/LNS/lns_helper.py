@@ -82,6 +82,10 @@ def merge_solutions(
                 new_weekend_value = new_solution.weekend_vars.get(
                     (window_day, emp_uid), 0
                 )
+                if window_day == 0:
+                    old_var = old_solutions.work_vars.get((original_day - 1, emp_uid))
+                    if old_var is not None and old_var == 1:
+                        new_weekend_value = 1
                 updated_solution.set_weekend_var(
                     original_day, emp_uid, new_weekend_value
                 )
