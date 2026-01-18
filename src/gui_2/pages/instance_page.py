@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 
 from nicegui import ui
 
-from ...help_functions import hash_string
+from ...help_functions import hash_string, natural_sort_key
 from ...inputTypes.instace import Instance
 from ...parseData import parseTXT
 from .. import state
@@ -25,7 +25,7 @@ def load_available_instances() -> list[str]:
     if not DATA_DIR.exists():
         return []
 
-    txt_files = sorted([f.name for f in DATA_DIR.glob("*.txt")])
+    txt_files = sorted([f.name for f in DATA_DIR.glob("*.txt")], key=natural_sort_key)
     return txt_files
 
 
@@ -46,7 +46,13 @@ def render_instance_info() -> None:
             ui.label(f"Anzahl Tage: {instance.number_of_days}")
             ui.label(f"Anzahl Schichttypen: {len(instance.shift_types)}")
             ui.label(f"Anzahl Mitarbeiter: {len(instance.employees)}")
-            ui.label(f"Wochenendtage: {len(instance.weekend_days)}")
+
+        # Zeige Wochenend-Tage an
+        if instance.weekend_days:
+            weekend_list = ", ".join(str(day) for day in sorted(instance.weekend_days))
+            ui.label(f"Wochenenden: Tag {weekend_list}").classes(
+                "text-sm text-gray-600"
+            )
 
 
 def render_shift_type_details(refresh_callback=None) -> None:
@@ -95,7 +101,9 @@ def render_shift_type_details(refresh_callback=None) -> None:
             if shift_type_uid is None:
                 return
 
-            shift_type = instance.shift_types[shift_type_uid]
+            shift_type = instance.shift_types.get(shift_type_uid)
+            if shift_type is None:
+                return
 
             with detail_container:
                 with ui.row().classes("w-full items-center justify-between mb-2"):
@@ -124,9 +132,9 @@ def render_shift_type_details(refresh_callback=None) -> None:
                     ui.label("Blockierte Schichten danach:").classes("font-semibold")
                     if shift_type.blocked_shifts_after:
                         blocked_names = [
-                            instance.shift_types[uid].name
+                            instance.shift_types.get(uid).name  # type: ignore
                             for uid in shift_type.blocked_shifts_after
-                            if uid in instance.shift_types
+                            if instance.shift_types.get(uid) is not None
                         ]
                         ui.label(", ".join(blocked_names) if blocked_names else "Keine")
                     else:
@@ -182,7 +190,9 @@ def render_employee_details(refresh_callback=None) -> None:
             if employee_uid is None:
                 return
 
-            employee = instance.employees[employee_uid]
+            employee = instance.employees.get(employee_uid)
+            if employee is None:
+                return
 
             with detail_container:
                 with ui.row().classes("w-full items-center justify-between mb-2"):
@@ -261,40 +271,97 @@ def render_shifts_table() -> None:
     with ui.card().classes("w-full mb-4"):
         ui.label("Schichten Übersicht").classes("text-xl font-bold mb-2")
 
-        days = sorted(instance.shifts.keys())
+        all_days = sorted(instance.shifts.keys())
         shift_types = sorted(instance.shift_types.keys())
 
-        columns = _build_shifts_table_columns(days)
-        rows, shift_cell_mapping = _build_shifts_table_rows(instance, days, shift_types)
+        # Calculate weeks (7 days per week)
+        num_weeks = (len(all_days) + 6) // 7  # Round up
+        weeks = []
+        for week_idx in range(num_weeks):
+            start_idx = week_idx * 7
+            end_idx = min(start_idx + 7, len(all_days))
+            week_days = all_days[start_idx:end_idx]
+            weeks.append((week_idx + 1, week_days))
 
-        table = (
-            ui.table(columns=columns, rows=rows, row_key="row_key")
-            .classes("w-full")
-            .props("flat hide-selected-banner dense")
-        )
+        # State for current week
+        current_week = {"value": 0}  # Index in weeks list
 
-        # Custom cell rendering with clickable elements
-        table.add_slot(
-            "body-cell",
-            """
-            <q-td :props="props">
-                <div v-if="props.col.name === 'shift_type'" class="text-weight-medium">
-                    {{ props.value }}
-                </div>
-                <div v-else class="q-pa-xs cursor-pointer hover:bg-gray-100" 
-                     @click="() => $parent.$emit('cell_click', props.row.row_key, props.col.name)">
-                    <div class="text-xs text-gray-600">{{ props.value }}</div>
-                </div>
-            </q-td>
-        """,
-        )
+        @ui.refreshable
+        def render_table():
+            """Render the table for the current week."""
+            week_num, days = weeks[current_week["value"]]
 
-        table.on(
-            "cell_click",
-            lambda e: _display_shift_details_dialog(
-                e.args[0], e.args[1], instance, shift_cell_mapping
-            ),
-        )
+            ui.label(f"Woche {week_num} (Tage {days[0]} - {days[-1]})").classes(
+                "text-lg font-semibold mb-2"
+            )
+
+            columns = _build_shifts_table_columns(days)
+            rows, shift_cell_mapping = _build_shifts_table_rows(
+                instance, days, shift_types
+            )
+
+            table = (
+                ui.table(columns=columns, rows=rows, row_key="row_key")
+                .classes("w-full")
+                .props("flat hide-selected-banner dense")
+            )
+
+            # Custom cell rendering with clickable elements
+            table.add_slot(
+                "body-cell",
+                """
+                <q-td :props="props">
+                    <div v-if="props.col.name === 'shift_type'" class="text-weight-medium">
+                        {{ props.value }}
+                    </div>
+                    <div v-else class="q-pa-xs cursor-pointer hover:bg-gray-100" 
+                         @click="() => $parent.$emit('cell_click', props.row.row_key, props.col.name)">
+                        <div class="text-xs text-gray-600">{{ props.value }}</div>
+                    </div>
+                </q-td>
+            """,
+            )
+
+            table.on(
+                "cell_click",
+                lambda e: _display_shift_details_dialog(
+                    e.args[0], e.args[1], instance, shift_cell_mapping
+                ),
+            )
+
+        # Week navigation
+        if num_weeks > 1:
+            with ui.row().classes("gap-2 items-center mb-4"):
+                ui.button(
+                    icon="chevron_left",
+                    on_click=lambda: [
+                        current_week.update(value=max(0, current_week["value"] - 1)),
+                        render_table.refresh(),
+                    ],
+                ).props("flat").bind_enabled_from(
+                    current_week, "value", lambda v: v > 0
+                )
+
+                ui.label().bind_text_from(
+                    current_week,
+                    "value",
+                    lambda v: f"Woche {weeks[v][0]} von {num_weeks}",
+                ).classes("font-medium")
+
+                ui.button(
+                    icon="chevron_right",
+                    on_click=lambda: [
+                        current_week.update(
+                            value=min(num_weeks - 1, current_week["value"] + 1)
+                        ),
+                        render_table.refresh(),
+                    ],
+                ).props("flat").bind_enabled_from(
+                    current_week, "value", lambda v: v < num_weeks - 1
+                )
+
+        # Render table
+        render_table()
 
 
 def _build_shifts_table_columns(days: List[int]) -> List[Dict[str, str]]:
@@ -330,7 +397,9 @@ def _build_shifts_table_rows(
 
     for idx, shift_type_uid in enumerate(shift_types):
         row_key = f"shift_{idx}"
-        shift_type = instance.shift_types[shift_type_uid]
+        shift_type = instance.shift_types.get(shift_type_uid)
+        if not shift_type:
+            continue
 
         row = {
             "shift_type": shift_type.name,
@@ -515,6 +584,7 @@ def _show_employee_dialog(
                 )
 
             # Speichere geänderte Instance
+            state.clear_solutions()
             state.set_instance(instance)
 
             ui.notify(success_msg, type="positive")
@@ -883,7 +953,8 @@ def _show_shift_type_dialog(
                         instance.shifts[day] = {}
 
                     # Prüfe ob Shift für diesen Tag und Typ bereits existiert
-                    if new_uid not in instance.shifts[day]:
+                    day_shifts = instance.shifts.get(day, {})
+                    if new_uid not in day_shifts:
                         # Bestimme ob Wochenende
                         is_weekend = day in instance.weekend_days
 
@@ -910,6 +981,7 @@ def _show_shift_type_dialog(
                 )
 
             # Speichere geänderte Instance
+            state.clear_solutions()
             state.set_instance(instance)
 
             ui.notify(success_msg, type="positive")
@@ -1029,8 +1101,14 @@ def _display_shift_details_dialog(
         return
 
     day, shift_type_uid = shift_cell_mapping[cell_key]
-    shift = instance.shifts[day][shift_type_uid]
-    shift_type = instance.shift_types[shift_type_uid]
+    shift = instance.shifts.get(day, {}).get(shift_type_uid)
+    if shift is None:
+        ui.notify("Schichtdaten nicht gefunden.", type="negative")
+        return
+    shift_type = instance.shift_types.get(shift_type_uid)
+    if shift_type is None:
+        ui.notify("Schichttyp nicht gefunden.", type="negative")
+        return
 
     # Form data für Edit-Modus
     form_data = {
@@ -1106,6 +1184,7 @@ def _display_shift_details_dialog(
             instance.shifts[day][shift_type_uid] = shift
 
             # Speichere geänderte Instance
+            state.clear_solutions()
             state.set_instance(instance)
 
             ui.notify("Schicht erfolgreich aktualisiert", type="positive")

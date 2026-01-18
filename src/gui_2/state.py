@@ -316,6 +316,11 @@ def get_solver_timeout() -> float | None:
     return _solver_timeout
 
 
+def rest_solutions() -> None:
+    clear_changed_days()
+    clear_solutions()
+
+
 def reset_solver_state() -> None:
     """Setzt alle Solver-bezogenen State-Variablen zurück."""
     global _solver_running, _solver_start_time, _solver_end_time
