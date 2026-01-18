@@ -228,7 +228,7 @@ class LNS:
             disabled_for_window=self.disabled_for_window,
         )
 
-    def solve(self, not_better_break_after: int = 60, enable_early_stop: bool = True) -> solution.Solution:
+    def solve(self, not_better_break_after: int = 60) -> solution.Solution:
         self.logger.info("Starting LNS solve process")
         start_time = time.time()
         iteration = 0
@@ -291,16 +291,16 @@ class LNS:
             sol.calculate_work_vars()
             sol.set_preferred_vars()
             # TODO Maybe also add this
-            sol.objective_value_new()
+            # sol.objective_value_new()
             if not sol.checkt_constraints[0]:
                 self.old_solution.to_json_file(
-                    f"{self.old_solution.instance.name}_error_lns_merge_old_start_{self.start_day}_end_{self.end_day}"
+                    f"error_lns_merge_old_start_{self.start_day}_end_{self.end_day}"
                 )
                 old_sol_debugg.to_json_file(
-                    f"{self.old_solution.instance.name}_error_lns_merge_bevor_start_{self.start_day}_end_{self.end_day}"
+                    f"error_lns_merge_bevor_start_{self.start_day}_end_{self.end_day}"
                 )
                 sol.to_json_file(
-                    f"{self.old_solution.instance.name}_error_lns_merge_after_start_{self.start_day}_end_{self.end_day}"
+                    f"error_lns_merge_after_start_{self.start_day}_end_{self.end_day}"
                 )
 
                 self.logger.debug(
@@ -337,8 +337,7 @@ class LNS:
                 )
                 improvement = -1
             # Lösung ist gut genug
-            if enable_early_stop:
-                early_stop = self.lns_early_stop(sol)
+            # early_stop = self.lns_early_stop(sol)
             self.update_search_window(improvement)
 
         total_time = time.time() - start_time
