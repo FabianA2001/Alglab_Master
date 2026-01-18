@@ -294,13 +294,13 @@ class LNS:
             sol.objective_value_new()
             if not sol.checkt_constraints[0]:
                 self.old_solution.to_json_file(
-                    f"error_lns_merge_old_start_{self.start_day}_end_{self.end_day}"
+                    f"{self.old_solution.instance.name}_error_lns_merge_old_start_{self.start_day}_end_{self.end_day}"
                 )
                 old_sol_debugg.to_json_file(
-                    f"error_lns_merge_bevor_start_{self.start_day}_end_{self.end_day}"
+                    f"{self.old_solution.instance.name}_error_lns_merge_bevor_start_{self.start_day}_end_{self.end_day}"
                 )
                 sol.to_json_file(
-                    f"error_lns_merge_after_start_{self.start_day}_end_{self.end_day}"
+                    f"{self.old_solution.instance.name}_error_lns_merge_after_start_{self.start_day}_end_{self.end_day}"
                 )
 
                 self.logger.debug(
@@ -337,7 +337,7 @@ class LNS:
                 )
                 improvement = -1
             # Lösung ist gut genug
-            # early_stop = self.lns_early_stop(sol)
+            early_stop = self.lns_early_stop(sol)
             self.update_search_window(improvement)
 
         total_time = time.time() - start_time
