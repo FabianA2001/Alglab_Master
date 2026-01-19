@@ -55,15 +55,23 @@ class callback_improvement_slowed(cp_model.CpSolverSolutionCallback):
             time.time() - self.last_check_time >= self.time_between_checks_in_seconds
             and (self.percentual_improvement > 0 or self.numerical_improvement > 0)
         ):
-            print(time.time() - self.last_check_time)
-            self.last_check_time = time.time()
-            print(self.time_between_checks_in_seconds)
             print(
+                "time since last objective function improvement check: ",
+                time.time() - self.last_check_time,
+            )
+            self.last_check_time = time.time()
+            print(
+                "desired time between objective function improvement checks: ",
+                self.time_between_checks_in_seconds,
+            )
+            print(
+                "comparison numerical wanted improvement (wanted objective function >= current objective function): ",
                 self.last_check_objective_value - self.numerical_improvement,
                 ">=",
                 self.objective_value,
             )
             print(
+                "comparison percentual wanted improvement (wanted objective function >= current objective function): ",
                 self.last_check_objective_value * (1 - self.percentual_improvement),
                 ">=",
                 self.objective_value,

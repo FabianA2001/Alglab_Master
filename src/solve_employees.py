@@ -504,3 +504,41 @@ class solve_employee:
             )
             return (solution1, True)
         return (solution, False)
+
+    @staticmethod
+    def st_solve_employee(
+        employee_uid: employee.EmployeeUid, instance: instace.Instance
+    ):
+        """
+        A function that for the instance passed, get an instance that only contains the given employee and then solve this instance and employee, at the end it return True if a solution exist and the employee is valid and False otherwise.
+
+        :param employee_uid: The employee to be solved
+        :type employee_uid: employee.EmployeeUid
+        :param instance: The instance
+        :type instance: instace.Instance
+        :return: True if the employee is valid with the instance False otherwise
+        """
+
+        start_time = time.time()
+        original_employees = instance.employees.copy()
+        instance_copy = instance
+        instance_copy.employees = {employee_uid: instance_copy.employees[employee_uid]}
+        solver_ = Solver(instance_copy, shift_vars.Shift_vars(instance_copy))
+        # also implement something to consider the previously set employees shifts
+        solution = solver_.solve_callback_with_solution(
+            disabled_constraints=[SolverConstraints.cover_requirements],
+            objective_function=solver_.objective_value_only_wishes,
+            log_search_progress=False,
+            max_time_in_seconds=60,
+            stop_after_first_solution=True,
+        )
+        instance_copy.employees = original_employees
+        print(time.time() - start_time)
+
+        if solution.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
+            return True
+        elif solution.solve_status in [cp_model.UNKNOWN]:
+            print("TOO SLOW")
+            return False
+        else:
+            return False
