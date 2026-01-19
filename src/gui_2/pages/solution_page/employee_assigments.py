@@ -113,8 +113,6 @@ def employee_assignments(
 
             table.on("cell_click", handle_cell_click)
 
-            table.on("cell_click", handle_cell_click)
-
         # Week navigation
         if num_weeks > 1:
             with ui.row().classes("gap-2 items-center mb-4"):
