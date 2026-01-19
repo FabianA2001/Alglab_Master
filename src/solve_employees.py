@@ -510,13 +510,13 @@ class solve_employee:
         employee_uid: employee.EmployeeUid, instance: instace.Instance
     ):
         """
-        A function that for the instance passed in the constructor, get an instance that only contains the given employee and then solve this instance and employee until timeout for soft_max_time_in_seconds or first solution if soft_max_time_in_seconds <= 8.
+        A function that for the instance passed, get an instance that only contains the given employee and then solve this instance and employee, at the end it return True if a solution exist and the employee is valid and False otherwise.
 
-        :param self: Description
         :param employee_uid: The employee to be solved
         :type employee_uid: employee.EmployeeUid
-        :param soft_max_time_in_seconds: Time for the optimization of the solution (only considering employee wishes), if <= 8 then the first solution is given back.
-        :type soft_max_time_in_seconds: int
+        :param instance: The instance
+        :type instance: instace.Instance
+        :return: True if the employee is valid with the instance False otherwise
         """
 
         start_time = time.time()
