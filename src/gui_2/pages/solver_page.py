@@ -140,17 +140,15 @@ def solver_page() -> None:
             "requires_solution": False,
         },
         {
-            "name": "First good Solution",
-            "description": "Use one shift method to find an OK solution quickly",
+            "name": "Normal Warm Start",
+            "description": "Resume normal optimization with hints from previous solution",
             "icon": "build",
-            "method": "solve_instance_one_shift",
+            "method": "normal_warm_start",
             "color": "warning",
             "params": {
-                "one_shift_max_time": 10 * 60,
-                "fixed_work_var_opt_max_time": 10 * 60,
-                "general_optimization_max_time": DEFAULT_TIMEOUT_SECONDS,
+                "max_time_in_seconds": DEFAULT_TIMEOUT_SECONDS,
             },
-            "requires_solution": False,
+            "requires_solution": True,
         },
         # TODO add first solution fast, and ok and warm_start without minimal changes,
     ]
@@ -491,6 +489,15 @@ def solver_page() -> None:
                     ],
                     optimization_callback=optimization_callback,
                 )
+            elif method_name == "normal_warm_start":
+                old_solution = state.get_solution()
+                if not old_solution:
+                    raise ValueError(
+                        "Minimal Changes LNS benötigt eine existierende Lösung!"
+                    )
+                solution = Solver(
+                    instance, Shift_vars(instance)
+                ).warm_start_generalized(hint_solution=old_solution, **params)
             else:
                 # Standard Solver-Methoden
                 vars = Shift_vars(instance)
