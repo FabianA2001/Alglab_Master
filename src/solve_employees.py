@@ -123,7 +123,10 @@ class solve_employee:
         return solution
 
     def solve_employee(
-        self, employee_uid: employee.EmployeeUid, soft_max_time_in_seconds: int = 0, to_be_repaired_solution : Solution | None = None
+        self,
+        employee_uid: employee.EmployeeUid,
+        soft_max_time_in_seconds: int = 0,
+        to_be_repaired_solution: Solution | None = None,
     ):
         """
         A function that for the instance passed in the constructor, get an instance that only contains the given employee and then solve this instance and employee until timeout for soft_max_time_in_seconds or first solution if soft_max_time_in_seconds <= 8.
@@ -137,10 +140,14 @@ class solve_employee:
         start_time = time.time()
         if to_be_repaired_solution is None:
             instance_copy = self.instance.model_copy()
-            instance_copy.employees = {employee_uid: instance_copy.employees[employee_uid]}
+            instance_copy.employees = {
+                employee_uid: instance_copy.employees[employee_uid]
+            }
         else:
             instance_copy = to_be_repaired_solution.instance.model_copy()
-            instance_copy.employees = {employee_uid: instance_copy.employees[employee_uid]}
+            instance_copy.employees = {
+                employee_uid: instance_copy.employees[employee_uid]
+            }
         solver_ = Solver(instance_copy, shift_vars.Shift_vars(instance_copy))
         stop_after_first_solution = False
         if soft_max_time_in_seconds <= 8:
@@ -166,7 +173,9 @@ class solve_employee:
         end_time = time.time()
         print(end_time - start_time)
         if to_be_repaired_solution is not None:
-            to_be_repaired_solution.copy_solution(solution=solution.model_copy(deep=True))
+            to_be_repaired_solution.copy_solution(
+                solution=solution.model_copy(deep=True)
+            )
             to_be_repaired_solution.solve_time = time.time() - start_time
             to_be_repaired_solution.set_preferred_vars()
             to_be_repaired_solution.objective_value_new()
@@ -517,3 +526,41 @@ class solve_employee:
             )
             return (solution1, True)
         return (solution, False)
+
+    @staticmethod
+    def st_solve_employee(
+        employee_uid: employee.EmployeeUid, instance: instace.Instance
+    ):
+        """
+        A function that for the instance passed, get an instance that only contains the given employee and then solve this instance and employee, at the end it return True if a solution exist and the employee is valid and False otherwise.
+
+        :param employee_uid: The employee to be solved
+        :type employee_uid: employee.EmployeeUid
+        :param instance: The instance
+        :type instance: instace.Instance
+        :return: True if the employee is valid with the instance False otherwise
+        """
+
+        start_time = time.time()
+        original_employees = instance.employees.copy()
+        instance_copy = instance
+        instance_copy.employees = {employee_uid: instance_copy.employees[employee_uid]}
+        solver_ = Solver(instance_copy, shift_vars.Shift_vars(instance_copy))
+        # also implement something to consider the previously set employees shifts
+        solution = solver_.solve_callback_with_solution(
+            disabled_constraints=[SolverConstraints.cover_requirements],
+            objective_function=solver_.objective_value_only_wishes,
+            log_search_progress=False,
+            max_time_in_seconds=60,
+            stop_after_first_solution=True,
+        )
+        instance_copy.employees = original_employees
+        print(time.time() - start_time)
+
+        if solution.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
+            return True
+        elif solution.solve_status in [cp_model.UNKNOWN]:
+            print("TOO SLOW")
+            return False
+        else:
+            return False

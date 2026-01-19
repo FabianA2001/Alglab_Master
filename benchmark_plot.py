@@ -55,12 +55,14 @@ def gather_sol_times(data_dir):
         # 34: "1S10_wv10_o0_1Scp0.025_wvcp0.012_ocn0_alternative",
         # 39: "1S10_wv10_o10_1Scp0.025_wvcp0.012_ocn0_alternative",
         # 40: "1S10_wv10_o10_1Scp0.025_wvcp0.012_ocn0_new",
-        41: "1S10_wv10_o10_1Scp0.05_wvcp0.024_ocn0_new",
+        # 41: "1S10_wv10_o10_1Scp0.05_wvcp0.024_ocn0_new",
         42: "1S10_wv10_o10_1Scp0.025_wvcp0.012_ocn0_new",
         # 43:"1S0_wv0_o0_1Scp0.025_wvcp0.012_ocn0_new",
-        44: "1S0_wv0_o30_1Scp0.025_wvcp0.012_ocn0_new",
+        # 44: "1S0_wv0_o30_1Scp0.025_wvcp0.012_ocn0_new",
         45: "1S10_wv10_o0_1Scp0.025_wvcp0.012_ocn0_new",
-        46: "1S10_wv10_o0_1Scp0.05_wvcp0.024_ocn0_new",
+        # 46: "1S10_wv10_o0_1Scp0.05_wvcp0.024_ocn0_new",
+        34: "1S10_wv10_o0_1Scp0.025_wvcp0.012_ocn0_alt",
+        39: "1S10_wv10_o10_1Scp0.025_wvcp0.012_ocn0_alt",
     }
     # Gathering files for optimal solutions
     for key in dict_constraint.values():  # Modify keys as per your dictionary
