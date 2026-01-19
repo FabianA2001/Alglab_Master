@@ -123,7 +123,7 @@ class solve_employee:
         return solution
 
     def solve_employee(
-        self, employee_uid: employee.EmployeeUid, soft_max_time_in_seconds: int = 60
+        self, employee_uid: employee.EmployeeUid, soft_max_time_in_seconds: int = 0, to_be_repaired_solution : Solution | None = None
     ):
         """
         A function that for the instance passed in the constructor, get an instance that only contains the given employee and then solve this instance and employee until timeout for soft_max_time_in_seconds or first solution if soft_max_time_in_seconds <= 8.
@@ -135,8 +135,12 @@ class solve_employee:
         :type soft_max_time_in_seconds: int
         """
         start_time = time.time()
-        instance_copy = self.instance.model_copy()
-        instance_copy.employees = {employee_uid: instance_copy.employees[employee_uid]}
+        if to_be_repaired_solution is None:
+            instance_copy = self.instance.model_copy()
+            instance_copy.employees = {employee_uid: instance_copy.employees[employee_uid]}
+        else:
+            instance_copy = to_be_repaired_solution.instance.model_copy()
+            instance_copy.employees = {employee_uid: instance_copy.employees[employee_uid]}
         solver_ = Solver(instance_copy, shift_vars.Shift_vars(instance_copy))
         stop_after_first_solution = False
         if soft_max_time_in_seconds <= 8:
@@ -161,6 +165,15 @@ class solve_employee:
 
         end_time = time.time()
         print(end_time - start_time)
+        if to_be_repaired_solution is not None:
+            to_be_repaired_solution.copy_solution(solution=solution.model_copy(deep=True))
+            to_be_repaired_solution.solve_time = time.time() - start_time
+            to_be_repaired_solution.set_preferred_vars()
+            to_be_repaired_solution.objective_value_new()
+            to_be_repaired_solution.calculate_work_vars()
+            to_be_repaired_solution.solve_status = cp_model.FEASIBLE
+            to_be_repaired_solution.timestamp = datetime.now()
+            return to_be_repaired_solution
         return solution
 
     def solve_employees_incrementally(

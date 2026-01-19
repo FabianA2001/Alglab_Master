@@ -146,7 +146,17 @@ def solver_page() -> None:
             },
             "requires_solution": False,
         },
-        # TODO add first solution fast, and ok and warm_start without minimal changes,
+        {
+            "name": "Repair Solution",
+            "description": "Use one shift method to find an OK solution quickly",
+            "icon": "build",
+            "method": "repair_solution",
+            "color": "warning",
+            "params": {
+                "max_time_in_seconds": DEFAULT_TIMEOUT_SECONDS,
+            },
+            "requires_solution": True,
+        },
     ]
 
     @ui.refreshable
@@ -480,6 +490,33 @@ def solver_page() -> None:
                     general_optimization_max_time=10 * 60,
                     optimization_callback=optimization_callback,
                 )
+            elif method_name == "repair_solution":
+                employee_uid_to_repair = set()  # Use a set instead of a list
+                old_solution = state.get_solution()
+
+                if not old_solution:
+                    raise ValueError(
+                        "Minimal Changes LNS benötigt eine existierende Lösung!"
+                    )
+
+                for day in range(instance.number_of_days):
+                    for shift_uid, _ in instance.shift_types.items():
+                        # Use add() to insert elements into the set
+                        employee_uid_to_repair.update(
+                            instance.shifts[day][shift_uid].assign_employee_day_shift
+                        )
+                        employee_uid_to_repair.update(
+                            instance.shifts[day][shift_uid].ban_employee_day_shift
+                        )
+
+                lokal_solution = old_solution.model_copy(deep=True)
+
+                for employee in employee_uid_to_repair:
+                    lokal_solution = solve_employee(instance=instance).solve_employee(
+                        employee_uid=employee, to_be_repaired_solution=lokal_solution
+                    )
+
+                solution = lokal_solution.model_copy(deep=True)
             else:
                 # Standard Solver-Methoden
                 vars = Shift_vars(instance)
