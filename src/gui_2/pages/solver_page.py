@@ -140,17 +140,15 @@ def solver_page() -> None:
             "requires_solution": False,
         },
         {
-            "name": "First good Solution",
-            "description": "Use one shift method to find an OK solution quickly",
+            "name": "Normal Warm Start",
+            "description": "Resume normal optimization with hints from previous solution",
             "icon": "build",
-            "method": "solve_instance_one_shift",
+            "method": "normal_warm_start",
             "color": "warning",
             "params": {
-                "one_shift_max_time": 10 * 60,
-                "fixed_work_var_opt_max_time": 10 * 60,
-                "general_optimization_max_time": DEFAULT_TIMEOUT_SECONDS,
+                "max_time_in_seconds": DEFAULT_TIMEOUT_SECONDS,
             },
-            "requires_solution": False,
+            "requires_solution": True,
         },
         # TODO add first solution fast, and ok and warm_start without minimal changes,
     ]
@@ -436,9 +434,14 @@ def solver_page() -> None:
                 params["timeout_seconds"] = current_timeout
             elif "max_solve_time" in params:
                 params["max_solve_time"] = current_timeout
-            elif "general_optimization_max_time" in params and current_timeout is not None:
+            elif (
+                "general_optimization_max_time" in params
+                and current_timeout is not None
+            ):
                 params["general_optimization_max_time"] = current_timeout
-                params["general_optimization_max_time"] = current_timeout if current_timeout > 1 else 0
+                params["general_optimization_max_time"] = (
+                    current_timeout if current_timeout > 1 else 0
+                )
 
             if method_name == "lns":
                 # LNS-Solver
@@ -474,16 +477,20 @@ def solver_page() -> None:
                     **params,
                 )
             elif method_name == "solve_instance_one_shift":
-                optimization_callback = Callback_Early_Stop(
-                    instance, Shift_vars(instance)
-                )
-                #Note right now optimization time is the max_time_in_seconds, the rest is not limited but finish for each isntance relativily fast to the size of an instance
+                # Note right now optimization time is the max_time_in_seconds, the rest is not limited but finish for each isntance relativily fast to the size of an instance
                 solution = solve_employee(instance=instance).solve_instance_one_shift(
                     one_shift_max_time=params["one_shift_max_time"],
                     fixed_work_var_opt_max_time=params["fixed_work_var_opt_max_time"],
-                    general_optimization_max_time=params["general_optimization_max_time"],
-                    optimization_callback=optimization_callback,
                 )
+            elif method_name == "normal_warm_start":
+                old_solution = state.get_solution()
+                if not old_solution:
+                    raise ValueError(
+                        "Minimal Changes LNS benötigt eine existierende Lösung!"
+                    )
+                solution = Solver(
+                    instance, Shift_vars(instance)
+                ).warm_start_generalized(hint_solution=old_solution, **params)
             else:
                 # Standard Solver-Methoden
                 vars = Shift_vars(instance)
