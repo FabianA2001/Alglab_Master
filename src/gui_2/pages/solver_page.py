@@ -15,11 +15,11 @@ from typing import Any
 
 from nicegui import ui
 
-from ...LNS import lns, minimal_change_lns
-from ...solve_employees import solve_employee
-from ...shift_vars import Shift_vars
-from ...solver import Solver
 from ...callback_early_stop import Callback_Early_Stop
+from ...LNS import lns, minimal_change_lns
+from ...shift_vars import Shift_vars
+from ...solve_employees import solve_employee
+from ...solver import Solver
 from .. import state
 
 # Konstanten
@@ -436,9 +436,14 @@ def solver_page() -> None:
                 params["timeout_seconds"] = current_timeout
             elif "max_solve_time" in params:
                 params["max_solve_time"] = current_timeout
-            elif "general_optimization_max_time" in params and current_timeout is not None:
+            elif (
+                "general_optimization_max_time" in params
+                and current_timeout is not None
+            ):
                 params["general_optimization_max_time"] = current_timeout
-                params["general_optimization_max_time"] = current_timeout if current_timeout > 1 else 0
+                params["general_optimization_max_time"] = (
+                    current_timeout if current_timeout > 1 else 0
+                )
 
             if method_name == "lns":
                 # LNS-Solver
@@ -477,11 +482,13 @@ def solver_page() -> None:
                 optimization_callback = Callback_Early_Stop(
                     instance, Shift_vars(instance)
                 )
-                #Note right now optimization time is the max_time_in_seconds, the rest is not limited but finish for each isntance relativily fast to the size of an instance
+                # Note right now optimization time is the max_time_in_seconds, the rest is not limited but finish for each isntance relativily fast to the size of an instance
                 solution = solve_employee(instance=instance).solve_instance_one_shift(
                     one_shift_max_time=params["one_shift_max_time"],
                     fixed_work_var_opt_max_time=params["fixed_work_var_opt_max_time"],
-                    general_optimization_max_time=params["general_optimization_max_time"],
+                    general_optimization_max_time=params[
+                        "general_optimization_max_time"
+                    ],
                     optimization_callback=optimization_callback,
                 )
             else:
@@ -618,6 +625,7 @@ def solver_page() -> None:
         """
         nonlocal solver_thread, is_running, start_time, log_buffer
 
+        state.clear_changed_days()
         if state.is_solver_running():
             ui.notify("Solver läuft bereits!", type="warning")
             return

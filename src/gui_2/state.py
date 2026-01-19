@@ -63,7 +63,6 @@ def add_solution(solution: Solution) -> None:
         solution: Die neue Solution oder None
     """
     global _current_solution
-    clear_changed_days()
     _current_solution.append(solution)
 
 
