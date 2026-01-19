@@ -434,14 +434,6 @@ def solver_page() -> None:
                 params["timeout_seconds"] = current_timeout
             elif "max_solve_time" in params:
                 params["max_solve_time"] = current_timeout
-            elif (
-                "general_optimization_max_time" in params
-                and current_timeout is not None
-            ):
-                params["general_optimization_max_time"] = current_timeout
-                params["general_optimization_max_time"] = (
-                    current_timeout if current_timeout > 1 else 0
-                )
 
             if method_name == "lns":
                 # LNS-Solver
