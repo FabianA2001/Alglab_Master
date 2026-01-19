@@ -117,10 +117,12 @@ def solver_page() -> None:
             "name": "First Solution",
             "description": "Use one shift method to find a first solution quickly",
             "icon": "build",
-            "method": "solve_instance_one_shift(first)",
+            "method": "solve_instance_one_shift",
             "color": "warning",
             "params": {
-                "max_time_in_seconds": DEFAULT_TIMEOUT_SECONDS,
+                "one_shift_max_time": 0 * 60,
+                "fixed_work_var_opt_max_time": 0 * 60,
+                "general_optimization_max_time": 0 * 60,
             },
             "requires_solution": False,
         },
@@ -128,10 +130,12 @@ def solver_page() -> None:
             "name": "First OK Solution",
             "description": "Use one shift method to find an OK solution quickly",
             "icon": "build",
-            "method": "solve_instance_one_shift(first OK)",
+            "method": "solve_instance_one_shift",
             "color": "warning",
             "params": {
-                "max_time_in_seconds": DEFAULT_TIMEOUT_SECONDS,
+                "one_shift_max_time": 10 * 60,
+                "fixed_work_var_opt_max_time": 10 * 60,
+                "general_optimization_max_time": 0 * 60,
             },
             "requires_solution": False,
         },
@@ -139,10 +143,12 @@ def solver_page() -> None:
             "name": "First good Solution",
             "description": "Use one shift method to find an OK solution quickly",
             "icon": "build",
-            "method": "solve_instance_one_shift(first OK then Solve)",
+            "method": "solve_instance_one_shift",
             "color": "warning",
             "params": {
-                "max_time_in_seconds": DEFAULT_TIMEOUT_SECONDS,
+                "one_shift_max_time": 10 * 60,
+                "fixed_work_var_opt_max_time": 10 * 60,
+                "general_optimization_max_time": DEFAULT_TIMEOUT_SECONDS,
             },
             "requires_solution": False,
         },
@@ -430,6 +436,9 @@ def solver_page() -> None:
                 params["timeout_seconds"] = current_timeout
             elif "max_solve_time" in params:
                 params["max_solve_time"] = current_timeout
+            elif "general_optimization_max_time" in params and current_timeout is not None:
+                params["general_optimization_max_time"] = current_timeout
+                params["general_optimization_max_time"] = current_timeout if current_timeout > 1 else 0
 
             if method_name == "lns":
                 # LNS-Solver
@@ -464,20 +473,15 @@ def solver_page() -> None:
                     days_with_change=list(days_with_change),
                     **params,
                 )
-            elif method_name == "solve_instance_one_shift(first)":
-                solution = solve_employee(instance=instance).solve_instance_one_shift()
-            elif method_name == "solve_instance_one_shift(first OK)":
-                solution = solve_employee(instance=instance).solve_instance_one_shift(
-                    one_shift_max_time=10 * 60, fixed_work_var_opt_max_time=10 * 60
-                )
-            elif method_name == "solve_instance_one_shift(first OK then Solve)":
+            elif method_name == "solve_instance_one_shift":
                 optimization_callback = Callback_Early_Stop(
                     instance, Shift_vars(instance)
                 )
+                #Note right now optimization time is the max_time_in_seconds, the rest is not limited but finish for each isntance relativily fast to the size of an instance
                 solution = solve_employee(instance=instance).solve_instance_one_shift(
-                    one_shift_max_time=10 * 60,
-                    fixed_work_var_opt_max_time=10 * 60,
-                    general_optimization_max_time=10 * 60,
+                    one_shift_max_time=params["one_shift_max_time"],
+                    fixed_work_var_opt_max_time=params["fixed_work_var_opt_max_time"],
+                    general_optimization_max_time=params["general_optimization_max_time"],
                     optimization_callback=optimization_callback,
                 )
             else:
