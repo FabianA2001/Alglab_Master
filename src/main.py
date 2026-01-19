@@ -306,9 +306,9 @@ def main() -> None:
     # try_warmstart_callback()
     # calculate_all_instancen()
     # print_some_infos()
-    # test_minimal_changes_lns()
+    t_minimal_changes_lns()
     # test_double_lns()
-    t_slice_window()
+    # t_slice_window()
 
 
 if __name__ == "__main__":

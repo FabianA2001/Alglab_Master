@@ -121,7 +121,9 @@ def solve_changes(
                     new_solution.solve_status == cp_model.OPTIMAL
                     or new_solution.solve_status == cp_model.FEASIBLE
                 ):
-                    print(f"Lösung gefunden mit mehr Padding: {PADDING + (3 * i)}")
+                    print(
+                        f"Lösung gefunden mit mehr Padding: {PADDING + ((3 + counter) * i)}"
+                    )
                     infeasible = False
         print("Lösung gefunden ohne extra padding")
         # TODO (Fabian) testen ob die neue soltions feasible ist
@@ -135,5 +137,6 @@ def solve_changes(
             assert False, (
                 f"Die zusammengeführte Lösung für das Fenster {start_day}-{end_day} verletzt die Nebenbedingungen."
             )
+        old_solution.solve_status = cp_model.FEASIBLE
 
     return old_solution

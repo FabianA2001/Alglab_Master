@@ -112,6 +112,10 @@ def merge_solutions(
             updated_solution.set_below_threshold_var(
                 original_day, shift_type_uid, new_below_threshold
             )
+            # kopiere work_vars
+        for emp_uid in updated_solution.instance.employees:
+            new_work_var = new_solution.work_vars.get((window_day, emp_uid), 0)
+            updated_solution.set_work_var(original_day, emp_uid, new_work_var)
 
     # Berechne den neuen objective value der gesamten Lösung
     objective_value = calculate_objective_value(updated_solution)
