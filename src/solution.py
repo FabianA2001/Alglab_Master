@@ -171,6 +171,9 @@ class Solution(BaseModel):
         """Sets the below threshold variable value."""
         self.below_threshold_vars[(day, type_uid)] = value
 
+    def set_work_var(self, day: int, employee_uid: int, value: int):
+        self.work_vars[(day, employee_uid)] = value
+
     def set_instance(self, instance: instace.Instance):
         self.instance = instance
 

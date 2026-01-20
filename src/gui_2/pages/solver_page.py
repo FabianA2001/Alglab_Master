@@ -509,6 +509,7 @@ def solver_page() -> None:
                 else:
                     solution = solver_method(**params)
 
+            state.clear_changed_days()
             # Schließe Write-Ende der Pipe
             os.close(write_pipe)
 
@@ -633,7 +634,6 @@ def solver_page() -> None:
         """
         nonlocal solver_thread, is_running, start_time, log_buffer
 
-        state.clear_changed_days()
         if state.is_solver_running():
             ui.notify("Solver läuft bereits!", type="warning")
             return

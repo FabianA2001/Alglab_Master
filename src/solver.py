@@ -583,7 +583,7 @@ class Solver:
     def objective_value_weight_changes(
         self,
         solution: Solution,
-        changes_weight: int = 10,
+        changes_weight: int = 500,
     ):
         """Calculates the objective value weight based on changes from a given solution."""
         objective_value = 0

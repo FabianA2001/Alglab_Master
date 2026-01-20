@@ -289,6 +289,98 @@ def t_double_lns():
     print("Sol2 status:", sol2.solve_status)
 
 
+def check_work_vars():
+    """Überprüft ob work_vars und weekend_vars logisch korrekt gesetzt sind."""
+    sol = Solution.from_json_file("Instance20_seed6191911")
+
+    print("\n" + "=" * 80)
+    print("VALIDIERUNG: Work-Vars und Weekend-Vars Konsistenz")
+    print("=" * 80)
+
+    # ===== Check work_vars =====
+    print("\n📋 Work-Vars Validierung:")
+    work_errors = []
+
+    for (day, employee_uid), work_var_value in sol.work_vars.items():
+        # Überprüfe alle Schichten an diesem Tag für diesen Mitarbeiter
+        shifts_assigned = [
+            value
+            for (d, shift_uid, emp_uid), value in sol.vars.items()
+            if d == day and emp_uid == employee_uid and value == 1
+        ]
+
+        has_shifts = len(shifts_assigned) > 0
+        emp_name = sol.instance.employees[employee_uid].name
+
+        # Logik Check: work_var sollte 1 sein wenn Mitarbeiter arbeitet, 0 wenn nicht
+        if work_var_value == 1 and not has_shifts:
+            work_errors.append(
+                f"Tag {day}, {emp_name}: work_var=1 aber keine Schichten zugewiesen"
+            )
+        elif work_var_value == 0 and has_shifts:
+            work_errors.append(
+                f"Tag {day}, {emp_name}: work_var=0 aber {len(shifts_assigned)} Schicht(en) zugewiesen"
+            )
+
+    if work_errors:
+        print(f"   ❌ INVALID - {len(work_errors)} Fehler gefunden:")
+        for error in work_errors:
+            print(f"      • {error}")
+    else:
+        print("   ✅ VALID - Alle work_vars sind korrekt gesetzt")
+
+    # ===== Check weekend_vars =====
+    print("\n📋 Weekend-Vars Validierung:")
+    weekend_errors = []
+
+    for (weekend_idx, employee_uid), weekend_var_value in sol.weekend_vars.items():
+        # Finde die Tage, die zu diesem Wochenende gehören (Samstag + Sonntag)
+        weekend_days = []
+        if weekend_idx in sol.instance.weekend_days:
+            weekend_days = [weekend_idx]
+
+            weekend_days.append(weekend_idx - 1)
+
+        # Überprüfe ob der Mitarbeiter an mindestens einem Wochenendtag arbeitet
+        works_on_weekend = False
+        for day in weekend_days:
+            shifts_assigned = [
+                value
+                for (d, shift_uid, emp_uid), value in sol.vars.items()
+                if d == day and emp_uid == employee_uid and value == 1
+            ]
+            if len(shifts_assigned) > 0:
+                works_on_weekend = True
+                break
+
+        emp_name = sol.instance.employees[employee_uid].name
+
+        if weekend_var_value == 1 and not works_on_weekend:
+            weekend_errors.append(
+                f"Wochenende {weekend_idx}, {emp_name}: weekend_var=1 aber keine Schichten"
+            )
+        elif weekend_var_value == 0 and works_on_weekend:
+            weekend_errors.append(
+                f"Wochenende {weekend_idx}, {emp_name}: weekend_var=0 aber arbeitet am Wochenende"
+            )
+
+    if weekend_errors:
+        print(f"   ❌ INVALID - {len(weekend_errors)} Fehler gefunden:")
+        for error in weekend_errors:
+            print(f"      • {error}")
+    else:
+        print("   ✅ VALID - Alle weekend_vars sind korrekt gesetzt")
+
+    # ===== Gesamtergebnis =====
+    print("\n" + "-" * 80)
+    total_errors = len(work_errors) + len(weekend_errors)
+    if total_errors == 0:
+        print("✅ GESAMTERGEBNIS: Alle Variablen sind logisch korrekt gesetzt")
+    else:
+        print(f"❌ GESAMTERGEBNIS: {total_errors} Fehler gefunden")
+    print("=" * 80 + "\n")
+
+
 def main() -> None:
     # inst = get_tes_data()
     # x = inst
@@ -306,9 +398,10 @@ def main() -> None:
     # try_warmstart_callback()
     # calculate_all_instancen()
     # print_some_infos()
-    # test_minimal_changes_lns()
+    # t_minimal_changes_lns()
     # test_double_lns()
-    t_slice_window()
+    # t_slice_window()
+    check_work_vars()
 
 
 if __name__ == "__main__":
