@@ -1,24 +1,17 @@
+import time
 from datetime import datetime
+from typing import Tuple
 
 from ortools.sat.python import cp_model
-from pydantic import BaseModel, Field, model_validator
 
-from typing import Callable, Tuple
+from src.shift_vars import Shift_vars
 
 from . import shift_vars
-from .callback_early_stop import Callback_Early_Stop
-from .solverCallback.callback_three_best_solutions import Callback_Top_Solutions
 from .inputTypes import employee, instace
 from .module.solverConstraints import SolverConstraints
 from .solution import Solution
 from .solver import Solver
 from .solverCallback.callback_improvement_slowed import callback_improvement_slowed
-
-import time
-
-from pathlib import Path
-from src.parseData import parseTXT
-from src.shift_vars import Shift_vars
 
 
 # TODO add a logger instead of all prints
@@ -521,7 +514,10 @@ class solve_employee:
 
         start_time = time.time()
         original_employees = instance.employees.copy()
-        instance_copy = instance
+        instance_copy = instance.model_copy()
+        assert type(employee_uid) is employee.EmployeeUid, (
+            f"employee_uid must be of type EmployeeUid but got {type(employee_uid)}"
+        )
         instance_copy.employees = {employee_uid: instance_copy.employees[employee_uid]}
         solver_ = Solver(instance_copy, shift_vars.Shift_vars(instance_copy))
         # also implement something to consider the previously set employees shifts

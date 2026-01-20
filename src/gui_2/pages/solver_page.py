@@ -5,6 +5,7 @@ verschiedener Solver-Methoden mit Echtzeit-Logging und Laufzeitanzeige.
 """
 
 import asyncio
+import ctypes
 import os
 import sys
 import threading
@@ -15,11 +16,11 @@ from typing import Any
 
 from nicegui import ui
 
-from ...LNS import lns, minimal_change_lns
-from ...solve_employees import solve_employee
-from ...shift_vars import Shift_vars
-from ...solver import Solver
 from ...callback_early_stop import Callback_Early_Stop
+from ...LNS import lns, minimal_change_lns
+from ...shift_vars import Shift_vars
+from ...solve_employees import solve_employee
+from ...solver import Solver
 from .. import state
 
 # Konstanten
@@ -434,6 +435,14 @@ def solver_page() -> None:
                 params["timeout_seconds"] = current_timeout
             elif "max_solve_time" in params:
                 params["max_solve_time"] = current_timeout
+            elif (
+                "general_optimization_max_time" in params
+                and current_timeout is not None
+            ):
+                params["general_optimization_max_time"] = current_timeout
+                params["general_optimization_max_time"] = (
+                    current_timeout if current_timeout > 1 else 0
+                )
 
             if method_name == "lns":
                 # LNS-Solver
@@ -469,10 +478,17 @@ def solver_page() -> None:
                     **params,
                 )
             elif method_name == "solve_instance_one_shift":
+                optimization_callback = Callback_Early_Stop(
+                    instance, Shift_vars(instance)
+                )
                 # Note right now optimization time is the max_time_in_seconds, the rest is not limited but finish for each isntance relativily fast to the size of an instance
                 solution = solve_employee(instance=instance).solve_instance_one_shift(
                     one_shift_max_time=params["one_shift_max_time"],
                     fixed_work_var_opt_max_time=params["fixed_work_var_opt_max_time"],
+                    general_optimization_max_time=params[
+                        "general_optimization_max_time"
+                    ],
+                    optimization_callback=optimization_callback,
                 )
             elif method_name == "normal_warm_start":
                 old_solution = state.get_solution()
@@ -617,6 +633,7 @@ def solver_page() -> None:
         """
         nonlocal solver_thread, is_running, start_time, log_buffer
 
+        state.clear_changed_days()
         if state.is_solver_running():
             ui.notify("Solver läuft bereits!", type="warning")
             return
@@ -684,10 +701,6 @@ def solver_page() -> None:
         if not result:
             return
 
-        # Bestätigt - Solver stoppen
-        add_log_message("⚠️ Solver-Stop durch Benutzer angefordert...")
-        add_log_message("🛑 Beende Solver-Thread...")
-
         # Setze Flags
         is_running = False
         state.set_solver_running(False)
@@ -705,15 +718,40 @@ def solver_page() -> None:
             except:
                 pass
 
-        # Versuche Thread zu beenden (Python Threads können nicht direkt gekillt werden)
-        # Der Thread wird beim nächsten Python-Statement oder IO-Operation beendet
+        # Beende Thread forciert mit ctypes
         if solver_thread is not None and solver_thread.is_alive():
-            add_log_message(
-                "⏳ Warte auf Thread-Beendigung (kann einen Moment dauern)..."
-            )
-            # Hinweis: Python Threads können nicht zwangsweise beendet werden
-            # Sie müssen auf natürliche Weise enden (z.B. wenn der Solver zurückkehrt)
-            add_log_message("ℹ️ Hinweis: Der Solver-Prozess läuft noch zu Ende")
+            add_log_message("⏳ Beende Thread forciert...")
+
+            # Forcierte Thread-Beendigung mit ctypes
+            try:
+                thread_id = solver_thread.ident
+                if thread_id is not None:
+                    # Löse eine SystemExit-Exception im Ziel-Thread aus
+                    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
+                        ctypes.c_long(thread_id), ctypes.py_object(SystemExit)
+                    )
+                    if res == 0:
+                        add_log_message("❌ Thread-ID nicht gefunden")
+                    elif res > 1:
+                        # Wenn mehr als ein Thread betroffen ist, rückgängig machen
+                        ctypes.pythonapi.PyThreadState_SetAsyncExc(
+                            ctypes.c_long(thread_id), None
+                        )
+                        add_log_message("❌ Thread-Beendigung fehlgeschlagen")
+                    else:
+                        add_log_message("✓ Thread forciert beendet")
+                        # Kurz warten, dass Thread beendet wird
+                        solver_thread.join(timeout=2.0)
+                        if solver_thread.is_alive():
+                            add_log_message("⚠️ Thread läuft noch, zweiter Versuch...")
+                            # Zweiter Versuch
+                            ctypes.pythonapi.PyThreadState_SetAsyncExc(
+                                ctypes.c_long(thread_id), ctypes.py_object(SystemExit)
+                            )
+                            solver_thread.join(timeout=1.0)
+            except Exception as e:
+                add_log_message(f"❌ Fehler beim Beenden des Threads: {e}")
+                add_log_message("ℹ️ Thread wird im Hintergrund weiterlaufen")
 
         add_log_message(LOG_SEPARATOR)
         add_log_message("🛑 Solver wurde gestoppt")

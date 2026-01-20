@@ -69,6 +69,7 @@ def add_solution(solution: Solution) -> None:
 def clear_solutions():
     """Löscht alle gespeicherten Solutions."""
     global _current_solution
+    clear_changed_days()
     _current_solution = []
 
 

@@ -2,7 +2,9 @@
 
 from nicegui import ui
 
+from ....inputTypes import employee
 from ....solution import Solution
+from ....solve_employees import solve_employee
 from ... import state
 from .comparison import render_solution_comparison
 from .components import (
@@ -19,6 +21,9 @@ def solution_page():
 
     # State für Vergleichslösung
     comparison_solution = {"value": None}
+    # Arbeitskopie der aktuellen Solution für Änderungen
+    # working_solution["changed_employees"] = {(day, shift_type_id): set[employee_uid]}
+    working_solution: dict = {"value": None, "changed_employees": {}}
 
     def load_solution(solution_name: str) -> None:
         """Lädt eine Solution und aktualisiert die Anzeige.
@@ -33,6 +38,11 @@ def solution_page():
             state.add_solution(solution)
             state.set_instance(solution.instance)
             state.clear_changed_days()  # Zurücksetzen bei neuer Solution
+
+            # Erstelle Arbeitskopie für Änderungen
+            working_solution["value"] = solution.model_copy(deep=True)
+            working_solution["changed_employees"] = {}  # Initialisiere Tracking
+
             update_solution_display()
             refresh_comparison_select()  # Aktualisiere Vergleichsliste
             ui.notify(
@@ -103,8 +113,66 @@ def solution_page():
         # Extrahiere den Index aus "#idx: ..."
         try:
             return label.split(":")[0].replace("#", "").strip()
-        except:
+        except Exception:
             return "(Keine)"
+
+    def add_changed_employee(employee_uid) -> None:
+        """Fügt einen veränderten Mitarbeiter zum Tracking hinzu.
+
+        Args:
+            day: Tag der Änderung
+            shift_type_id: Schicht-Typ ID
+            employee_uid: Mitarbeiter UID
+        """
+
+        working_solution["changed_employees"] = employee_uid
+
+    def get_changed_employees() -> employee.EmployeeUid:
+        """Gibt das Dictionary mit veränderten Mitarbeitern zurück."""
+        return working_solution["changed_employees"]
+
+    def clear_changed_employees() -> None:
+        """Löscht alle Tracking-Informationen für veränderte Mitarbeiter."""
+        working_solution["changed_employees"] = None
+
+    def commit_changes(test_emp=True) -> None:
+        """Übernimmt Änderungen von der Arbeitskopie in den State."""
+        if working_solution["value"] is None:
+            ui.notify("Keine Arbeitskopie vorhanden", type="warning")
+            return
+
+        if test_emp and not solve_employee.st_solve_employee(
+            get_changed_employees(), working_solution["value"].instance
+        ):
+            print("teste änderung für employee_uid:", get_changed_employees())
+            ui.notify(
+                "Änderung konnte nicht übernommen werden da die Instanze infeasible  werden würde",
+                type="warning",
+            )
+            clear_changed_employees()
+            state_sol = state.get_solution()
+            assert state_sol is not None
+            working_solution["value"] = state_sol.model_copy(deep=True)
+            # UI aktualisieren um die zurückgesetzten Werte anzuzeigen
+            update_solution_display()
+            refresh_comparison_select()
+            return
+
+        # Füge die geänderte Solution zum State hinzu
+        state.add_solution(working_solution["value"])
+        state.set_instance(working_solution["value"].instance)
+        state_sol = state.get_solution()
+        assert state_sol is not None
+        working_solution["value"] = state_sol.model_copy(deep=True)
+
+        # Lösche Tracking-Informationen nach Commit
+        clear_changed_employees()
+
+        # Aktualisiere die Anzeige
+        update_solution_display()
+        refresh_comparison_select()
+
+        ui.notify("Änderungen erfolgreich übernommen", type="positive")
 
     def update_solution_display() -> None:
         """Aktualisiert die Anzeige der Solution-Details."""
@@ -131,13 +199,16 @@ def solution_page():
                 """Callback um die Refresh-Funktion der Vergleichstabelle zu speichern."""
                 comparison_refresh_container["refresh"] = refresh_func
 
-            # Rendere Haupttabelle und übergebe comparison refresh callback
+            # Rendere Haupttabelle und übergebe working_solution und commit callback
+            assert working_solution["value"] is not None
             render_employee_assignments(
-                current_solution,
+                working_solution["value"],
                 current_week,
                 lambda: comparison_refresh_container["refresh"]()
                 if comparison_refresh_container["refresh"]
                 else None,
+                commit_changes,
+                add_changed_employee,
             )
             # Vergleichsansicht anzeigen wenn zweite Solution vorhanden
             if comparison_solution["value"] is not None:
@@ -213,5 +284,9 @@ def solution_page():
     solution_container = ui.column().classes("w-full")
 
     # Zeige aktuelle Solution beim Laden der Seite
-    if state.get_solution() is not None:
+    current_sol = state.get_solution()
+    if current_sol is not None:
+        # Erstelle Arbeitskopie für vorhandene Solution
+        working_solution["value"] = current_sol.model_copy(deep=True)
+        working_solution["changed_employees"] = {}  # Initialisiere Tracking
         update_solution_display()

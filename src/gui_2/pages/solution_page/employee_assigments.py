@@ -18,7 +18,11 @@ SOFT_WEIGHT_ADJUSTMENT = 10
 
 
 def employee_assignments(
-    solution: Solution, current_week: dict, comparison_refresh_callback=None
+    solution: Solution,
+    current_week: dict,
+    comparison_refresh_callback=None,
+    commit_callback=None,
+    employee_change_callback=None,
 ) -> None:
     """
     Display employee assignments in a table format.
@@ -30,6 +34,8 @@ def employee_assignments(
         solution: The Solution object containing shift assignments.
         current_week: Dictionary mit 'value' key für die aktuelle Woche (shared)
         comparison_refresh_callback: Optional callback to refresh comparison table
+        commit_callback: Optional callback to commit changes to state
+        employee_change_callback: Optional callback to track changed employees
     """
     with ui.card().classes("w-full mb-4"):
         ui.label("Mitarbeiter-Zuordnung").classes("text-xl font-bold mb-2")
@@ -45,6 +51,10 @@ def employee_assignments(
             end_idx = min(start_idx + 7, len(all_days))
             week_days = all_days[start_idx:end_idx]
             weeks.append((week_idx + 1, week_days))
+
+        # Capture callbacks outside of refreshable function
+        captured_commit_callback = commit_callback
+        captured_employee_change_callback = employee_change_callback
 
         @ui.refreshable
         def render_table():
@@ -90,12 +100,18 @@ def employee_assignments(
             """,
             )
 
-            table.on(
-                "cell_click",
-                lambda e: _display_details_dialog(
-                    e.args[0], e.args[1], solution, shift_mapping
-                ),
-            )
+            # Use captured callbacks in closure
+            def handle_cell_click(e):
+                _display_details_dialog(
+                    e.args[0],
+                    e.args[1],
+                    solution,
+                    shift_mapping,
+                    captured_commit_callback,
+                    captured_employee_change_callback,
+                )
+
+            table.on("cell_click", handle_cell_click)
 
         # Week navigation
         if num_weeks > 1:
@@ -278,6 +294,8 @@ def _display_details_dialog(
     col_name: str,
     solution: Solution,
     shift_mapping: Dict[str, Any],
+    commit_callback=None,
+    employee_change_callback=None,
 ) -> None:
     """
     Handle cell click events and display a dialog with shift assignment details.
@@ -287,6 +305,8 @@ def _display_details_dialog(
         col_name: The column name (e.g., 'day_1', 'day_2').
         solution: The Solution object containing shift assignments.
         shift_mapping: Mapping from row keys to shift type IDs.
+        commit_callback: Optional callback to commit changes to state.
+        employee_change_callback: Optional callback to track changed employees.
     """
     # Ignore clicks on the shift type column
     if col_name == "shift_type":
@@ -324,7 +344,14 @@ def _display_details_dialog(
         # Employee add/remove section
         ui.separator().classes("my-4")
         _render_employee_modification_section(
-            solution, shift_obj, day, shift_type_id, shift_name, dialog
+            solution,
+            shift_obj,
+            day,
+            shift_type_id,
+            shift_name,
+            dialog,
+            commit_callback,
+            employee_change_callback,
         )
 
         # Weight adjustment section
@@ -338,6 +365,7 @@ def _display_details_dialog(
                 shift_name,
                 weight_below,
                 dialog,
+                commit_callback,
             )
 
         ui.button("Schließen", on_click=dialog.close).classes("mt-4")
@@ -381,6 +409,8 @@ def _render_employee_modification_section(
     shift_type_id: Any,
     shift_name: str,
     dialog: Any,
+    commit_callback=None,
+    employee_change_callback=None,
 ) -> None:
     """
     Render the employee add/remove section with dropdowns and soft/hard buttons.
@@ -434,7 +464,7 @@ def _render_employee_modification_section(
                     ui.notify("Bitte wählen Sie einen Mitarbeiter aus", type="warning")
                     return
 
-                # Increase penalty_assigned_day_employee
+                # Increase penalty_assigned_day_employee (auf Arbeitskopie)
                 current_penalty = shift_obj.penalty_assigned_day_employee.get(
                     selected_uid, 0
                 )
@@ -446,14 +476,19 @@ def _render_employee_modification_section(
                 state.add_changed_day(day)
                 components.refresh_changed_days()
 
-                # Aktualisiere Instance im State
-                state.set_instance(solution.instance)
+                # Tracke veränderten Mitarbeiter
+                if employee_change_callback:
+                    employee_change_callback(selected_uid)
 
                 emp_name = all_employees.get(selected_uid, "Unbekannt")
                 ui.notify(
                     f"Soft: Strafe für {emp_name} erhöht auf {current_penalty + SOFT_WEIGHT_ADJUSTMENT}",
                     type="positive",
                 )
+
+                # Übernehme Änderungen in den State
+                if commit_callback:
+                    commit_callback(False)
 
             def remove_hard() -> None:
                 """Hard remove: Add employee to ban list."""
@@ -462,20 +497,27 @@ def _render_employee_modification_section(
                     ui.notify("Bitte wählen Sie einen Mitarbeiter aus", type="warning")
                     return
 
+                # Füge zur Sperrliste hinzu (auf Arbeitskopie)
                 shift_obj.ban_employee_day_shift.add(selected_uid)
 
                 # Markiere Tag als geändert
                 state.add_changed_day(day)
                 components.refresh_changed_days()
 
-                # Aktualisiere Instance im State
-                state.set_instance(solution.instance)
+                # Tracke veränderten Mitarbeiter
+                if employee_change_callback:
+                    employee_change_callback(selected_uid)
 
                 emp_name = all_employees.get(selected_uid, "Unbekannt")
                 ui.notify(
                     f"Hard: {emp_name} wurde zur Sperrliste hinzugefügt",
                     type="positive",
                 )
+
+                # Übernehme Änderungen in den State
+                if commit_callback:
+                    commit_callback()
+
                 dialog.close()
 
             ui.button("Soft", on_click=remove_soft).classes("w-full").props(
@@ -506,7 +548,7 @@ def _render_employee_modification_section(
                     ui.notify("Bitte wählen Sie einen Mitarbeiter aus", type="warning")
                     return
 
-                # Increase penalty_not_assigned_day_employee
+                # Increase penalty_not_assigned_day_employee (auf Arbeitskopie)
                 current_penalty = shift_obj.penalty_not_assigned_day_employee.get(
                     selected_uid, 0
                 )
@@ -518,14 +560,19 @@ def _render_employee_modification_section(
                 state.add_changed_day(day)
                 components.refresh_changed_days()
 
-                # Aktualisiere Instance im State
-                state.set_instance(solution.instance)
+                # Tracke veränderten Mitarbeiter
+                if employee_change_callback:
+                    employee_change_callback(selected_uid)
 
                 emp_name = all_employees.get(selected_uid, "Unbekannt")
                 ui.notify(
                     f"Soft: Strafe für Nicht-Zuweisung von {emp_name} erhöht auf {current_penalty + SOFT_WEIGHT_ADJUSTMENT}",
                     type="positive",
                 )
+
+                # Übernehme Änderungen in den State
+                if commit_callback:
+                    commit_callback(False)
 
             def add_hard() -> None:
                 """Hard add: Add employee to assignment list."""
@@ -534,20 +581,27 @@ def _render_employee_modification_section(
                     ui.notify("Bitte wählen Sie einen Mitarbeiter aus", type="warning")
                     return
 
+                # Füge zur Zuweisungsliste hinzu (auf Arbeitskopie)
                 shift_obj.assign_employee_day_shift.add(selected_uid)
 
                 # Markiere Tag als geändert
                 state.add_changed_day(day)
                 components.refresh_changed_days()
 
-                # Aktualisiere Instance im State
-                state.set_instance(solution.instance)
+                # Tracke veränderten Mitarbeiter
+                if employee_change_callback:
+                    employee_change_callback(selected_uid)
 
                 emp_name = all_employees.get(selected_uid, "Unbekannt")
                 ui.notify(
                     f"Hard: {emp_name} wurde zur Zuweisungsliste hinzugefügt",
                     type="positive",
                 )
+
+                # Übernehme Änderungen in den State
+                if commit_callback:
+                    commit_callback()
+
                 dialog.close()
 
             ui.button("Soft", on_click=add_soft).classes("w-full").props(
@@ -566,6 +620,7 @@ def _render_weight_adjustment_section(
     shift_name: str,
     weight_below: int,
     dialog: Any,
+    commit_callback=None,
 ) -> None:
     """Render the weight adjustment section with input and update button."""
     ui.label("Instanz-Anpassungen").classes("font-semibold")
@@ -584,19 +639,22 @@ def _render_weight_adjustment_section(
     def update_weight() -> None:
         """Update the weight_below_preferred value in the instance."""
         new_weight = int(weight_input.value)
+        # Setze neues Gewicht (auf Arbeitskopie)
         shift_obj.weight_below_preferred = new_weight
 
         # Markiere Tag als geändert
         state.add_changed_day(day)
         components.refresh_changed_days()
 
-        # Aktualisiere Instance im State
-        state.set_instance(solution.instance)
-
         ui.notify(
             f"Gewicht für Tag {day}, Schicht {shift_name} aktualisiert: {new_weight}",
             type="positive",
         )
+
+        # Übernehme Änderungen in den State
+        if commit_callback:
+            commit_callback()
+
         dialog.close()
 
     ui.button("Gewicht aktualisieren", on_click=update_weight).classes("mt-2").props(
