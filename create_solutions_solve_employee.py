@@ -338,7 +338,7 @@ def main():
                             with open("error_log.txt", "a") as error_file:
                                 error_file.write(error_filename + "\n")
                     
-                    for not_better_stop_timer in [1]:
+                    for not_better_stop_timer in [0.75]:
                         lns_start_time = time.time()
                         with open("objective_function.txt", "a") as error_file:
                             error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_onlylns_{x}"
