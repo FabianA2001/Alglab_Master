@@ -274,7 +274,6 @@ class Solver:
         """Handles the case when the model is invalid."""
         print("The model provided is invalid and cannot be solved.")
         print("The model provided is invalid and cannot be solved.")
-
     def warm_start(
         self,
         solution: Solution,
@@ -584,7 +583,7 @@ class Solver:
     def objective_value_weight_changes(
         self,
         solution: Solution,
-        changes_weight: int = 10,
+        changes_weight: int = 500,
     ):
         """Calculates the objective value weight based on changes from a given solution."""
         objective_value = 0

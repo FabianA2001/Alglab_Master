@@ -146,7 +146,11 @@ def render_statistics(solution: Solution) -> None:
 
 
 def render_employee_assignments(
-    solution: Solution, current_week: dict, comparison_refresh_callback=None
+    solution: Solution,
+    current_week: dict,
+    comparison_refresh_callback=None,
+    commit_callback=None,
+    employee_change_callback=None,
 ) -> None:
     """Rendert die Mitarbeiter-Zuordnungen pro Tag.
 
@@ -154,5 +158,13 @@ def render_employee_assignments(
         solution: Die Solution mit den Zuordnungen
         current_week: Dictionary mit 'value' key für die aktuelle Woche (shared)
         comparison_refresh_callback: Optional callback to refresh comparison table
+        commit_callback: Optional callback to commit changes to state
+        employee_change_callback: Optional callback to track changed employees
     """
-    employee_assignments(solution, current_week, comparison_refresh_callback)
+    employee_assignments(
+        solution,
+        current_week,
+        comparison_refresh_callback,
+        commit_callback,
+        employee_change_callback,
+    )

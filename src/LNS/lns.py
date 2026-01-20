@@ -38,7 +38,7 @@ class LNS:
         ####################
         start_search_window_size: int = 10,
         search_window_size_min: int = 3,
-        window_increase_factor: float = 1.3,
+        window_increase_factor: float = 1.5,
         window_decrease_factor: float = 0.7,
         strong_improvement_threshold: float = 0.01,
         logger=logging.getLogger(__name__),
@@ -74,6 +74,7 @@ class LNS:
         self.MAX_DAY: int = self.old_solution.instance.number_of_days - 1
         self.start_search_window_size: int = start_search_window_size
         self.search_window_size_min = search_window_size_min
+        self.deafult_search_window_size: int = 5
         self.start_day: int = random.randint(
             self.MIN_DAY,
             max(
@@ -176,7 +177,7 @@ class LNS:
                 )
             else:
                 # negative improvement - fenster verschieben
-                new_window_size = max(old_window_size, 5)
+                new_window_size = self.deafult_search_window_size
                 self.logger.debug(
                     f"Negative improvement: Keeping window size at {new_window_size} and shifting"
                 )
@@ -228,22 +229,34 @@ class LNS:
             disabled_for_window=self.disabled_for_window,
         )
 
-    def solve(self, not_better_break_after: int = 60, enable_early_stop: bool = True) -> solution.Solution:
+    def solve(
+        self,
+        not_better_increase_after: int = 60,
+        number_max_increases: int = 3,
+        increase_factor: int = 2,
+    ) -> solution.Solution:
         self.logger.info("Starting LNS solve process")
         start_time = time.time()
         iteration = 0
         improvements = 0
+        count_increase = 0
 
         # TODO early stop statt runtime im while loop hier
         early_stop = False
         time_of_last_improvement = time.time()
-        while (time.time() - start_time < self.timeout_seconds) and not early_stop:
+        while (time.time() - start_time < self.timeout_seconds) and not (
+            count_increase >= number_max_increases
+        ):
             print(f" time is {time.time() - time_of_last_improvement}")
-            if time.time() - time_of_last_improvement >= not_better_break_after:
-                print(
-                    f"exiting because no solution was better since {not_better_break_after} seconds"
+            if time.time() - time_of_last_improvement >= not_better_increase_after:
+                # print(
+                #     f"exiting because no solution was better since {not_better_break_after} seconds"
+                # )
+                # break
+                count_increase += 1
+                self.deafult_search_window_size = (
+                    self.deafult_search_window_size * increase_factor
                 )
-                break
             assert self.end_day > self.start_day
             iteration += 1
             elapsed_time = time.time() - start_time
@@ -284,23 +297,23 @@ class LNS:
 
                 # sys.exit(1)
                 #############
-                self.update_search_window(improvement=-1)  # oder spezieller Wert
+                self.update_search_window(improvement=0)  # oder spezieller Wert
                 continue
             old_sol_debugg = sol.model_copy()
             sol = self.merge_solutions(sol)
             sol.calculate_work_vars()
             sol.set_preferred_vars()
             # TODO Maybe also add this
-            sol.objective_value_new()
+            # sol.objective_value_new()
             if not sol.checkt_constraints[0]:
                 self.old_solution.to_json_file(
-                    f"{self.old_solution.instance.name}_error_lns_merge_old_start_{self.start_day}_end_{self.end_day}"
+                    f"error_lns_merge_old_start_{self.start_day}_end_{self.end_day}"
                 )
                 old_sol_debugg.to_json_file(
-                    f"{self.old_solution.instance.name}_error_lns_merge_bevor_start_{self.start_day}_end_{self.end_day}"
+                    f"error_lns_merge_bevor_start_{self.start_day}_end_{self.end_day}"
                 )
                 sol.to_json_file(
-                    f"{self.old_solution.instance.name}_error_lns_merge_after_start_{self.start_day}_end_{self.end_day}"
+                    f"error_lns_merge_after_start_{self.start_day}_end_{self.end_day}"
                 )
 
                 self.logger.debug(
@@ -337,8 +350,7 @@ class LNS:
                 )
                 improvement = -1
             # Lösung ist gut genug
-            if enable_early_stop:
-                early_stop = self.lns_early_stop(sol)
+            # early_stop = self.lns_early_stop(sol)
             self.update_search_window(improvement)
 
         total_time = time.time() - start_time
