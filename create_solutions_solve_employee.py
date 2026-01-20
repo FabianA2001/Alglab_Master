@@ -272,6 +272,10 @@ def main():
 
                     print(opt_time * 60 - (time.time() - start_time))
                     for not_better_stop_timer in [30]:
+                        with open("objective_function.txt", "a") as error_file:
+                            error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_onlylns_{x}"
+                            error_file.write(error_filename + "\n")
+                            error_file.write(f"{solution.objective_value}" + "\n")
                         lns_start_time = time.time()
                         solution_lns = lns.LNS(
                             sol_or_instance=solution.model_copy(deep=True),
@@ -336,6 +340,10 @@ def main():
                     
                     for not_better_stop_timer in [0.5, 3]:
                         lns_start_time = time.time()
+                        with open("objective_function.txt", "a") as error_file:
+                            error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_onlylns_{x}"
+                            error_file.write(error_filename + "\n")
+                            error_file.write(f"{solution.objective_value}" + "\n")
                         solution_lns = lns.LNS(
                             sol_or_instance=solution.model_copy(deep=True),
                             timeout_seconds=timeout_seconds,
