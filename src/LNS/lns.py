@@ -229,23 +229,34 @@ class LNS:
             disabled_for_window=self.disabled_for_window,
         )
 
-    def solve(self, not_better_break_after: int = 60) -> solution.Solution:
+    def solve(
+        self,
+        not_better_increase_after: int = 60,
+        number_max_increases: int = 3,
+        increase_factor: int = 2,
+    ) -> solution.Solution:
         self.logger.info("Starting LNS solve process")
         start_time = time.time()
         iteration = 0
         improvements = 0
+        count_increase = 0
 
         # TODO early stop statt runtime im while loop hier
         early_stop = False
         time_of_last_improvement = time.time()
-        while (time.time() - start_time < self.timeout_seconds) and not early_stop:
+        while (time.time() - start_time < self.timeout_seconds) and not (
+            count_increase >= number_max_increases
+        ):
             print(f" time is {time.time() - time_of_last_improvement}")
-            if time.time() - time_of_last_improvement >= not_better_break_after:
+            if time.time() - time_of_last_improvement >= not_better_increase_after:
                 # print(
                 #     f"exiting because no solution was better since {not_better_break_after} seconds"
                 # )
                 # break
-                self.deafult_search_window_size = self.deafult_search_window_size * 2
+                count_increase += 1
+                self.deafult_search_window_size = (
+                    self.deafult_search_window_size * increase_factor
+                )
             assert self.end_day > self.start_day
             iteration += 1
             elapsed_time = time.time() - start_time
