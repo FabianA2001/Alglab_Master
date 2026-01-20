@@ -25,7 +25,7 @@ class solve_employee:
     def solve_all_employees(
         self,
         incrementally: bool = False,
-        soft_max_time_in_seconds: int = 15 * 60,
+        soft_max_time_in_seconds: int = 0,
         optimize_till_max_time: bool = False,
     ) -> Solution:
         """
@@ -71,25 +71,24 @@ class solve_employee:
                 )
 
             # Handle return code and output from subprocess
-            if solution_temp.solve_status not in [cp_model.INFEASIBLE]:
-                self.solution.store_solution_vars(
-                    solution=solution_temp, employee_uid=employee_uid
-                )
-                self.solution.store_solution_work_vars(
-                    solution=solution_temp, employee_uid=employee_uid
+            if solution_temp.solve_status not in [cp_model.INFEASIBLE, cp_model.UNKNOWN]:
+                self.solution.copy_solution(
+                    solution=solution_temp
                 )
             else:
                 print(
                     f"Error solving for employee {employee_uid}: No solution has been found"
                 )
+                return_solution = Solution(instance=self.instance)
+                return_solution.solve_status = cp_model.INFEASIBLE
+                return return_solution
 
-        solver = Solver(self.instance, shift_vars.Shift_vars(self.instance))
-        self.solution = solver.warm_start_generalized(
-            hard_constraint_solution=self.solution,
-            max_time_in_seconds=9999,
-            objective_function=solver.objective_value_new,
-            stop_after_first_solution=True,
-        )
+        self.solution.set_preferred_vars()
+        self.solution.objective_value_new()
+        self.solution.calculate_work_vars()
+        self.solution.solve_status = cp_model.FEASIBLE
+        self.solution.timestamp = datetime.now()
+
         end_time = time.time()
         self.solution.solve_time = end_time - start_time
 
@@ -116,10 +115,7 @@ class solve_employee:
         return solution
 
     def solve_employee(
-        self,
-        employee_uid: employee.EmployeeUid,
-        soft_max_time_in_seconds: int = 0,
-        to_be_repaired_solution: Solution | None = None,
+        self, employee_uid: employee.EmployeeUid, soft_max_time_in_seconds: int = 0
     ):
         """
         A function that for the instance passed in the constructor, get an instance that only contains the given employee and then solve this instance and employee until timeout for soft_max_time_in_seconds or first solution if soft_max_time_in_seconds <= 8.
@@ -131,16 +127,8 @@ class solve_employee:
         :type soft_max_time_in_seconds: int
         """
         start_time = time.time()
-        if to_be_repaired_solution is None:
-            instance_copy = self.instance.model_copy()
-            instance_copy.employees = {
-                employee_uid: instance_copy.employees[employee_uid]
-            }
-        else:
-            instance_copy = to_be_repaired_solution.instance.model_copy()
-            instance_copy.employees = {
-                employee_uid: instance_copy.employees[employee_uid]
-            }
+        instance_copy = self.instance.model_copy()
+        instance_copy.employees = {employee_uid: instance_copy.employees[employee_uid]}
         solver_ = Solver(instance_copy, shift_vars.Shift_vars(instance_copy))
         stop_after_first_solution = False
         if soft_max_time_in_seconds <= 8:
@@ -162,20 +150,6 @@ class solve_employee:
                 max_time_in_seconds=450,
                 stop_after_first_solution=True,
             )
-
-        end_time = time.time()
-        print(end_time - start_time)
-        if to_be_repaired_solution is not None:
-            to_be_repaired_solution.copy_solution(
-                solution=solution.model_copy(deep=True)
-            )
-            to_be_repaired_solution.solve_time = time.time() - start_time
-            to_be_repaired_solution.set_preferred_vars()
-            to_be_repaired_solution.objective_value_new()
-            to_be_repaired_solution.calculate_work_vars()
-            to_be_repaired_solution.solve_status = cp_model.FEASIBLE
-            to_be_repaired_solution.timestamp = datetime.now()
-            return to_be_repaired_solution
         return solution
 
     def solve_employees_incrementally(
@@ -369,6 +343,8 @@ class solve_employee:
                         self.solution.work_vars.pop((day, employee_uid))
             else:
                 print(f"Error solving for employee {employee_uid}: ")
+                self.hint_solution.solve_status = cp_model.INFEASIBLE
+                return self.hint_solution
 
         employee_verification_time = time.time()
         self.hint_solution.solve_time = employee_verification_time - start_time
