@@ -168,7 +168,7 @@ def main():
 
 
     # create solutions using one_shift method and optimizing after finding an ok solution using one_shift method
-    for one_shift_time, work_var_time, opt_time in [(10, 10, 0), (10, 10, 10)]:
+    for one_shift_time, work_var_time, opt_time in [(0, 0, 0)]:
         #     # ,  (2.5, 0, 0), (1, 0, 0),  (5, 2.5, 0), (5, 5, 0),  (10, 5, 0), (5, 10, 0),  (10, 10, 0), (0, 0, 30), (0, 2.5, 27.5), (2.5, 0, 27.5), (2.5, 2.5, 25), (2.5, 5, 22.5), (5, 2.5, 22.5), (5, 5, 20), (5, 10, 15), (10, 10, 10), (10, 5, 15)
         for json_file in json_files_best_till_time:
             for x in range(0, 3):
@@ -302,14 +302,17 @@ def main():
                                 error_file.write(error_filename + "\n")
 
                         print(f"time : {opt_time * 60 - (time.time() - start_time)}")
-                        solution_opt = Solver(
-                            instance.model_copy(deep=True),
-                            Shift_vars(instance.model_copy(deep=True)),
-                        ).warm_start_generalized(
-                            hint_solution=solution_lns.model_copy(deep=True),
-                            max_time_in_seconds=opt_time * 60
-                            - (time.time() - start_time),
-                        )
+                        if timeout_seconds - (time.time() - lns_start_time) <= 0:
+                            solution_opt = solution_lns.model_copy(deep=True)
+                        else:
+                            solution_opt = Solver(
+                                instance.model_copy(deep=True),
+                                Shift_vars(instance.model_copy(deep=True)),
+                            ).warm_start_generalized(
+                                hint_solution=solution_lns.model_copy(deep=True),
+                                max_time_in_seconds=timeout_seconds
+                                - (time.time() - lns_start_time),
+                            )
 
                         solution_opt.solve_time = (
                             time.time() - lns_start_time
@@ -358,14 +361,17 @@ def main():
                                 error_file.write(error_filename + "\n")
 
                         print(f"time : {opt_time * 60 - (time.time() - start_time)}")
-                        solution_opt = Solver(
-                            instance.model_copy(deep=True),
-                            Shift_vars(instance.model_copy(deep=True)),
-                        ).warm_start_generalized(
-                            hint_solution=solution_lns.model_copy(deep=True),
-                            max_time_in_seconds=opt_time * 60
-                            - (time.time() - start_time),
-                        )
+                        if timeout_seconds - (time.time() - lns_start_time) <= 0:
+                            solution_opt = solution_lns.model_copy(deep=True)
+                        else:
+                            solution_opt = Solver(
+                                instance.model_copy(deep=True),
+                                Shift_vars(instance.model_copy(deep=True)),
+                            ).warm_start_generalized(
+                                hint_solution=solution_lns.model_copy(deep=True),
+                                max_time_in_seconds=timeout_seconds
+                                - (time.time() - lns_start_time),
+                            )
 
                         solution_opt.solve_time = (
                             time.time() - lns_start_time
@@ -387,7 +393,7 @@ def main():
     
 
     # create solutions using first solution from one_shift method and optimizing using normal optimization
-    for one_shift_time, work_var_time, opt_time in [(0, 0, 0), (0, 0, 30)]:
+    for one_shift_time, work_var_time, opt_time in [(0, 0, 30)]:
         #     # ,  (2.5, 0, 0), (1, 0, 0),  (5, 2.5, 0), (5, 5, 0),  (10, 5, 0), (5, 10, 0),  (10, 10, 0), (0, 0, 30), (0, 2.5, 27.5), (2.5, 0, 27.5), (2.5, 2.5, 25), (2.5, 5, 22.5), (5, 2.5, 22.5), (5, 5, 20), (5, 10, 15), (10, 10, 10), (10, 5, 15)
         for json_file in json_files_best_till_time:
             for x in range(0, 3):
