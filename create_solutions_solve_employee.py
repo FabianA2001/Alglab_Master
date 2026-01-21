@@ -272,7 +272,7 @@ def main():
                         not_better_stop_timer,
                         number_max_increases,
                         increase_factor,
-                    ) in [(60, 3, 2), (15, 3, 2), (10, 4, 2)]:
+                    ) in [(60, 3, 2)]:
                         with open("objective_function.txt", "a") as error_file:
                             error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_onlylns_{x}"
                             error_file.write(error_filename + "\n")
