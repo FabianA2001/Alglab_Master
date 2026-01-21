@@ -41,6 +41,7 @@ class LNS:
         window_increase_factor: float = 1.5,
         window_decrease_factor: float = 0.7,
         strong_improvement_threshold: float = 0.01,
+        deafult_search_window_size: int = 5,
         logger=logging.getLogger(__name__),
         log_level: int = logging.DEBUG,
     ):
@@ -74,7 +75,7 @@ class LNS:
         self.MAX_DAY: int = self.old_solution.instance.number_of_days - 1
         self.start_search_window_size: int = start_search_window_size
         self.search_window_size_min = search_window_size_min
-        self.deafult_search_window_size: int = 5
+        self.deafult_search_window_size: int = deafult_search_window_size
         self.start_day: int = random.randint(
             self.MIN_DAY,
             max(
@@ -369,6 +370,169 @@ class LNS:
             or self.old_solution.solve_status == cp_model.FEASIBLE
         )
         return self.old_solution
+    
+
+    def solve_alt(
+        self,
+        not_better_increase_after: int = 60,
+        number_max_increases: int = 3,
+        increase_factor: int = 2,
+    ) -> solution.Solution:
+        self.logger.info("Starting LNS solve process")
+        start_time = time.time()
+        iteration = 0
+        improvements = 0
+        count_increase = 0
+        from ..solve_employees import solve_employee
+        # TODO early stop statt runtime im while loop hier
+        early_stop = False
+        time_of_last_improvement = time.time()
+        while (time.time() - start_time < self.timeout_seconds) and not (
+            count_increase >= number_max_increases
+        ):
+            print(f" time is {time.time() - time_of_last_improvement}")
+            print(f"count_increase is ", count_increase)
+            if time.time() - time_of_last_improvement >= not_better_increase_after:
+                # print(
+                #     f"exiting because no solution was better since {not_better_break_after} seconds"
+                # )
+                # break
+                count_increase += 1
+                #keep
+                if self.MAX_DAY <= self.deafult_search_window_size * increase_factor:
+                    break
+                else:
+                    self.deafult_search_window_size = (
+                        self.deafult_search_window_size * increase_factor
+                    )
+                    self.update_search_window(improvement=-1)
+            assert self.end_day > self.start_day
+            iteration += 1
+            elapsed_time = time.time() - start_time
+            small_max_solve_time = min(
+                self.small_runtime_milliseconds_base
+                * (self.end_day - self.start_day)
+                * (self.NUMBER_OF_SHIFT_TYPES + self.NUMBER_OF_EMPLOYEES), 120)
+            small_max_solve_time = max(
+                self.MIN_SMALL_SEARCH_TIME,
+                small_max_solve_time,
+            )
+            self.logger.debug(
+                f"Iteration {iteration}({elapsed_time:.2f}): Solving with small max solve time: {small_max_solve_time:.2f}s "
+                f"for window days {self.start_day} to {self.end_day}"
+            )
+
+            solvr = slice_instance.Slice_instance(
+                sol=self.old_solution,
+                start=self.start_day,
+                end=self.end_day,
+            ).get_solver()
+            infeasible = False
+            #keep
+            print("run isntance till: ", small_max_solve_time)
+            slice_first_solution_time = time.time()
+            slice_solution = solve_employee(instance=solvr.instance).solve_instance_one_shift(one_shift_max_time=round(small_max_solve_time/2), fixed_work_var_opt_max_time=round(small_max_solve_time/2))
+            print("one shift slices solution first time: ", time.time() - slice_first_solution_time)
+            if slice_solution.solve_status in [cp_model.INFEASIBLE, cp_model.UNKNOWN]:
+                print("solution invalid")
+                sol = solution.Solution(instance=solvr.instance)
+                sol.solve_status = slice_solution.solve_status
+                slice_solution=None
+            else:
+                sol = solvr.solve_window(
+                    log_search_progress=False,
+                    max_time_in_seconds=small_max_solve_time,
+                    hint_solution=slice_solution
+                )
+
+            if not (
+                sol.solve_status == cp_model.OPTIMAL
+                or sol.solve_status == cp_model.FEASIBLE
+            ):
+                self.logger.debug(
+                    f"Iteration {iteration}: No feasible solution found (status: {sol.solve_status})"
+                )
+                # self.old_solution.to_json_file(
+                #     f"error_lns_infeasible_start_{self.start_day}_end_{self.end_day}"
+                # )
+                # HACK
+                # import sys
+
+                # sys.exit(1)
+                #############
+                self.update_search_window(improvement=-1)
+                continue
+            old_sol_debugg = sol.model_copy()
+            sol = self.merge_solutions(sol)
+            sol.calculate_work_vars()
+            sol.set_preferred_vars()
+            # TODO Maybe also add this
+            # sol.objective_value_new()
+            if not sol.checkt_constraints[0]:
+                self.old_solution.to_json_file(
+                    f"error_lns_merge_old_start_{self.start_day}_end_{self.end_day}"
+                )
+                old_sol_debugg.to_json_file(
+                    f"error_lns_merge_bevor_start_{self.start_day}_end_{self.end_day}"
+                )
+                sol.to_json_file(
+                    f"error_lns_merge_after_start_{self.start_day}_end_{self.end_day}"
+                )
+
+                self.logger.debug(
+                    f"Iteration {iteration}: Merged solution violates constraints!"
+                )
+
+                # HACK
+                # import sys
+
+                # sys.exit(1)
+                ##########
+                continue
+
+            sol.solve_status = cp_model.FEASIBLE
+            self.logger.debug(
+                f"Iteration {iteration}: Found solution with objective {sol.objective_value}"
+            )
+
+            improvement = 0
+            if sol.objective_value < self.old_solution.objective_value:
+                improvements += 1
+                improvement = self.old_solution.objective_value - sol.objective_value
+                self.logger.info(
+                    f"Iteration {iteration}: Found improvement! "
+                    f"Old objective: {self.old_solution.objective_value}, "
+                    f"New objective: {sol.objective_value}, "
+                    f"Improvement: {improvement}"
+                )
+                self.old_solution = sol
+                time_of_last_improvement = time.time()
+            else:
+                self.logger.debug(
+                    f"Iteration {iteration}: No improvement (current best: {self.old_solution.objective_value})"
+                )
+                improvement = -1
+            # Lösung ist gut genug
+            # early_stop = self.lns_early_stop(sol)
+            if improvement > 0 and self.deafult_search_window_size == self.search_window_size_min:
+                self.update_search_window(-1)
+            else:
+                self.update_search_window(improvement)
+
+        total_time = time.time() - start_time
+        self.logger.info(
+            f"LNS completed: {iteration} iterations, {improvements} improvements, "
+            f"total time: {total_time:.2f}s, final objective: {self.old_solution.objective_value}, "
+            f"start objective: {self.start_objective}, improvement: {self.start_objective - self.old_solution.objective_value}"
+        )
+        self.old_solution.timestamp = datetime.now()
+        assert (
+            self.old_solution.solve_status == cp_model.OPTIMAL
+            or self.old_solution.solve_status == cp_model.FEASIBLE
+        )
+        return self.old_solution
+
+
 
     def lns_early_stop(self, sol: solution.Solution) -> bool:
         total_weights = 0

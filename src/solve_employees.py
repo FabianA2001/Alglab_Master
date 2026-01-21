@@ -310,7 +310,7 @@ class solve_employee:
                 stop_after_first_solution = True
             elif solution.solve_status in [cp_model.INFEASIBLE, cp_model.MODEL_INVALID]:
                 print("Something went wrong and the model is infeasible or invalid")
-                return solution
+                return solve_employee(instance=self.instance).solve_all_employees()
             if counter == 2:
                 return solution
         one_shift_time_end = time.time()
@@ -344,7 +344,7 @@ class solve_employee:
             else:
                 print(f"Error solving for employee {employee_uid}: ")
                 self.hint_solution.solve_status = cp_model.INFEASIBLE
-                return self.hint_solution
+                return solve_employee(instance=self.instance).solve_all_employees()
 
         employee_verification_time = time.time()
         self.hint_solution.solve_time = employee_verification_time - start_time
@@ -466,7 +466,7 @@ class solve_employee:
         solution_one_shift_type = self.solution
 
         solver = Solver(instance, Shift_vars(instance))
-        stop_after_first_solution = False
+        stop_after_first_solution = True
         if soft_max_time_in_seconds <= 8:
             soft_max_time_in_seconds = 450
             stop_after_first_solution = True
@@ -493,7 +493,9 @@ class solve_employee:
                 max_time_in_seconds=450,
                 stop_after_first_solution=True,
             )
+            print("employee time: ", time.time() - start_time)
             return (solution1, True)
+        print("employee time: ", time.time() - start_time)
         return (solution, False)
 
     @staticmethod
@@ -519,6 +521,7 @@ class solve_employee:
         instance_copy.employees = {employee_uid: instance_copy.employees[employee_uid]}
         solver_ = Solver(instance_copy, shift_vars.Shift_vars(instance_copy))
         # also implement something to consider the previously set employees shifts
+        #TODO use one shift time because it is faster but first ban and force assign need to be added to the creation of the one shift instance
         solution = solver_.solve_callback_with_solution(
             disabled_constraints=[SolverConstraints.cover_requirements],
             objective_function=solver_.objective_value_only_wishes,

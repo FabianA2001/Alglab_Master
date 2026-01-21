@@ -90,11 +90,19 @@ class Solver_for_window(solver.Solver):
         max_time_in_seconds: float = 60.0,
         stop_after_first_solution: bool = False,
         callback: cp_model.CpSolverSolutionCallback | None = None,
+        hint_solution: Solution | None = None
     ) -> Solution:
-        return super().solve_with_early_stop(
+        if hint_solution is None:
+            return super().solve_with_early_stop(
+                log_search_progress=log_search_progress,
+                max_time_in_seconds=max_time_in_seconds,
+                stop_after_first_solution=stop_after_first_solution,
+            )
+        else:
+            return super().solve_with_early_stop_alt(
             log_search_progress=log_search_progress,
             max_time_in_seconds=max_time_in_seconds,
-            stop_after_first_solution=stop_after_first_solution,
+            hint_solution=hint_solution,
         )
 
     def solve_window_min_changes(
