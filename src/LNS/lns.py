@@ -392,6 +392,8 @@ class LNS:
         ):
             print(f" time is {time.time() - time_of_last_improvement}")
             print(f"count_increase is ", count_increase)
+            if self.MAX_DAY <= self.deafult_search_window_size:
+                break
             if time.time() - time_of_last_improvement >= not_better_increase_after:
                 # print(
                 #     f"exiting because no solution was better since {not_better_break_after} seconds"
