@@ -401,7 +401,7 @@ def main():
                         not_better_stop_timer,
                         number_max_increases,
                         increase_factor,
-                    ) in [(120, 1, 2)
+                    ) in [(90, 1, 2)
                           #, (10, 1, 2)
                           ]:
                         with open("objective_function.txt", "a") as error_file:
@@ -412,10 +412,10 @@ def main():
                         solution_lns = lns.LNS(
                             sol_or_instance=solution.model_copy(deep=True),
                             timeout_seconds=timeout_seconds,
-                            search_window_size_min=20,
+                            search_window_size_min=min(20, solution.instance.number_of_days-1),
                             small_runtime_base=0.03,
-                            start_search_window_size=20,
-                            deafult_search_window_size=20,
+                            start_search_window_size=min(20, solution.instance.number_of_days-1),
+                            deafult_search_window_size=min(20, solution.instance.number_of_days-1),
                             log_level=10,
                         ).solve_alt(
                             not_better_increase_after=not_better_stop_timer,
