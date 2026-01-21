@@ -353,7 +353,7 @@ def main():
 
 
 
-    for one_shift_time, work_var_time, opt_time in [(10, 10, 30)]:
+    for one_shift_time, work_var_time, opt_time in [(10, 10, 30), (0, 0, 30)]:
         #     # ,  (2.5, 0, 0), (1, 0, 0),  (5, 2.5, 0), (5, 5, 0),  (10, 5, 0), (5, 10, 0),  (10, 10, 0), (0, 0, 30), (0, 2.5, 27.5), (2.5, 0, 27.5), (2.5, 2.5, 25), (2.5, 5, 22.5), (5, 2.5, 22.5), (5, 5, 20), (5, 10, 15), (10, 10, 10), (10, 5, 15)
         for json_file in json_files_best_till_time:
             for x in range(0, 2):
@@ -401,7 +401,9 @@ def main():
                         not_better_stop_timer,
                         number_max_increases,
                         increase_factor,
-                    ) in [(120, 1, 2), (10, 1, 2)]:
+                    ) in [(120, 1, 2)
+                          #, (10, 1, 2)
+                          ]:
                         with open("objective_function.txt", "a") as error_file:
                             error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_dif_onlylns_{x}"
                             error_file.write(error_filename + "\n")
