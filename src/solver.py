@@ -9,7 +9,6 @@ from src.greedy_scheduler import SequentialGreedyScheduler, SequentialGreedySche
 
 from . import shift_vars
 from .callback_early_stop import Callback_Early_Stop
-from .solverCallback import callback_improvement_slowed
 from .solverCallback.callback_three_best_solutions import Callback_Top_Solutions
 from .inputTypes import instace
 from .module import (
