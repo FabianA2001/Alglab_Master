@@ -427,7 +427,6 @@ class solve_employee:
         # Because we have input_tupel[0]+input_tupel[1]-int(time.time()-start_time)>0, this method may take more time than was initially desired but still in the desired time of the full function
         if (
             general_optimization_max_time > 0
-            and input_tupel[0] + input_tupel[1] - int(time.time() - start_time) > 0
         ):
             general_optimization_max_time = (
                 general_optimization_max_time
@@ -460,7 +459,7 @@ class solve_employee:
                 print("Something went wrong and the model is infeasible or invalid")
                 return solution_temp
         else:
-            print("Opt: No general optimization desired, keeping last valid solution")
+            print("Opt: Optimization wanted in less than 0 seconds, Keeping last valid solution")
 
         # if len(invalid_employees)>0 or True:
         #     with open('invalid_employees_count.txt', 'a') as file:
