@@ -122,8 +122,8 @@ def solver_page() -> None:
             "method": "solve_instance_one_shift",
             "color": "warning",
             "params": {
-                "one_shift_max_time": round(DEFAULT_TIMEOUT_SECONDS/3),
-                "fixed_work_var_opt_max_time": round(2*DEFAULT_TIMEOUT_SECONDS/3),
+                "one_shift_max_time": round(DEFAULT_TIMEOUT_SECONDS / 3),
+                "fixed_work_var_opt_max_time": round(2 * DEFAULT_TIMEOUT_SECONDS / 3),
                 "general_optimization_max_time": 1,
             },
             "requires_solution": False,
@@ -427,8 +427,10 @@ def solver_page() -> None:
                 "general_optimization_max_time" in params
                 and current_timeout is not None
             ):
-                params["one_shift_max_time"] = math.ceil(current_timeout/3)
-                params["fixed_work_var_opt_max_time"] = math.ceil(2*current_timeout/3)
+                params["one_shift_max_time"] = math.ceil(current_timeout / 3)
+                params["fixed_work_var_opt_max_time"] = math.ceil(
+                    2 * current_timeout / 3
+                )
                 params["general_optimization_max_time"] = 1
 
             if method_name == "lns":
@@ -466,9 +468,6 @@ def solver_page() -> None:
                 )
             elif method_name == "solve_instance_one_shift":
                 # Note right now optimization time is the max_time_in_seconds, the rest is not limited but finish for each isntance relativily fast to the size of an instance
-                print(params["one_shift_max_time"], params["fixed_work_var_opt_max_time"], params[
-                        "general_optimization_max_time"
-                    ])
                 solution = solve_employee(instance=instance).solve_instance_one_shift(
                     one_shift_max_time=params["one_shift_max_time"],
                     fixed_work_var_opt_max_time=params["fixed_work_var_opt_max_time"],

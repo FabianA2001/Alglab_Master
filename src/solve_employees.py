@@ -367,8 +367,9 @@ class solve_employee:
                         self.solution.work_vars.pop((day, employee_uid))
             else:
                 print(f"Error solving for employee {employee_uid}: ")
+                print("Instance does not have a solution")
                 self.hint_solution.solve_status = cp_model.INFEASIBLE
-                return solve_employee(instance=self.instance).solve_all_employees()
+                return self.hint_solution
 
         employee_verification_time = time.time()
         self.hint_solution.solve_time = employee_verification_time - start_time
@@ -544,7 +545,7 @@ class solve_employee:
         instance_copy.employees = {employee_uid: instance_copy.employees[employee_uid]}
         solver_ = Solver(instance_copy, shift_vars.Shift_vars(instance_copy))
         # also implement something to consider the previously set employees shifts
-        # TODO use one shift time because it is faster but first ban and force assign need to be added to the creation of the one shift instance
+        # TODO use one shift time because it is faster
         solution = solver_.solve_callback_with_solution(
             disabled_constraints=[SolverConstraints.cover_requirements],
             objective_function=solver_.objective_value_only_wishes,

@@ -91,21 +91,6 @@ class Solver:
             stop_after_first_solution=stop_after_first_solution,
         )
 
-    def solve_with_early_stop_alt(
-        self,
-        log_search_progress: bool = True,
-        max_time_in_seconds: float = 60.0,
-        hint_solution: Solution | None = None,
-        constraint_set: int = 2,
-        stop_after_first_solution: bool = False,
-    ):
-        callback_improvement_slowed.callback_improvement_slowed(percentual_improvement=0.1, time_between_checks_in_seconds=round(max_time_in_seconds/4))
-        return self.warm_start_generalized(
-            hint_solution=hint_solution,
-            log_search_progress=log_search_progress,
-            max_time_in_seconds=max_time_in_seconds,
-        )
-
     def objevtive_value(self):
         objective_value = 0
         for employee_uid in self.instance.employees:
@@ -290,6 +275,7 @@ class Solver:
         """Handles the case when the model is invalid."""
         print("The model provided is invalid and cannot be solved.")
         print("The model provided is invalid and cannot be solved.")
+
     def warm_start(
         self,
         solution: Solution,
