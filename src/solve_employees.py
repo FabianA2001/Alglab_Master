@@ -493,9 +493,9 @@ class solve_employee:
                 max_time_in_seconds=450,
                 stop_after_first_solution=True,
             )
-            print("employee time: ", time.time() - start_time)
+            # print("employee time: ", time.time() - start_time)
             return (solution1, True)
-        print("employee time: ", time.time() - start_time)
+        # print("employee time: ", time.time() - start_time)
         return (solution, False)
 
     @staticmethod
