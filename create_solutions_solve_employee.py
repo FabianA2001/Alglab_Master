@@ -85,6 +85,33 @@ def main():
         "Instance9": 1849.0,
     }
 
+    dict_objective_values = {
+        "Instance1": 1163.0,
+        "Instance10": 24873.0,
+        "Instance11": 35675.0,
+        "Instance12": 53572.5,
+        "Instance13": 90079.0,
+        "Instance14": 26941.0,
+        "Instance15": 36596.0,
+        "Instance16": 16303.5,
+        "Instance17": 42931.5,
+        "Instance18": 29634.5,
+        "Instance19": 62920.0,
+        "Instance1ExtraLong": 964.0,
+        "Instance2": 3836.5,
+        "Instance20": 241998.0,
+        "Instance21": 246717.5,
+        "Instance22": 475299.5,
+        "Instance23": 579215.0,
+        "Instance3": 5277.5,
+        "Instance4": 6792.5,
+        "Instance5": 6714.5,
+        "Instance6": 9975.5,
+        "Instance7": 12190.5,
+        "Instance8": 18322.5,
+        "Instance9": 12466.0,
+    }
+
     dict_constraint = {
         # 0:"original"
         # ,1:"new"
@@ -120,23 +147,23 @@ def main():
     #             # Call the secondary script with the current JSON file and iteration x
     #             subprocess.run(["python3", "process_json_solve_employee.py", str(json_file), str(x), "True", incrementally, str(30*60), "True"])
 
-    # for one_shift_time, work_var_time, opt_time in [(0,0,30)]:
-    #     # ,  (2.5, 0, 0), (1, 0, 0),  (5, 2.5, 0), (5, 5, 0),  (10, 5, 0), (5, 10, 0),  (10, 10, 0), (0, 0, 30), (0, 2.5, 27.5), (2.5, 0, 27.5), (2.5, 2.5, 25), (2.5, 5, 22.5), (5, 2.5, 22.5), (5, 5, 20), (5, 10, 15), (10, 10, 10), (10, 5, 15)
-    #     for json_file in json_files_best_till_time:
-    #         for x in range(0, 3):
-    #             if json_file.stem in dict_objective_values.keys():
-    #                 callback_opt = callback_until_objective_value(desired_objective_value=dict_objective_values[json_file.stem])
-    #                 print(f"one_shift, work_var, opt times: {(one_shift_time, work_var_time, opt_time)}")
-    #                 print(f"Processing {json_file.name} with iteration {x} ...")
-    #                 # Call the secondary script with the current JSON file and iteration x
-    #                 instance = parseTXT.parse_txt(json_file)
-    #                 solver_employee = solve_employee(instance)
+    for one_shift_time, work_var_time, opt_time in [(0,0,30)]:
+        # ,  (2.5, 0, 0), (1, 0, 0),  (5, 2.5, 0), (5, 5, 0),  (10, 5, 0), (5, 10, 0),  (10, 10, 0), (0, 0, 30), (0, 2.5, 27.5), (2.5, 0, 27.5), (2.5, 2.5, 25), (2.5, 5, 22.5), (5, 2.5, 22.5), (5, 5, 20), (5, 10, 15), (10, 10, 10), (10, 5, 15)
+        for json_file in json_files_best_till_time:
+            for x in range(0, 3):
+                if json_file.stem in dict_objective_values.keys():
+                    callback_opt = callback_until_objective_value(desired_objective_value=dict_objective_values[json_file.stem])
+                    print(f"one_shift, work_var, opt times: {(one_shift_time, work_var_time, opt_time)}")
+                    print(f"Processing {json_file.name} with iteration {x} ...")
+                    # Call the secondary script with the current JSON file and iteration x
+                    instance = parseTXT.parse_txt(json_file)
+                    solver_employee = solve_employee(instance)
 
-    #                 solution = solver_employee.solve_instance_one_shift(one_shift_max_time=one_shift_time*60, fixed_work_var_opt_max_time=work_var_time*60, general_optimization_max_time=opt_time*60, optimization_callback=callback_opt)
+                    solution = solver_employee.solve_instance_one_shift(one_shift_max_time=one_shift_time*60, fixed_work_var_opt_max_time=work_var_time*60, general_optimization_max_time=opt_time*60, optimization_callback=callback_opt)
 
-    #                 filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_till_median_immediate_first_{x}"
+                    filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_till_median_immediate_first_{x}"
 
-    #                 solution.to_json_file(filename)
+                    solution.to_json_file(filename)
 
     # for one_shift_time, work_var_time, opt_time in [(0,0,30)]:
     #     # ,  (2.5, 0, 0), (1, 0, 0),  (5, 2.5, 0), (5, 5, 0),  (10, 5, 0), (5, 10, 0),  (10, 10, 0), (0, 0, 30), (0, 2.5, 27.5), (2.5, 0, 27.5), (2.5, 2.5, 25), (2.5, 5, 22.5), (5, 2.5, 22.5), (5, 5, 20), (5, 10, 15), (10, 10, 10), (10, 5, 15)
@@ -223,284 +250,284 @@ def main():
     #                     filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_alt_immediate_first_{x}"
     #                     solution.to_json_file(filename)
 
-    # create LNS solution using first one_shift method and optimizing after LNS stop finding solutions
-    for one_shift_time, work_var_time, opt_time in [(10, 10, 30), (0, 0, 30)]:
-        #     # ,  (2.5, 0, 0), (1, 0, 0),  (5, 2.5, 0), (5, 5, 0),  (10, 5, 0), (5, 10, 0),  (10, 10, 0), (0, 0, 30), (0, 2.5, 27.5), (2.5, 0, 27.5), (2.5, 2.5, 25), (2.5, 5, 22.5), (5, 2.5, 22.5), (5, 5, 20), (5, 10, 15), (10, 10, 10), (10, 5, 15)
-        for json_file in json_files_best_till_time:
-            for x in range(0, 2):
-                for (
-                    percentual_improvement_shift,
-                    time_between_checks_in_seconds_shift,
-                    percentual_improvement_work_var,
-                    time_between_checks_in_seconds_work_var,
-                    numerical_improvement_opt,
-                ) in [(0.025, 8, 0.012, 8, 0)]:
-                    time_between_checks_in_seconds_opt = 120
-                    callback_one_shift = callback_improvement_slowed(
-                        percentual_improvement=percentual_improvement_shift,
-                        time_between_checks_in_seconds=time_between_checks_in_seconds_shift,
-                    )
-                    callback_opt_work_var = callback_improvement_slowed(
-                        percentual_improvement=percentual_improvement_work_var,
-                        time_between_checks_in_seconds=time_between_checks_in_seconds_work_var,
-                    )
-                    callback_opt = callback_improvement_slowed(
-                        numerical_improvement=numerical_improvement_opt,
-                        time_between_checks_in_seconds=time_between_checks_in_seconds_opt,
-                    )
-                    print(
-                        f"one_shift, work_var, opt times: {(one_shift_time, work_var_time, opt_time)}"
-                    )
-                    print(f"Processing {json_file.name} with iteration {x} ...")
-                    # Call the secondary script with the current JSON file and iteration x
-                    instance = parseTXT.parse_txt(json_file)
-                    solver_employee = solve_employee(instance)
-                    start_time = time.time()
-                    solution = solver_employee.solve_instance_one_shift(
-                        one_shift_max_time=one_shift_time * 60,
-                        fixed_work_var_opt_max_time=work_var_time * 60,
-                        general_optimization_max_time=0 * 60,
-                        one_shift_callback=callback_one_shift,
-                        fixed_work_var_opt_callback=callback_opt_work_var,
-                    )
+    # # create LNS solution using first one_shift method and optimizing after LNS stop finding solutions
+    # for one_shift_time, work_var_time, opt_time in [(10, 10, 30), (0, 0, 30)]:
+    #     #     # ,  (2.5, 0, 0), (1, 0, 0),  (5, 2.5, 0), (5, 5, 0),  (10, 5, 0), (5, 10, 0),  (10, 10, 0), (0, 0, 30), (0, 2.5, 27.5), (2.5, 0, 27.5), (2.5, 2.5, 25), (2.5, 5, 22.5), (5, 2.5, 22.5), (5, 5, 20), (5, 10, 15), (10, 10, 10), (10, 5, 15)
+    #     for json_file in json_files_best_till_time:
+    #         for x in range(0, 2):
+    #             for (
+    #                 percentual_improvement_shift,
+    #                 time_between_checks_in_seconds_shift,
+    #                 percentual_improvement_work_var,
+    #                 time_between_checks_in_seconds_work_var,
+    #                 numerical_improvement_opt,
+    #             ) in [(0.025, 8, 0.012, 8, 0)]:
+    #                 time_between_checks_in_seconds_opt = 120
+    #                 callback_one_shift = callback_improvement_slowed(
+    #                     percentual_improvement=percentual_improvement_shift,
+    #                     time_between_checks_in_seconds=time_between_checks_in_seconds_shift,
+    #                 )
+    #                 callback_opt_work_var = callback_improvement_slowed(
+    #                     percentual_improvement=percentual_improvement_work_var,
+    #                     time_between_checks_in_seconds=time_between_checks_in_seconds_work_var,
+    #                 )
+    #                 callback_opt = callback_improvement_slowed(
+    #                     numerical_improvement=numerical_improvement_opt,
+    #                     time_between_checks_in_seconds=time_between_checks_in_seconds_opt,
+    #                 )
+    #                 print(
+    #                     f"one_shift, work_var, opt times: {(one_shift_time, work_var_time, opt_time)}"
+    #                 )
+    #                 print(f"Processing {json_file.name} with iteration {x} ...")
+    #                 # Call the secondary script with the current JSON file and iteration x
+    #                 instance = parseTXT.parse_txt(json_file)
+    #                 solver_employee = solve_employee(instance)
+    #                 start_time = time.time()
+    #                 solution = solver_employee.solve_instance_one_shift(
+    #                     one_shift_max_time=one_shift_time * 60,
+    #                     fixed_work_var_opt_max_time=work_var_time * 60,
+    #                     general_optimization_max_time=0 * 60,
+    #                     one_shift_callback=callback_one_shift,
+    #                     fixed_work_var_opt_callback=callback_opt_work_var,
+    #                 )
 
-                    timeout_seconds = opt_time * 60 - (time.time() - start_time)
-                    first_opt_time = time.time() - start_time
+    #                 timeout_seconds = opt_time * 60 - (time.time() - start_time)
+    #                 first_opt_time = time.time() - start_time
 
-                    print(opt_time * 60 - (time.time() - start_time))
-                    for (
-                        not_better_stop_timer,
-                        number_max_increases,
-                        increase_factor,
-                    ) in [(60, 3, 2)]:
-                        with open("objective_function.txt", "a") as error_file:
-                            error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_onlylns_{x}"
-                            error_file.write(error_filename + "\n")
-                            error_file.write(f"{solution.objective_value}" + "\n")
-                        lns_start_time = time.time()
-                        solution_lns = lns.LNS(
-                            sol_or_instance=solution.model_copy(deep=True),
-                            timeout_seconds=timeout_seconds,
-                            log_level=10,
-                        ).solve(
-                            not_better_increase_after=not_better_stop_timer,
-                            number_max_increases=number_max_increases,
-                            increase_factor=increase_factor,
-                        )
-                        with open("objective_function.txt", "a") as error_file:
-                            error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_onlylns_{x}"
-                            error_file.write(error_filename + "\n")
-                            error_file.write(f"{solution.objective_value}" + "\n")
+    #                 print(opt_time * 60 - (time.time() - start_time))
+    #                 for (
+    #                     not_better_stop_timer,
+    #                     number_max_increases,
+    #                     increase_factor,
+    #                 ) in [(60, 3, 2)]:
+    #                     with open("objective_function.txt", "a") as error_file:
+    #                         error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_onlylns_{x}"
+    #                         error_file.write(error_filename + "\n")
+    #                         error_file.write(f"{solution.objective_value}" + "\n")
+    #                     lns_start_time = time.time()
+    #                     solution_lns = lns.LNS(
+    #                         sol_or_instance=solution.model_copy(deep=True),
+    #                         timeout_seconds=timeout_seconds,
+    #                         log_level=10,
+    #                     ).solve(
+    #                         not_better_increase_after=not_better_stop_timer,
+    #                         number_max_increases=number_max_increases,
+    #                         increase_factor=increase_factor,
+    #                     )
+    #                     with open("objective_function.txt", "a") as error_file:
+    #                         error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_onlylns_{x}"
+    #                         error_file.write(error_filename + "\n")
+    #                         error_file.write(f"{solution.objective_value}" + "\n")
 
-                        only_lns_time = time.time() - lns_start_time
-                        full_time = only_lns_time + first_opt_time
-                        if solution_lns.solve_status in [
-                            cp_model.FEASIBLE
-                        ] or solution_lns.solve_status in [cp_model.OPTIMAL]:
-                            solution_lns.solve_time = full_time
-                            filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_lns_time_out_30_{x}"
-                            solution_lns.to_json_file(filename)
-                            filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_lns_immediate_first_{x}"
-                            solution_lns.to_json_file(filename)
+    #                     only_lns_time = time.time() - lns_start_time
+    #                     full_time = only_lns_time + first_opt_time
+    #                     if solution_lns.solve_status in [
+    #                         cp_model.FEASIBLE
+    #                     ] or solution_lns.solve_status in [cp_model.OPTIMAL]:
+    #                         solution_lns.solve_time = full_time
+    #                         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_lns_time_out_30_{x}"
+    #                         solution_lns.to_json_file(filename)
+    #                         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_lns_immediate_first_{x}"
+    #                         solution_lns.to_json_file(filename)
 
-                            solution_lns.solve_time = only_lns_time
-                            filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_onlylns_time_out_30_{x}"
-                            solution_lns.to_json_file(filename)
-                            filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_onlylns_immediate_first_{x}"
-                            solution_lns.to_json_file(filename)
+    #                         solution_lns.solve_time = only_lns_time
+    #                         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_onlylns_time_out_30_{x}"
+    #                         solution_lns.to_json_file(filename)
+    #                         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_onlylns_immediate_first_{x}"
+    #                         solution_lns.to_json_file(filename)
 
-                        else:
-                            error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_onlylns_{x}"
-                            with open("error_log.txt", "a") as error_file:
-                                error_file.write(error_filename + "\n")
+    #                     else:
+    #                         error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_onlylns_{x}"
+    #                         with open("error_log.txt", "a") as error_file:
+    #                             error_file.write(error_filename + "\n")
 
-                        print(
-                            f"time : {timeout_seconds - (time.time() - lns_start_time)}"
-                        )
-                        if timeout_seconds - (time.time() - lns_start_time) <= 0:
-                            solution_opt = solution_lns.model_copy(deep=True)
-                        else:
-                            solution_opt = Solver(
-                                instance.model_copy(deep=True),
-                                Shift_vars(instance.model_copy(deep=True)),
-                            ).warm_start_generalized(
-                                hint_solution=solution_lns.model_copy(deep=True),
-                                max_time_in_seconds=timeout_seconds
-                                - (time.time() - lns_start_time),
-                            )
+    #                     print(
+    #                         f"time : {timeout_seconds - (time.time() - lns_start_time)}"
+    #                     )
+    #                     if timeout_seconds - (time.time() - lns_start_time) <= 0:
+    #                         solution_opt = solution_lns.model_copy(deep=True)
+    #                     else:
+    #                         solution_opt = Solver(
+    #                             instance.model_copy(deep=True),
+    #                             Shift_vars(instance.model_copy(deep=True)),
+    #                         ).warm_start_generalized(
+    #                             hint_solution=solution_lns.model_copy(deep=True),
+    #                             max_time_in_seconds=timeout_seconds
+    #                             - (time.time() - lns_start_time),
+    #                         )
 
-                        solution_opt.solve_time = (
-                            time.time() - lns_start_time
-                        ) + first_opt_time
-                        if solution_opt.solve_status in [cp_model.OPTIMAL]:
-                            filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_lns_alt_opt_{x}"
-                            solution_opt.to_json_file(filename)
-                        if solution_opt.solve_status in [
-                            cp_model.FEASIBLE
-                        ] or solution_opt.solve_status in [cp_model.OPTIMAL]:
-                            filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_lns_alt_time_out_30_{x}"
-                            solution_opt.to_json_file(filename)
-                        else:
-                            error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_lns_alt_opt_{x}"
-                            with open("error_log.txt", "a") as error_file:
-                                error_file.write(error_filename + "\n")
+    #                     solution_opt.solve_time = (
+    #                         time.time() - lns_start_time
+    #                     ) + first_opt_time
+    #                     if solution_opt.solve_status in [cp_model.OPTIMAL]:
+    #                         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_lns_alt_opt_{x}"
+    #                         solution_opt.to_json_file(filename)
+    #                     if solution_opt.solve_status in [
+    #                         cp_model.FEASIBLE
+    #                     ] or solution_opt.solve_status in [cp_model.OPTIMAL]:
+    #                         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_lns_alt_time_out_30_{x}"
+    #                         solution_opt.to_json_file(filename)
+    #                     else:
+    #                         error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_lns_alt_opt_{x}"
+    #                         with open("error_log.txt", "a") as error_file:
+    #                             error_file.write(error_filename + "\n")
 
-                    for (
-                        not_better_stop_timer,
-                        number_max_increases,
-                        increase_factor,
-                    ) in [
-                        (45, 2, 2)
-                        # , (10, 1, 2)
-                    ]:
-                        with open("objective_function.txt", "a") as error_file:
-                            error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_dif_onlylns_{x}"
-                            error_file.write(error_filename + "\n")
-                            error_file.write(f"{solution.objective_value}" + "\n")
-                        lns_start_time = time.time()
-                        solution_lns = lns.LNS(
-                            sol_or_instance=solution.model_copy(deep=True),
-                            timeout_seconds=timeout_seconds,
-                            search_window_size_min=min(
-                                14, solution.instance.number_of_days - 1
-                            ),
-                            small_runtime_base=0.03,
-                            start_search_window_size=min(
-                                14, solution.instance.number_of_days - 1
-                            ),
-                            deafult_search_window_size=min(
-                                14, solution.instance.number_of_days - 1
-                            ),
-                            log_level=10,
-                        ).solve_alt(
-                            not_better_increase_after=not_better_stop_timer,
-                            number_max_increases=number_max_increases,
-                            increase_factor=increase_factor,
-                        )
-                        with open("objective_function.txt", "a") as error_file:
-                            error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_dif_onlylns_{x}"
-                            error_file.write(error_filename + "\n")
-                            error_file.write(f"{solution.objective_value}" + "\n")
+    #                 for (
+    #                     not_better_stop_timer,
+    #                     number_max_increases,
+    #                     increase_factor,
+    #                 ) in [
+    #                     (45, 2, 2)
+    #                     # , (10, 1, 2)
+    #                 ]:
+    #                     with open("objective_function.txt", "a") as error_file:
+    #                         error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_dif_onlylns_{x}"
+    #                         error_file.write(error_filename + "\n")
+    #                         error_file.write(f"{solution.objective_value}" + "\n")
+    #                     lns_start_time = time.time()
+    #                     solution_lns = lns.LNS(
+    #                         sol_or_instance=solution.model_copy(deep=True),
+    #                         timeout_seconds=timeout_seconds,
+    #                         search_window_size_min=min(
+    #                             14, solution.instance.number_of_days - 1
+    #                         ),
+    #                         small_runtime_base=0.03,
+    #                         start_search_window_size=min(
+    #                             14, solution.instance.number_of_days - 1
+    #                         ),
+    #                         deafult_search_window_size=min(
+    #                             14, solution.instance.number_of_days - 1
+    #                         ),
+    #                         log_level=10,
+    #                     ).solve_alt(
+    #                         not_better_increase_after=not_better_stop_timer,
+    #                         number_max_increases=number_max_increases,
+    #                         increase_factor=increase_factor,
+    #                     )
+    #                     with open("objective_function.txt", "a") as error_file:
+    #                         error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_dif_onlylns_{x}"
+    #                         error_file.write(error_filename + "\n")
+    #                         error_file.write(f"{solution.objective_value}" + "\n")
 
-                        only_lns_time = time.time() - lns_start_time
-                        full_time = only_lns_time + first_opt_time
-                        if solution_lns.solve_status in [
-                            cp_model.FEASIBLE
-                        ] or solution_lns.solve_status in [cp_model.OPTIMAL]:
-                            solution_lns.solve_time = full_time
-                            filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_dif_lns_time_out_30_{x}"
-                            solution_lns.to_json_file(filename)
-                            filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_dif_lns_immediate_first_{x}"
-                            solution_lns.to_json_file(filename)
+    #                     only_lns_time = time.time() - lns_start_time
+    #                     full_time = only_lns_time + first_opt_time
+    #                     if solution_lns.solve_status in [
+    #                         cp_model.FEASIBLE
+    #                     ] or solution_lns.solve_status in [cp_model.OPTIMAL]:
+    #                         solution_lns.solve_time = full_time
+    #                         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_dif_lns_time_out_30_{x}"
+    #                         solution_lns.to_json_file(filename)
+    #                         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_dif_lns_immediate_first_{x}"
+    #                         solution_lns.to_json_file(filename)
 
-                            solution_lns.solve_time = only_lns_time
-                            filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_dif_onlylns_time_out_30_{x}"
-                            solution_lns.to_json_file(filename)
-                            filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_dif_onlylns_immediate_first_{x}"
-                            solution_lns.to_json_file(filename)
+    #                         solution_lns.solve_time = only_lns_time
+    #                         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_dif_onlylns_time_out_30_{x}"
+    #                         solution_lns.to_json_file(filename)
+    #                         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_dif_onlylns_immediate_first_{x}"
+    #                         solution_lns.to_json_file(filename)
 
-                        else:
-                            error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_dif_onlylns_{x}"
-                            with open("error_log.txt", "a") as error_file:
-                                error_file.write(error_filename + "\n")
+    #                     else:
+    #                         error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_dif_onlylns_{x}"
+    #                         with open("error_log.txt", "a") as error_file:
+    #                             error_file.write(error_filename + "\n")
 
-                        print(
-                            f"time : {timeout_seconds - (time.time() - lns_start_time)}"
-                        )
-                        if timeout_seconds - (time.time() - lns_start_time) <= 0:
-                            solution_opt = solution_lns.model_copy(deep=True)
-                        else:
-                            solution_opt = Solver(
-                                instance.model_copy(deep=True),
-                                Shift_vars(instance.model_copy(deep=True)),
-                            ).warm_start_generalized(
-                                hint_solution=solution_lns.model_copy(deep=True),
-                                max_time_in_seconds=timeout_seconds
-                                - (time.time() - lns_start_time),
-                            )
+    #                     print(
+    #                         f"time : {timeout_seconds - (time.time() - lns_start_time)}"
+    #                     )
+    #                     if timeout_seconds - (time.time() - lns_start_time) <= 0:
+    #                         solution_opt = solution_lns.model_copy(deep=True)
+    #                     else:
+    #                         solution_opt = Solver(
+    #                             instance.model_copy(deep=True),
+    #                             Shift_vars(instance.model_copy(deep=True)),
+    #                         ).warm_start_generalized(
+    #                             hint_solution=solution_lns.model_copy(deep=True),
+    #                             max_time_in_seconds=timeout_seconds
+    #                             - (time.time() - lns_start_time),
+    #                         )
 
-                        solution_opt.solve_time = (
-                            time.time() - lns_start_time
-                        ) + first_opt_time
-                        if solution_opt.solve_status in [cp_model.OPTIMAL]:
-                            filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_dif_lns_alt_opt_{x}"
-                            solution_opt.to_json_file(filename)
-                        if solution_opt.solve_status in [
-                            cp_model.FEASIBLE
-                        ] or solution_opt.solve_status in [cp_model.OPTIMAL]:
-                            filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_dif_lns_alt_time_out_30_{x}"
-                            solution_opt.to_json_file(filename)
-                        else:
-                            error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_dif_lns_alt_opt_{x}"
-                            with open("error_log.txt", "a") as error_file:
-                                error_file.write(error_filename + "\n")
+    #                     solution_opt.solve_time = (
+    #                         time.time() - lns_start_time
+    #                     ) + first_opt_time
+    #                     if solution_opt.solve_status in [cp_model.OPTIMAL]:
+    #                         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_dif_lns_alt_opt_{x}"
+    #                         solution_opt.to_json_file(filename)
+    #                     if solution_opt.solve_status in [
+    #                         cp_model.FEASIBLE
+    #                     ] or solution_opt.solve_status in [cp_model.OPTIMAL]:
+    #                         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_dif_lns_alt_time_out_30_{x}"
+    #                         solution_opt.to_json_file(filename)
+    #                     else:
+    #                         error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_dif_lns_alt_opt_{x}"
+    #                         with open("error_log.txt", "a") as error_file:
+    #                             error_file.write(error_filename + "\n")
 
-                    # for not_better_stop_timer in []:
-                    #     lns_start_time = time.time()
-                    #     with open("objective_function.txt", "a") as error_file:
-                    #         error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_onlylns_{x}"
-                    #         error_file.write(error_filename + "\n")
-                    #         error_file.write(f"{solution.objective_value}" + "\n")
-                    #     solution_lns = lns.LNS(
-                    #         sol_or_instance=solution.model_copy(deep=True),
-                    #         timeout_seconds=timeout_seconds,
-                    #         log_level=20,
-                    #     ).solve(not_better_increase_after=not_better_stop_timer * 60, enable_early_stop = False)
-                    #     with open("objective_function.txt", "a") as error_file:
-                    #         error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_onlylns_{x}"
-                    #         error_file.write(error_filename + "\n")
-                    #         error_file.write(f"{solution.objective_value}" + "\n")
+    #                 # for not_better_stop_timer in []:
+    #                 #     lns_start_time = time.time()
+    #                 #     with open("objective_function.txt", "a") as error_file:
+    #                 #         error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_onlylns_{x}"
+    #                 #         error_file.write(error_filename + "\n")
+    #                 #         error_file.write(f"{solution.objective_value}" + "\n")
+    #                 #     solution_lns = lns.LNS(
+    #                 #         sol_or_instance=solution.model_copy(deep=True),
+    #                 #         timeout_seconds=timeout_seconds,
+    #                 #         log_level=20,
+    #                 #     ).solve(not_better_increase_after=not_better_stop_timer * 60, enable_early_stop = False)
+    #                 #     with open("objective_function.txt", "a") as error_file:
+    #                 #         error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_onlylns_{x}"
+    #                 #         error_file.write(error_filename + "\n")
+    #                 #         error_file.write(f"{solution.objective_value}" + "\n")
 
-                    #     only_lns_time = time.time() - lns_start_time
-                    #     full_time = only_lns_time + first_opt_time
-                    #     if solution_lns.solve_status in [
-                    #         cp_model.FEASIBLE
-                    #     ] or solution_lns.solve_status in [cp_model.OPTIMAL]:
-                    #         solution_lns.solve_time = full_time
-                    #         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_lns_time_out_30_{x}"
-                    #         solution_lns.to_json_file(filename)
-                    #         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_lns_immediate_first_{x}"
-                    #         solution_lns.to_json_file(filename)
+    #                 #     only_lns_time = time.time() - lns_start_time
+    #                 #     full_time = only_lns_time + first_opt_time
+    #                 #     if solution_lns.solve_status in [
+    #                 #         cp_model.FEASIBLE
+    #                 #     ] or solution_lns.solve_status in [cp_model.OPTIMAL]:
+    #                 #         solution_lns.solve_time = full_time
+    #                 #         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_lns_time_out_30_{x}"
+    #                 #         solution_lns.to_json_file(filename)
+    #                 #         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_lns_immediate_first_{x}"
+    #                 #         solution_lns.to_json_file(filename)
 
-                    #         solution_lns.solve_time = only_lns_time
-                    #         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_onlylns_time_out_30_{x}"
-                    #         solution_lns.to_json_file(filename)
-                    #         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_onlylns_immediate_first_{x}"
-                    #         solution_lns.to_json_file(filename)
+    #                 #         solution_lns.solve_time = only_lns_time
+    #                 #         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_onlylns_time_out_30_{x}"
+    #                 #         solution_lns.to_json_file(filename)
+    #                 #         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_onlylns_immediate_first_{x}"
+    #                 #         solution_lns.to_json_file(filename)
 
-                    #     else:
-                    #         error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_onlylns_{x}"
-                    #         with open("error_log.txt", "a") as error_file:
-                    #             error_file.write(error_filename + "\n")
+    #                 #     else:
+    #                 #         error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_onlylns_{x}"
+    #                 #         with open("error_log.txt", "a") as error_file:
+    #                 #             error_file.write(error_filename + "\n")
 
-                    #     print(f"time : {timeout_seconds- (time.time() - lns_start_time)}")
-                    #     if timeout_seconds - (time.time() - lns_start_time) <= 0:
-                    #         solution_opt = solution_lns.model_copy(deep=True)
-                    #     else:
-                    #         solution_opt = Solver(
-                    #             instance.model_copy(deep=True),
-                    #             Shift_vars(instance.model_copy(deep=True)),
-                    #         ).warm_start_generalized(
-                    #             hint_solution=solution_lns.model_copy(deep=True),
-                    #             max_time_in_seconds=timeout_seconds
-                    #             - (time.time() - lns_start_time),
-                    #         )
+    #                 #     print(f"time : {timeout_seconds- (time.time() - lns_start_time)}")
+    #                 #     if timeout_seconds - (time.time() - lns_start_time) <= 0:
+    #                 #         solution_opt = solution_lns.model_copy(deep=True)
+    #                 #     else:
+    #                 #         solution_opt = Solver(
+    #                 #             instance.model_copy(deep=True),
+    #                 #             Shift_vars(instance.model_copy(deep=True)),
+    #                 #         ).warm_start_generalized(
+    #                 #             hint_solution=solution_lns.model_copy(deep=True),
+    #                 #             max_time_in_seconds=timeout_seconds
+    #                 #             - (time.time() - lns_start_time),
+    #                 #         )
 
-                    #     solution_opt.solve_time = (
-                    #         time.time() - lns_start_time
-                    #     ) + first_opt_time
-                    #     if solution_opt.solve_status in [cp_model.OPTIMAL]:
-                    #         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_lns_alt_opt_{x}"
-                    #         solution_opt.to_json_file(filename)
-                    #     if solution_opt.solve_status in [
-                    #         cp_model.FEASIBLE
-                    #     ] or solution_opt.solve_status in [cp_model.OPTIMAL]:
-                    #         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_lns_alt_time_out_30_{x}"
-                    #         solution_opt.to_json_file(filename)
-                    #     else:
-                    #         error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_lns_alt_opt_{x}"
-                    #         with open("error_log.txt", "a") as error_file:
-                    #             error_file.write(error_filename + "\n")
+    #                 #     solution_opt.solve_time = (
+    #                 #         time.time() - lns_start_time
+    #                 #     ) + first_opt_time
+    #                 #     if solution_opt.solve_status in [cp_model.OPTIMAL]:
+    #                 #         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_lns_alt_opt_{x}"
+    #                 #         solution_opt.to_json_file(filename)
+    #                 #     if solution_opt.solve_status in [
+    #                 #         cp_model.FEASIBLE
+    #                 #     ] or solution_opt.solve_status in [cp_model.OPTIMAL]:
+    #                 #         filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_lns_alt_time_out_30_{x}"
+    #                 #         solution_opt.to_json_file(filename)
+    #                 #     else:
+    #                 #         error_filename = f"{solution.instance.name}_1S{one_shift_time}_wv{work_var_time}_o{opt_time}_1Scp{percentual_improvement_shift}_wvcp{percentual_improvement_work_var}_ocn{numerical_improvement_opt}_timer{not_better_stop_timer}_it{number_max_increases}_if{increase_factor}_lns_alt_opt_{x}"
+    #                 #         with open("error_log.txt", "a") as error_file:
+    #                 #             error_file.write(error_filename + "\n")
 
     # create solutions using first solution from one_shift method and optimizing using normal optimization
     for one_shift_time, work_var_time, opt_time in [(0, 0, 30)]:
