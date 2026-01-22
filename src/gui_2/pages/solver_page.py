@@ -504,7 +504,6 @@ def solver_page() -> None:
                         "general_optimization_max_time"
                     ],
                     optimization_callback=optimization_callback,
-                    **params,
                 )
             elif method_name == "normal_warm_start":
                 old_solution = state.get_solution()
