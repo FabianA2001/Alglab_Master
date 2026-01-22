@@ -71,10 +71,11 @@ class solve_employee:
                 )
 
             # Handle return code and output from subprocess
-            if solution_temp.solve_status not in [cp_model.INFEASIBLE, cp_model.UNKNOWN]:
-                self.solution.copy_solution(
-                    solution=solution_temp
-                )
+            if solution_temp.solve_status not in [
+                cp_model.INFEASIBLE,
+                cp_model.UNKNOWN,
+            ]:
+                self.solution.copy_solution(solution=solution_temp)
             else:
                 print(
                     f"Error solving for employee {employee_uid}: No solution has been found"
@@ -113,6 +114,28 @@ class solve_employee:
         solution = self.solution.model_copy(deep=True)
         self.solution = Solution(self.instance)
         return solution
+
+    def return_all_invalid_employees(
+        self,
+    ):
+        count_ = 0
+        invalid_employee_uids = []
+        for employee_uid in self.instance.employees:
+            count_ += 1
+            print(count_)
+
+            solution_temp = self.solve_employee(
+                employee_uid=employee_uid,
+            )
+
+            # Handle return code and output from subprocess
+            if solution_temp.solve_status in [cp_model.INFEASIBLE, cp_model.UNKNOWN]:
+                print(
+                    f"Error solving for employee {employee_uid}: No solution has been found"
+                )
+                invalid_employee_uids.append(employee_uid)
+
+        return invalid_employee_uids
 
     def solve_employee(
         self, employee_uid: employee.EmployeeUid, soft_max_time_in_seconds: int = 0
@@ -309,6 +332,7 @@ class solve_employee:
                 one_shift_max_time = 450
                 stop_after_first_solution = True
             elif solution.solve_status in [cp_model.INFEASIBLE, cp_model.MODEL_INVALID]:
+                # TODO instead the instance should be changed to an instance without the problematic employee and then we should try again. This should only happen if count == 0 if we are infeasible another time return solve_all_employees
                 print("Something went wrong and the model is infeasible or invalid")
                 return solve_employee(instance=self.instance).solve_all_employees()
             if counter == 2:
@@ -521,7 +545,7 @@ class solve_employee:
         instance_copy.employees = {employee_uid: instance_copy.employees[employee_uid]}
         solver_ = Solver(instance_copy, shift_vars.Shift_vars(instance_copy))
         # also implement something to consider the previously set employees shifts
-        #TODO use one shift time because it is faster but first ban and force assign need to be added to the creation of the one shift instance
+        # TODO use one shift time because it is faster but first ban and force assign need to be added to the creation of the one shift instance
         solution = solver_.solve_callback_with_solution(
             disabled_constraints=[SolverConstraints.cover_requirements],
             objective_function=solver_.objective_value_only_wishes,
