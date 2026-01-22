@@ -92,6 +92,8 @@ class Solver_for_window(solver.Solver):
         callback: cp_model.CpSolverSolutionCallback | None = None,
     ) -> Solution:
         return super().solve_with_early_stop(
+            log_search_progress=log_search_progress,
+            max_time_in_seconds=max_time_in_seconds,
             stop_after_first_solution=stop_after_first_solution,
         )
 
