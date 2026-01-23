@@ -75,7 +75,7 @@ class solve_employee:
                 cp_model.INFEASIBLE,
                 cp_model.UNKNOWN,
             ]:
-                self.solution.copy_solution(solution=solution_temp)
+                self.solution.copy_solution(solution=solution_temp.model_copy())
             else:
                 print(
                     f"Error solving for employee {employee_uid}: No solution has been found"
