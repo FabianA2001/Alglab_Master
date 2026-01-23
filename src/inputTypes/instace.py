@@ -171,24 +171,34 @@ class Instance(BaseModel):
                             shift_type_uid
                         ].penalty_assigned_day_employee.keys()
                     ):
-                        # TODO this might be problimatic because one day might have bad and good shifts for an employee
-                        shift_on_requests[(day, hash_string("all"))][employee_uid] = (
-                            instance_copy.shifts[day][
-                                shift_type_uid
-                            ].penalty_assigned_day_employee[employee_uid]
-                        )
+                        # Sum penalties instead of overwriting
+                        existing_penalty_on = shift_on_requests.get(
+                            (day, hash_string("all")), {}
+                        ).get(employee_uid, 0)
+                        new_penalty_on = instance_copy.shifts[day][
+                            shift_type_uid
+                        ].penalty_assigned_day_employee[employee_uid]
+                        shift_on_requests.setdefault((day, hash_string("all")), {})[
+                            employee_uid
+                        ] = existing_penalty_on + new_penalty_on
+
                     if (
                         employee_uid
                         in instance_copy.shifts[day][
                             shift_type_uid
                         ].penalty_not_assigned_day_employee.keys()
                     ):
-                        shift_off_requests[(day, hash_string("all"))][employee_uid] = (
-                            instance_copy.shifts[day][
-                                shift_type_uid
-                            ].penalty_not_assigned_day_employee[employee_uid]
-                        )
-                    
+                        # Sum penalties instead of overwriting
+                        existing_penalty_off = shift_off_requests.get(
+                            (day, hash_string("all")), {}
+                        ).get(employee_uid, 0)
+                        new_penalty_off = instance_copy.shifts[day][
+                            shift_type_uid
+                        ].penalty_not_assigned_day_employee[employee_uid]
+                        shift_off_requests.setdefault((day, hash_string("all")), {})[
+                            employee_uid
+                        ] = existing_penalty_off + new_penalty_off
+
                     if (
                         employee_uid
                         in instance_copy.shifts[day][
@@ -196,7 +206,7 @@ class Instance(BaseModel):
                         ].ban_employee_day_shift
                     ):
                         ban_set[day].add(employee_uid)
-                        
+
                     if (
                         employee_uid
                         in instance_copy.shifts[day][
@@ -264,11 +274,11 @@ class Instance(BaseModel):
         for day in range(one_shift_instance.number_of_days):
             if day in ban_set:
                 one_shift_instance.shifts[day][
-                            hash_string("all")
-                        ].ban_employee_day_shift = ban_set[day]
+                    hash_string("all")
+                ].ban_employee_day_shift = ban_set[day]
             if day in force_assign_set:
                 one_shift_instance.shifts[day][
-                            hash_string("all")
-                        ].assign_employee_day_shift = force_assign_set[day]
+                    hash_string("all")
+                ].assign_employee_day_shift = force_assign_set[day]
 
         return one_shift_instance
