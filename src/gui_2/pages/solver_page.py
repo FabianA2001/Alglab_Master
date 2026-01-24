@@ -209,13 +209,14 @@ def solver_page() -> None:
                         tooltip_text += " (Benötigt existierende Lösung)"
                     button.tooltip(tooltip_text)
 
-            # Stop Button separat
-            ui.separator()
-            ui.button(
-                "Solver stoppen",
-                icon="stop",
-                on_click=stop_solver,
-            ).props("color=negative").set_enabled(is_solver_active)
+            # TODO vernünftig implementieren
+            # # Stop Button separat
+            # ui.separator()
+            # ui.button(
+            #     "Solver stoppen",
+            #     icon="stop",
+            #     on_click=stop_solver,
+            # ).props("color=negative").set_enabled(is_solver_active)
 
     def add_log_message(message: str) -> None:
         """Fügt eine Log-Nachricht mit Zeitstempel hinzu.
