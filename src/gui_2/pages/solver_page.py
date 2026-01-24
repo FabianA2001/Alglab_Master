@@ -6,6 +6,7 @@ verschiedener Solver-Methoden mit Echtzeit-Logging und Laufzeitanzeige.
 
 import asyncio
 import ctypes
+import math
 import os
 import sys
 import threading
@@ -47,49 +48,17 @@ def solver_page() -> None:
     # Konfiguration der verfügbaren Solver-Methoden
     solver_methods = [
         {
-            "name": "Standard Solve",
-            "description": "Standard CP-SAT Solver",
-            "icon": "play_arrow",
-            "method": "solve",
-            "color": "positive",
+            "name": "Solve From Start",
+            "description": "Find a solution in the minimal time required or until time out",
+            "icon": "build",
+            "method": "solve_instance_one_shift",
+            "color": "warning",
             "params": {
-                "log_search_progress": True,
-                "max_time_in_seconds": DEFAULT_TIMEOUT_SECONDS,
+                "one_shift_max_time": round(DEFAULT_TIMEOUT_SECONDS / 3),
+                "fixed_work_var_opt_max_time": round(2 * DEFAULT_TIMEOUT_SECONDS / 3),
+                "general_optimization_max_time": 0,
             },
-        },
-        {
-            "name": "Solve mit Early Stop",
-            "description": "Solver mit Early-Stop-Callback",
-            "icon": "fast_forward",
-            "method": "solve_with_early_stop",
-            "color": "primary",
-            "params": {
-                "log_search_progress": True,
-                "max_time_in_seconds": DEFAULT_TIMEOUT_SECONDS,
-            },
-        },
-        {
-            "name": "Erste Lösung",
-            "description": "Stoppt nach erster gefundener Lösung",
-            "icon": "looks_one",
-            "method": "solve",
-            "color": "secondary",
-            "params": {
-                "log_search_progress": True,
-                "max_time_in_seconds": 60.0,
-                "stop_after_first_solution": True,
-            },
-        },
-        {
-            "name": "Large Neighborhood Search",
-            "description": "LNS-Solver für große Nachbarschaftssuche",
-            "icon": "explore",
-            "method": "lns",
-            "color": "info",
-            "params": {
-                "timeout_seconds": DEFAULT_TIMEOUT_SECONDS,
-            },
-            "requires_solution": True,
+            "requires_solution": False,
         },
         {
             "name": "Minimal Changes LNS",
@@ -100,54 +69,6 @@ def solver_page() -> None:
             "params": {
                 "max_solve_time": DEFAULT_TIMEOUT_SECONDS,
                 "log_search_progress": True,
-            },
-            "requires_solution": True,
-        },
-        {
-            "name": "Minimal Changes Warm Start",
-            "description": "Minimal Changes with hints from previous solution",
-            "icon": "build",
-            "method": "warm_start",
-            "color": "warning",
-            "params": {
-                "max_time_in_seconds": DEFAULT_TIMEOUT_SECONDS,
-            },
-            "requires_solution": True,
-        },
-        {
-            "name": "First Solution",
-            "description": "Use one shift method to find a first solution quickly",
-            "icon": "build",
-            "method": "solve_instance_one_shift",
-            "color": "warning",
-            "params": {
-                "one_shift_max_time": 0 * 60,
-                "fixed_work_var_opt_max_time": 0 * 60,
-                "general_optimization_max_time": 0 * 60,
-            },
-            "requires_solution": False,
-        },
-        {
-            "name": "First OK Solution",
-            "description": "Use one shift method to find an OK solution quickly",
-            "icon": "build",
-            "method": "solve_instance_one_shift",
-            "color": "warning",
-            "params": {
-                "one_shift_max_time": 10 * 60,
-                "fixed_work_var_opt_max_time": 10 * 60,
-                "general_optimization_max_time": 0 * 60,
-            },
-            "requires_solution": False,
-        },
-        {
-            "name": "Normal Warm Start",
-            "description": "Resume normal optimization with hints from previous solution",
-            "icon": "build",
-            "method": "normal_warm_start",
-            "color": "warning",
-            "params": {
-                "max_time_in_seconds": DEFAULT_TIMEOUT_SECONDS,
             },
             "requires_solution": True,
         },
@@ -439,10 +360,11 @@ def solver_page() -> None:
                 "general_optimization_max_time" in params
                 and current_timeout is not None
             ):
-                params["general_optimization_max_time"] = current_timeout
-                params["general_optimization_max_time"] = (
-                    current_timeout if current_timeout > 1 else 0
+                params["one_shift_max_time"] = math.ceil(current_timeout / 3)
+                params["fixed_work_var_opt_max_time"] = math.ceil(
+                    2 * current_timeout / 3
                 )
+                params["general_optimization_max_time"] = 0
 
             if method_name == "lns":
                 # LNS-Solver
@@ -478,18 +400,66 @@ def solver_page() -> None:
                     **params,
                 )
             elif method_name == "solve_instance_one_shift":
-                optimization_callback = Callback_Early_Stop(
-                    instance, Shift_vars(instance)
-                )
                 # Note right now optimization time is the max_time_in_seconds, the rest is not limited but finish for each isntance relativily fast to the size of an instance
-                solution = solve_employee(instance=instance).solve_instance_one_shift(
+                solve_start_time = time.time()
+                if current_timeout is None:
+                    time_out = (
+                        params["one_shift_max_time"]
+                        + params["fixed_work_var_opt_max_time"]
+                    )
+                else:
+                    time_out = current_timeout
+                current_solution = solve_employee(
+                    instance=instance
+                ).solve_instance_one_shift(
                     one_shift_max_time=params["one_shift_max_time"],
                     fixed_work_var_opt_max_time=params["fixed_work_var_opt_max_time"],
-                    general_optimization_max_time=params[
-                        "general_optimization_max_time"
-                    ],
-                    optimization_callback=optimization_callback,
+                    general_optimization_max_time=0,
                 )
+                remaining_timeout_seconds = time_out - (time.time() - solve_start_time)
+                if instance.number_of_days < 50 and remaining_timeout_seconds > 10:
+                    current_solution = Solver(
+                        instance.model_copy(deep=True),
+                        Shift_vars(instance.model_copy(deep=True)),
+                    ).warm_start_generalized(
+                        hint_solution=current_solution.model_copy(deep=True),
+                        max_time_in_seconds=20,
+                    )
+
+                remaining_timeout_seconds = time_out - (time.time() - solve_start_time)
+                print("lns optimization maximal time: ", remaining_timeout_seconds)
+                if (
+                    remaining_timeout_seconds > 0
+                    and current_solution.solve_status not in [4]
+                ):
+                    current_solution = lns.LNS(
+                        sol_or_instance=current_solution.model_copy(deep=True),
+                        timeout_seconds=remaining_timeout_seconds,
+                        log_level=30,
+                    ).solve(
+                        not_better_increase_after=30,
+                        number_max_increases=1,
+                        increase_factor=2,
+                    )
+                else:
+                    solution = current_solution
+
+                remaining_timeout_seconds = time_out - (time.time() - solve_start_time)
+                print("normal optimization time: ", remaining_timeout_seconds)
+                if (
+                    remaining_timeout_seconds > 0
+                    and current_solution.solve_status not in [4]
+                ):
+                    solution = Solver(
+                        instance.model_copy(deep=True),
+                        Shift_vars(instance.model_copy(deep=True)),
+                    ).warm_start_generalized(
+                        hint_solution=current_solution,
+                        max_time_in_seconds=remaining_timeout_seconds,
+                    )
+                else:
+                    solution = current_solution
+
             elif method_name == "normal_warm_start":
                 old_solution = state.get_solution()
                 if not old_solution:

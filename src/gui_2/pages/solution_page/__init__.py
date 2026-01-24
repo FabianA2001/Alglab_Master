@@ -140,10 +140,13 @@ def solution_page():
         if working_solution["value"] is None:
             ui.notify("Keine Arbeitskopie vorhanden", type="warning")
             return
-
-        if test_emp and not solve_employee.st_solve_employee(
-            get_changed_employees(), working_solution["value"].instance
-        ):
+        # TODO pass the new temp_solution after defining it
+        validity, temp_solution = solve_employee.st_solve_employee(
+            get_changed_employees(),
+            working_solution["value"].instance,
+            in_solution=state.get_solution(),
+        )
+        if test_emp and not validity:
             print("teste änderung für employee_uid:", get_changed_employees())
             ui.notify(
                 "Änderung konnte nicht übernommen werden da die Instanze infeasible  werden würde",

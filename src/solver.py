@@ -274,6 +274,7 @@ class Solver:
         """Handles the case when the model is invalid."""
         print("The model provided is invalid and cannot be solved.")
         print("The model provided is invalid and cannot be solved.")
+
     def warm_start(
         self,
         solution: Solution,

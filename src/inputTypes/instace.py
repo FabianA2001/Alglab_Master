@@ -160,6 +160,8 @@ class Instance(BaseModel):
 
         shift_on_requests: dict[tuple[int, int], dict[int, int]] = defaultdict(dict)
         shift_off_requests: dict[tuple[int, int], dict[int, int]] = defaultdict(dict)
+        ban_set: dict[int, set] = defaultdict(set)
+        force_assign_set: dict[int, set] = defaultdict(set)
         for day in range(instance_copy.number_of_days):
             for shift_type_uid, shift_type in instance_copy.shift_types.items():
                 for employee_uid, employee_ in instance_copy.employees.items():
@@ -186,6 +188,22 @@ class Instance(BaseModel):
                                 shift_type_uid
                             ].penalty_not_assigned_day_employee[employee_uid]
                         )
+                    
+                    if (
+                        employee_uid
+                        in instance_copy.shifts[day][
+                            shift_type_uid
+                        ].ban_employee_day_shift
+                    ):
+                        ban_set[day].add(employee_uid)
+                        
+                    if (
+                        employee_uid
+                        in instance_copy.shifts[day][
+                            shift_type_uid
+                        ].assign_employee_day_shift
+                    ):
+                        force_assign_set[day].add(employee_uid)
 
         cover_requirements: dict[tuple[int, int], tuple[int, int, int]] = {}
 
@@ -233,7 +251,7 @@ class Instance(BaseModel):
 
         shift_types_new[0].length = int(shift_length)
 
-        return Instance.create(
+        one_shift_instance = Instance.create(
             name=instance_name,
             number_of_days=number_of_days,
             shift_typs=shift_types_new,
@@ -242,3 +260,15 @@ class Instance(BaseModel):
             shift_off_requests=shift_off_requests,
             cover_requirements=cover_requirements,
         )
+
+        for day in range(one_shift_instance.number_of_days):
+            if day in ban_set:
+                one_shift_instance.shifts[day][
+                            hash_string("all")
+                        ].ban_employee_day_shift = ban_set[day]
+            if day in force_assign_set:
+                one_shift_instance.shifts[day][
+                            hash_string("all")
+                        ].assign_employee_day_shift = force_assign_set[day]
+
+        return one_shift_instance
