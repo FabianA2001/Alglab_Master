@@ -17,7 +17,6 @@ from typing import Any
 
 from nicegui import ui
 
-from ...callback_early_stop import Callback_Early_Stop
 from ...LNS import lns, minimal_change_lns
 from ...shift_vars import Shift_vars
 from ...solve_employees import solve_employee
@@ -61,8 +60,8 @@ def solver_page() -> None:
             "requires_solution": False,
         },
         {
-            "name": "Minimal Changes LNS",
-            "description": "LNS mit minimalen Änderungen an bestehender Lösung",
+            "name": "Minimal Changes",
+            "description": "Window Solver mit minimalen Änderungen an bestehender Lösung",
             "icon": "build",
             "method": "minimal_change_lns",
             "color": "warning",
