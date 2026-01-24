@@ -522,10 +522,11 @@ def _render_employee_modification_section(
 
                 dialog.close()
 
-            ui.button("Soft", on_click=remove_soft).classes("w-full").props(
-                "outline color=orange"
-            )
-            ui.button("Hard", on_click=remove_hard).classes("w-full").props(
+            # HACK disable soft
+            # ui.button("Soft", on_click=remove_soft).classes("w-full").props(
+            #     "outline color=orange"
+            # )
+            ui.button("Löschen", on_click=remove_hard).classes("w-full").props(
                 "outline color=red"
             )
 
@@ -606,11 +607,12 @@ def _render_employee_modification_section(
 
                 dialog.close()
 
-            ui.button("Soft", on_click=add_soft).classes("w-full").props(
-                "outline color=orange"
-            )
-            ui.button("Hard", on_click=add_hard).classes("w-full").props(
-                "outline color=red"
+            # HACK disable soft
+            # ui.button("Soft", on_click=add_soft).classes("w-full").props(
+            #     "outline color=orange"
+            # )
+            ui.button("Hinzufügen", on_click=add_hard).classes("w-full").props(
+                "outline color=green"
             )
 
 
