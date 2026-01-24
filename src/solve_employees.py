@@ -328,6 +328,8 @@ class solve_employee:
             print("left valid employees: ", valid_employee_uids)
             for employee_uid, employee in instance.employees.items():
                 print(employee_uid, " : ", employee.name)
+        elif len(valid_employee_uids) == 0:
+            return self.solve_all_employees()
         else:
             print("invalid: ", invalid_employee_uids)
             print("valid: ", valid_employee_uids)
