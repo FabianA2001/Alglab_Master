@@ -25,7 +25,7 @@ class solve_employee:
     def solve_all_employees(
         self,
         incrementally: bool = False,
-        soft_max_time_in_seconds: int = 15 * 60,
+        soft_max_time_in_seconds: int = 0,
         optimize_till_max_time: bool = False,
     ) -> Solution:
         """
@@ -71,25 +71,25 @@ class solve_employee:
                 )
 
             # Handle return code and output from subprocess
-            if solution_temp.solve_status not in [cp_model.INFEASIBLE]:
-                self.solution.store_solution_vars(
-                    solution=solution_temp, employee_uid=employee_uid
-                )
-                self.solution.store_solution_work_vars(
-                    solution=solution_temp, employee_uid=employee_uid
-                )
+            if solution_temp.solve_status not in [
+                cp_model.INFEASIBLE,
+                cp_model.UNKNOWN,
+            ]:
+                self.solution.copy_solution(solution=solution_temp.model_copy())
             else:
                 print(
                     f"Error solving for employee {employee_uid}: No solution has been found"
                 )
+                return_solution = Solution(instance=self.instance)
+                return_solution.solve_status = cp_model.INFEASIBLE
+                return return_solution
 
-        solver = Solver(self.instance, shift_vars.Shift_vars(self.instance))
-        self.solution = solver.warm_start_generalized(
-            hard_constraint_solution=self.solution,
-            max_time_in_seconds=9999,
-            objective_function=solver.objective_value_new,
-            stop_after_first_solution=True,
-        )
+        self.solution.set_preferred_vars()
+        self.solution.objective_value_new()
+        self.solution.calculate_work_vars()
+        self.solution.solve_status = cp_model.FEASIBLE
+        self.solution.timestamp = datetime.now()
+
         end_time = time.time()
         self.solution.solve_time = end_time - start_time
 
@@ -115,8 +115,30 @@ class solve_employee:
         self.solution = Solution(self.instance)
         return solution
 
+    def return_all_invalid_employees(
+        self,
+    ):
+        count_ = 0
+        invalid_employee_uids = []
+        for employee_uid in self.instance.employees:
+            count_ += 1
+            print(count_)
+
+            solution_temp = self.solve_employee(
+                employee_uid=employee_uid,
+            )
+
+            # Handle return code and output from subprocess
+            if solution_temp.solve_status in [cp_model.INFEASIBLE, cp_model.UNKNOWN]:
+                print(
+                    f"Error solving for employee {employee_uid}: No solution has been found"
+                )
+                invalid_employee_uids.append(employee_uid)
+
+        return invalid_employee_uids
+
     def solve_employee(
-        self, employee_uid: employee.EmployeeUid, soft_max_time_in_seconds: int = 60
+        self, employee_uid: employee.EmployeeUid, soft_max_time_in_seconds: int = 0
     ):
         """
         A function that for the instance passed in the constructor, get an instance that only contains the given employee and then solve this instance and employee until timeout for soft_max_time_in_seconds or first solution if soft_max_time_in_seconds <= 8.
@@ -151,9 +173,6 @@ class solve_employee:
                 max_time_in_seconds=450,
                 stop_after_first_solution=True,
             )
-
-        end_time = time.time()
-        print(end_time - start_time)
         return solution
 
     def solve_employees_incrementally(
@@ -313,8 +332,9 @@ class solve_employee:
                 one_shift_max_time = 450
                 stop_after_first_solution = True
             elif solution.solve_status in [cp_model.INFEASIBLE, cp_model.MODEL_INVALID]:
+                # TODO instead the instance should be changed to an instance without the problematic employee and then we should try again. This should only happen if count == 0 if we are infeasible another time return solve_all_employees
                 print("Something went wrong and the model is infeasible or invalid")
-                return solution
+                return solve_employee(instance=self.instance).solve_all_employees()
             if counter == 2:
                 return solution
         one_shift_time_end = time.time()
@@ -347,6 +367,9 @@ class solve_employee:
                         self.solution.work_vars.pop((day, employee_uid))
             else:
                 print(f"Error solving for employee {employee_uid}: ")
+                print("Instance does not have a solution")
+                self.hint_solution.solve_status = cp_model.INFEASIBLE
+                return self.hint_solution
 
         employee_verification_time = time.time()
         self.hint_solution.solve_time = employee_verification_time - start_time
@@ -405,7 +428,6 @@ class solve_employee:
         # Because we have input_tupel[0]+input_tupel[1]-int(time.time()-start_time)>0, this method may take more time than was initially desired but still in the desired time of the full function
         if (
             general_optimization_max_time > 0
-            and input_tupel[0] + input_tupel[1] - int(time.time() - start_time) > 0
         ):
             general_optimization_max_time = (
                 general_optimization_max_time
@@ -438,7 +460,7 @@ class solve_employee:
                 print("Something went wrong and the model is infeasible or invalid")
                 return solution_temp
         else:
-            print("Opt: No general optimization desired, keeping last valid solution")
+            print("Opt: Optimization wanted in less than 0 seconds, Keeping last valid solution")
 
         # if len(invalid_employees)>0 or True:
         #     with open('invalid_employees_count.txt', 'a') as file:
@@ -468,7 +490,7 @@ class solve_employee:
         solution_one_shift_type = self.solution
 
         solver = Solver(instance, Shift_vars(instance))
-        stop_after_first_solution = False
+        stop_after_first_solution = True
         if soft_max_time_in_seconds <= 8:
             soft_max_time_in_seconds = 450
             stop_after_first_solution = True
@@ -495,13 +517,15 @@ class solve_employee:
                 max_time_in_seconds=450,
                 stop_after_first_solution=True,
             )
+            # print("employee time: ", time.time() - start_time)
             return (solution1, True)
+        # print("employee time: ", time.time() - start_time)
         return (solution, False)
 
     @staticmethod
     def st_solve_employee(
-        employee_uid: employee.EmployeeUid, instance: instace.Instance
-    ):
+        employee_uid: employee.EmployeeUid, instance: instace.Instance, in_solution: Solution
+    ) -> Tuple[bool, Solution]:
         """
         A function that for the instance passed, get an instance that only contains the given employee and then solve this instance and employee, at the end it return True if a solution exist and the employee is valid and False otherwise.
 
@@ -521,6 +545,7 @@ class solve_employee:
         instance_copy.employees = {employee_uid: instance_copy.employees[employee_uid]}
         solver_ = Solver(instance_copy, shift_vars.Shift_vars(instance_copy))
         # also implement something to consider the previously set employees shifts
+        # TODO use one shift time because it is faster
         solution = solver_.solve_callback_with_solution(
             disabled_constraints=[SolverConstraints.cover_requirements],
             objective_function=solver_.objective_value_only_wishes,
@@ -532,9 +557,14 @@ class solve_employee:
         print(time.time() - start_time)
 
         if solution.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
-            return True
+            in_solution.store_solution_vars(employee_uid=employee_uid, solution=solution)
+            in_solution.set_preferred_vars()
+            in_solution.objective_value_new()
+            in_solution.calculate_work_vars()
+            in_solution.solve_status = cp_model.FEASIBLE
+            return True, in_solution
         elif solution.solve_status in [cp_model.UNKNOWN]:
             print("TOO SLOW")
-            return False
+            return False, in_solution
         else:
-            return False
+            return False, in_solution
