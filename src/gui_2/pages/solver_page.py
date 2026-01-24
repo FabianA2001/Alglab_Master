@@ -17,7 +17,6 @@ from typing import Any
 
 from nicegui import ui
 
-from ...callback_early_stop import Callback_Early_Stop
 from ...LNS import lns, minimal_change_lns
 from ...shift_vars import Shift_vars
 from ...solve_employees import solve_employee
@@ -61,8 +60,8 @@ def solver_page() -> None:
             "requires_solution": False,
         },
         {
-            "name": "Minimal Changes LNS",
-            "description": "LNS mit minimalen Änderungen an bestehender Lösung",
+            "name": "Minimal Changes",
+            "description": "Window Solver mit minimalen Änderungen an bestehender Lösung",
             "icon": "build",
             "method": "minimal_change_lns",
             "color": "warning",
@@ -210,13 +209,14 @@ def solver_page() -> None:
                         tooltip_text += " (Benötigt existierende Lösung)"
                     button.tooltip(tooltip_text)
 
-            # Stop Button separat
-            ui.separator()
-            ui.button(
-                "Solver stoppen",
-                icon="stop",
-                on_click=stop_solver,
-            ).props("color=negative").set_enabled(is_solver_active)
+            # TODO vernünftig implementieren
+            # # Stop Button separat
+            # ui.separator()
+            # ui.button(
+            #     "Solver stoppen",
+            #     icon="stop",
+            #     on_click=stop_solver,
+            # ).props("color=negative").set_enabled(is_solver_active)
 
     def add_log_message(message: str) -> None:
         """Fügt eine Log-Nachricht mit Zeitstempel hinzu.
@@ -397,7 +397,7 @@ def solver_page() -> None:
                 solution = minimal_change_lns.solve_changes(
                     old_solution=lokal_solution,
                     days_with_change=list(days_with_change),
-                    **params,
+                    hint_solution=state.get_changed_solution() ** params,
                 )
             elif method_name == "solve_instance_one_shift":
                 # Note right now optimization time is the max_time_in_seconds, the rest is not limited but finish for each isntance relativily fast to the size of an instance

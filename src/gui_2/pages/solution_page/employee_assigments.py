@@ -82,7 +82,9 @@ def employee_assignments(
                     <div v-if="props.col.name === 'shift_type'" class="text-weight-medium">
                         {{ props.value }}
                     </div>
-                    <div v-else-if="props.value === '-'" class="text-grey-5 text-center">
+                    <div v-else-if="props.value === '-'" class="text-grey-5 text-center cursor-pointer q-pa-xs"
+                         :style="props.row['_color_' + props.col.name] || ''"
+                         @click="() => $parent.$emit('cell_click', props.row.row_key, props.col.name)">
                         —
                     </div>
                     <div v-else class="q-pa-xs cursor-pointer" 
@@ -520,10 +522,11 @@ def _render_employee_modification_section(
 
                 dialog.close()
 
-            ui.button("Soft", on_click=remove_soft).classes("w-full").props(
-                "outline color=orange"
-            )
-            ui.button("Hard", on_click=remove_hard).classes("w-full").props(
+            # HACK disable soft
+            # ui.button("Soft", on_click=remove_soft).classes("w-full").props(
+            #     "outline color=orange"
+            # )
+            ui.button("Löschen", on_click=remove_hard).classes("w-full").props(
                 "outline color=red"
             )
 
@@ -604,11 +607,12 @@ def _render_employee_modification_section(
 
                 dialog.close()
 
-            ui.button("Soft", on_click=add_soft).classes("w-full").props(
-                "outline color=orange"
-            )
-            ui.button("Hard", on_click=add_hard).classes("w-full").props(
-                "outline color=red"
+            # HACK disable soft
+            # ui.button("Soft", on_click=add_soft).classes("w-full").props(
+            #     "outline color=orange"
+            # )
+            ui.button("Hinzufügen", on_click=add_hard).classes("w-full").props(
+                "outline color=green"
             )
 
 

@@ -829,16 +829,20 @@ def _check_all_constraints(
     results: dict[str, tuple[bool, list[str]]] = {}
     all_valid = True
 
-    for constraint_name, check_func in constraints:
-        if constraint_name in solution.disabled_constraints:
-            continue  # Überspringe deaktivierte Constraints
-        is_valid, violations = check_func(solution)
-        # if not is_valid:
-        # print(
-        #     f"Constraint '{constraint_name.name}' verletzt: {len(violations)} Verstöße gefunden."
-        # )
-        results[constraint_name.name] = (is_valid, violations)
-        if not is_valid:
-            all_valid = False
+    try:
+        for constraint_name, check_func in constraints:
+            if constraint_name in solution.disabled_constraints:
+                continue  # Überspringe deaktivierte Constraints
+            is_valid, violations = check_func(solution)
+            # if not is_valid:
+            # print(
+            #     f"Constraint '{constraint_name.name}' verletzt: {len(violations)} Verstöße gefunden."
+            # )
+            results[constraint_name.name] = (is_valid, violations)
+            if not is_valid:
+                all_valid = False
+    except KeyError as e:
+        print(f"Fehler beim Überprüfen der Constraints: Fehlender Schlüssel {e}")
+        all_valid = False
 
     return all_valid, results
