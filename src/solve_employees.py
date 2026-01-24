@@ -524,8 +524,8 @@ class solve_employee:
 
     @staticmethod
     def st_solve_employee(
-        employee_uid: employee.EmployeeUid, instance: instace.Instance
-    ):
+        employee_uid: employee.EmployeeUid, instance: instace.Instance, in_solution: Solution
+    ) -> Tuple[bool, Solution]:
         """
         A function that for the instance passed, get an instance that only contains the given employee and then solve this instance and employee, at the end it return True if a solution exist and the employee is valid and False otherwise.
 
@@ -557,9 +557,14 @@ class solve_employee:
         print(time.time() - start_time)
 
         if solution.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
-            return True
+            in_solution.store_solution_vars(employee_uid=employee_uid, solution=solution)
+            in_solution.set_preferred_vars()
+            in_solution.objective_value_new()
+            in_solution.calculate_work_vars()
+            in_solution.solve_status = cp_model.FEASIBLE
+            return True, in_solution
         elif solution.solve_status in [cp_model.UNKNOWN]:
             print("TOO SLOW")
-            return False
+            return False, in_solution
         else:
-            return False
+            return False, in_solution
