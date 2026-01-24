@@ -34,6 +34,7 @@ def __solve_change(
 def solve_changes(
     old_solution: Solution,
     days_with_change: list[int],
+    hint_solution: Solution | None = None,
     max_solve_time: int = 60,
     log_search_progress: bool = True,
 ) -> Solution:

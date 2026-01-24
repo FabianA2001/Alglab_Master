@@ -141,25 +141,34 @@ def solution_page():
             ui.notify("Keine Arbeitskopie vorhanden", type="warning")
             return
         # TODO pass the new temp_solution after defining it
-        validity, temp_solution = solve_employee.st_solve_employee(
-            get_changed_employees(),
-            working_solution["value"].instance,
-            in_solution=state.get_solution(),
-        )
-        if test_emp and not validity:
-            print("teste änderung für employee_uid:", get_changed_employees())
-            ui.notify(
-                "Änderung konnte nicht übernommen werden da die Instanze infeasible  werden würde",
-                type="warning",
+        if test_emp:
+            changed_solutions = (
+                state.get_changed_solution()
+                if state.get_changed_solution()
+                else state.get_solution()
             )
-            clear_changed_employees()
-            state_sol = state.get_solution()
-            assert state_sol is not None
-            working_solution["value"] = state_sol.model_copy(deep=True)
-            # UI aktualisieren um die zurückgesetzten Werte anzuzeigen
-            update_solution_display()
-            refresh_comparison_select()
-            return
+            assert changed_solutions is not None
+
+            validity, temp_solution = solve_employee.st_solve_employee(
+                get_changed_employees(),
+                working_solution["value"].instance,
+                in_solution=changed_solutions,
+            )
+            if not validity:
+                print("teste änderung für employee_uid:", get_changed_employees())
+                ui.notify(
+                    "Änderung konnte nicht übernommen werden da die Instanze infeasible  werden würde",
+                    type="warning",
+                )
+                clear_changed_employees()
+                state_sol = state.get_solution()
+                assert state_sol is not None
+                working_solution["value"] = state_sol.model_copy(deep=True)
+                # UI aktualisieren um die zurückgesetzten Werte anzuzeigen
+                update_solution_display()
+                refresh_comparison_select()
+                return
+            state.set_changed_solution(temp_solution)
 
         # Füge die geänderte Solution zum State hinzu
         state.add_solution(working_solution["value"])

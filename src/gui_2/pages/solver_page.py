@@ -397,7 +397,7 @@ def solver_page() -> None:
                 solution = minimal_change_lns.solve_changes(
                     old_solution=lokal_solution,
                     days_with_change=list(days_with_change),
-                    **params,
+                    hint_solution=state.get_changed_solution() ** params,
                 )
             elif method_name == "solve_instance_one_shift":
                 # Note right now optimization time is the max_time_in_seconds, the rest is not limited but finish for each isntance relativily fast to the size of an instance

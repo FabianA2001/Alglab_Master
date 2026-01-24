@@ -21,6 +21,7 @@ varibalen in der reseter funktion hinzufügen, damit diese zurückgesetzt werden
 # Globale Variablen für den Application State
 _current_instance: Optional[Instance] = None
 _current_solution: list[Solution] = []
+_changed_solution: Optional[Solution] = None
 _solver_running: bool = False
 _solver_start_time: Optional[float] = None
 _solver_end_time: Optional[float] = None
@@ -71,6 +72,7 @@ def clear_solutions():
     global _current_solution
     clear_changed_days()
     _current_solution = []
+    _changed_solution = None
 
 
 def get_solution() -> Optional[Solution]:
@@ -91,6 +93,25 @@ def get_all_solutions() -> list[Solution]:
         Optional[list[Solution]]: Liste aller Solutions oder None
     """
     return _current_solution
+
+
+def set_changed_solution(solution: Optional[Solution]) -> None:
+    """Setzt die geänderte Solution.
+
+    Args:
+        solution: Die geänderte Solution oder None
+    """
+    global _changed_solution
+    _changed_solution = solution
+
+
+def get_changed_solution() -> Optional[Solution]:
+    """Holt die geänderte Solution.
+
+    Returns:
+        Optional[Solution]: Die geänderte Solution oder None
+    """
+    return _changed_solution
 
 
 def set_solver_running(running: bool) -> None:
