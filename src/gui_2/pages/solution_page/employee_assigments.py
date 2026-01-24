@@ -82,7 +82,9 @@ def employee_assignments(
                     <div v-if="props.col.name === 'shift_type'" class="text-weight-medium">
                         {{ props.value }}
                     </div>
-                    <div v-else-if="props.value === '-'" class="text-grey-5 text-center">
+                    <div v-else-if="props.value === '-'" class="text-grey-5 text-center cursor-pointer q-pa-xs"
+                         :style="props.row['_color_' + props.col.name] || ''"
+                         @click="() => $parent.$emit('cell_click', props.row.row_key, props.col.name)">
                         —
                     </div>
                     <div v-else class="q-pa-xs cursor-pointer" 
