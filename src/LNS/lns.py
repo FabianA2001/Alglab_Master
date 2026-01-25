@@ -34,7 +34,7 @@ class LNS:
         sol_or_instance: solution.Solution | instace.Instance,
         percent_search_time_first_solution: float = 0.1,
         timeout_seconds: float = 300.0,
-        small_runtime_base: float = 0.01,  # * number_of_days * (number_of_shift_types + number_of_employees)
+        small_runtime_base: float = 0.015,  # * number_of_days * (number_of_shift_types + number_of_employees)
         ####################
         start_search_window_size: int = 10,
         search_window_size_min: int = 3,
@@ -74,7 +74,7 @@ class LNS:
         self.MAX_DAY: int = self.old_solution.instance.number_of_days - 1
         self.start_search_window_size: int = start_search_window_size
         self.search_window_size_min = search_window_size_min
-        self.deafult_search_window_size: int = 5
+        self.deafult_search_window_size: int = 10
         self.start_day: int = random.randint(
             self.MIN_DAY,
             max(
@@ -298,7 +298,7 @@ class LNS:
 
                 # sys.exit(1)
                 #############
-                self.update_search_window(improvement=0)  # oder spezieller Wert
+                self.update_search_window(improvement=-1)  # oder spezieller Wert
                 continue
             old_sol_debugg = sol.model_copy()
             sol = self.merge_solutions(sol)

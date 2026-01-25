@@ -266,27 +266,27 @@ def t_slice_window():
     new_sol.to_json_file("sliced_instance_test")
 
 
-def t_double_lns():
-    sol = Solution.from_json_file("Instance4_bearbeitet")
+# def t_double_lns():
+#     sol = Solution.from_json_file("Instance4_bearbeitet")
 
-    ###################
-    sol1 = minimal_change_lns.__solve_change(
-        sol,
-        start_day=0,
-        end_day=5,
-        max_solve_time=120,
-        log_search_progress=False,
-    )
-    print("Sol1 status:", sol1.solve_status)
-    ###################
-    sol2 = minimal_change_lns.__solve_change(
-        sol,
-        start_day=0,
-        end_day=sol.instance.number_of_days - 1,
-        max_solve_time=120,
-        log_search_progress=False,
-    )
-    print("Sol2 status:", sol2.solve_status)
+#     ###################
+#     sol1 = minimal_change_lns.__solve_change(
+#         sol,
+#         start_day=0,
+#         end_day=5,
+#         max_solve_time=120,
+#         log_search_progress=False,
+#     )
+#     print("Sol1 status:", sol1.solve_status)
+#     ###################
+#     sol2 = minimal_change_lns.__solve_change(
+#         sol,
+#         start_day=0,
+#         end_day=sol.instance.number_of_days - 1,
+#         max_solve_time=120,
+#         log_search_progress=False,
+#     )
+#     print("Sol2 status:", sol2.solve_status)
 
 
 def check_work_vars():
@@ -398,10 +398,12 @@ def main() -> None:
     # try_warmstart_callback()
     # calculate_all_instancen()
     # print_some_infos()
-    # t_minimal_changes_lns()
-    # test_double_lns()
-    # t_slice_window()
-    check_work_vars()
+    t_minimal_changes_lns()
+
+
+# test_double_lns()
+# t_slice_window()
+# check_work_vars()
 
 
 if __name__ == "__main__":
