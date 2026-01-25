@@ -471,7 +471,7 @@ def _show_employee_dialog(
         "max_numbers_of_shifts": (
             employee.max_numbers_of_shifts.copy()
             if employee.max_numbers_of_shifts
-            else {}
+            else {uid: instance.number_of_days for uid in instance.shift_types.keys()}
         )
         if employee
         else {},
