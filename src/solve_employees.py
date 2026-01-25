@@ -581,6 +581,8 @@ class solve_employee:
         print(time.time() - start_time)
 
         if solution.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
+            if in_solution is None:
+                return True, Solution(instance=instance_copy)
             in_solution.store_solution_vars(
                 employee_uid=employee_uid, solution=solution
             )
@@ -590,7 +592,11 @@ class solve_employee:
             in_solution.solve_status = cp_model.FEASIBLE
             return True, in_solution
         elif solution.solve_status in [cp_model.UNKNOWN]:
+            if in_solution is None:
+                return False, Solution(instance=instance_copy)
             print("TOO SLOW")
             return False, in_solution
         else:
+            if in_solution is None:
+                return False, Solution(instance=instance_copy)
             return False, in_solution
