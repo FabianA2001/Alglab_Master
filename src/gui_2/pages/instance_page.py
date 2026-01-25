@@ -579,7 +579,10 @@ def _show_employee_dialog(
                     else set(),
                     max_numbers_of_shifts=form_data["max_numbers_of_shifts"].copy()
                     if form_data["max_numbers_of_shifts"]
-                    else {uid: 0 for uid in instance.shift_types.keys()},
+                    else {
+                        uid: instance.number_of_days
+                        for uid in instance.shift_types.keys()
+                    },
                 )
 
                 instance.employees[new_uid] = new_employee
@@ -973,7 +976,9 @@ def _show_shift_type_dialog(
                 # Erstelle null value in Mitarbeitern
                 for employee in instance.employees.values():
                     if new_uid not in employee.max_numbers_of_shifts:
-                        employee.max_numbers_of_shifts[new_uid] = 0
+                        employee.max_numbers_of_shifts[new_uid] = (
+                            instance.number_of_days
+                        )
 
                 success_msg = (
                     f"Schichttyp '{form_data['name']}' erfolgreich hinzugefügt"
