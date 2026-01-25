@@ -315,7 +315,7 @@ class solve_employee:
         valid_employee_uids, invalid_employee_uids = solve_employee(
             instance=instance
         ).return_all_valid_invalid_employees()
-        print("one shift validity time: ", time.time()-one_shift_validity_start_time)
+        print("one shift validity time: ", time.time() - one_shift_validity_start_time)
         if len(invalid_employee_uids) > 0:
             print("Something went wrong and the model is infeasible or invalid")
             print("removing invalid employees: ", invalid_employee_uids)
@@ -548,7 +548,7 @@ class solve_employee:
     def st_solve_employee(
         employee_uid: employee.EmployeeUid,
         instance: instace.Instance,
-        in_solution: Solution,
+        in_solution: Solution | None = None,
     ) -> Tuple[bool, Solution]:
         """
         A function that for the instance passed, get an instance that only contains the given employee and then solve this instance and employee, at the end it return True if a solution exist and the employee is valid and False otherwise.
@@ -581,6 +581,8 @@ class solve_employee:
         print(time.time() - start_time)
 
         if solution.solve_status in [cp_model.FEASIBLE, cp_model.OPTIMAL]:
+            if in_solution is None:
+                return True, Solution(instance=instance_copy)
             in_solution.store_solution_vars(
                 employee_uid=employee_uid, solution=solution
             )
@@ -590,7 +592,11 @@ class solve_employee:
             in_solution.solve_status = cp_model.FEASIBLE
             return True, in_solution
         elif solution.solve_status in [cp_model.UNKNOWN]:
+            if in_solution is None:
+                return False, Solution(instance=instance_copy)
             print("TOO SLOW")
             return False, in_solution
         else:
+            if in_solution is None:
+                return False, Solution(instance=instance_copy)
             return False, in_solution
