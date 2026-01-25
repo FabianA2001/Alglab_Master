@@ -622,6 +622,7 @@ class Solver:
         solver.parameters.log_search_progress = log_search_progress
         solver.parameters.max_time_in_seconds = max_time_in_seconds
 
+        self.hint_with_solution(solution)
         self.vars.model.Minimize(self.objective_value_weight_changes(solution=solution))
         self.start_solve_time = datetime.now()
         # status = solver.Solve(self.vars.model)
@@ -1033,3 +1034,69 @@ class Solver:
         ]
 
         return filtered_results
+
+    def hint_with_solution(
+        self,
+        hint_solution: Solution,
+    ):
+        # employee_uid_ = None
+        if hint_solution is not None:
+            """Warm starts the solver with a given solution."""
+            for employee_uid in self.instance.employees.keys():
+                for day in range(self.instance.number_of_days):
+                    for type_uid, _ in self.instance.shifts[day].items():
+                        if (day, type_uid, employee_uid) in hint_solution.vars.keys():
+                            var_value = (
+                                hint_solution.vars[(day, type_uid, employee_uid)] == 1
+                            )
+                            self.vars.model.AddHint(
+                                self.vars.get_var(day, type_uid, employee_uid),
+                                var_value,
+                            )
+                        # elif employee_uid_ != employee_uid:
+                        #     employee_uid_ = employee_uid
+                        #     print(f"var not found in hint solution solution {employee_uid}")
+                    if (day, employee_uid) in hint_solution.work_vars.keys():
+                        var_value = hint_solution.work_vars[(day, employee_uid)] == 1
+                        self.vars.model.AddHint(
+                            self.vars.get_work_vars(day, employee_uid), var_value
+                        )
+                    # elif employee_uid_ != employee_uid:
+                    #     employee_uid_ = employee_uid
+                    #     print(f"work var not found in hint solution solution {employee_uid}")
+
+                # for weekend in range(round(self.instance.number_of_days / 7)):
+                #     if (weekend, employee_uid) in hint_solution.weekend_vars.keys():
+                #         weekend_value = hint_solution.weekend_vars.get((weekend, employee_uid)) == 1  # Assuming 0 means "not on weekend"
+                #         self.vars.model.AddHint(self.vars.get_weekend_var(weekend, employee_uid), weekend_value)
+
+                # Adding hints for weekend_vars
+                for weekend in range(round(self.instance.number_of_days / 7)):
+                    if (weekend, employee_uid) in hint_solution.weekend_vars.keys():
+                        var_value = (
+                            hint_solution.weekend_vars[(weekend, employee_uid)] == 1
+                        )
+                        self.vars.model.AddHint(
+                            self.vars.get_weekend_var(weekend, employee_uid), var_value
+                        )
+
+            # Adding hints for above_prefferd_vars
+            for day in range(self.instance.number_of_days):
+                for type_uid in self.instance.shifts[day].keys():
+                    if (day, type_uid) in hint_solution.above_prefferd_vars.keys():
+                        var_value = hint_solution.above_prefferd_vars[(day, type_uid)]
+                        self.vars.model.AddHint(
+                            self.vars.get_above_prefferd_var(day, type_uid), var_value
+                        )
+                    # Adding hints for below_prefferd_vars
+                    if (day, type_uid) in hint_solution.below_prefferd_vars.keys():
+                        var_value = hint_solution.below_prefferd_vars[(day, type_uid)]
+                        self.vars.model.AddHint(
+                            self.vars.get_below_prefferd_var(day, type_uid), var_value
+                        )
+                    # Adding hints for below_threshold_vars
+                    if (day, type_uid) in hint_solution.below_threshold_vars.keys():
+                        var_value = hint_solution.below_threshold_vars[(day, type_uid)]
+                        self.vars.model.AddHint(
+                            self.vars.get_below_threshold_var(day, type_uid), var_value
+                        )

@@ -100,6 +100,7 @@ class Solver_for_window(solver.Solver):
     def solve_window_min_changes(
         self,
         solution: Solution,
+        hint_solution: Solution | None = None,
         log_search_progress: bool = True,
         max_time_in_seconds: float = 60.0,
         stop_after_first_solution: bool = False,

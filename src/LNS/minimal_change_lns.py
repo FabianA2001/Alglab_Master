@@ -85,24 +85,22 @@ def solve_changes(
             # TODO (Fabian) Müsste number_of_days nicht durch 2 geteilt werden weil Padding in beide Richtungen erweitert wird?
             # TODO (Fabian) Small solve time muss angepasst werden weil es jetzt ja pro trag theoretisch mehrmals versucht wird
             while infeasible and ((not reached_start) or (not reached_end)):
-                print(
-                    f"Erneuter Versuch mit mehr Padding: {PADDING + ((5 + counter) * i)}"
-                )
-                start_day = max(0, day - (PADDING + ((5 + counter) * i)))
+                print(f"Erneuter Versuch mit mehr Padding: {PADDING + ((10) * i)}")
+                start_day = max(0, day - (PADDING + ((10) * i)))
 
                 end_day = min(
                     new_instanc.number_of_days - 1,
-                    day + (PADDING + ((3 + counter) * i)),
+                    day + (PADDING + ((10) * i)),
                 )
                 dmin = new_instanc.number_of_days
                 for d in days_with_change_copy:
                     if d >= start_day and d < day and d < dmin:
-                        start_day = max(0, day - (PADDING + ((5 + counter) * i)))
+                        start_day = max(0, day - (PADDING + ((10) * i)))
                         dmin = d
                     if d <= end_day and d > day:
                         end_day = min(
                             new_instanc.number_of_days - 1,
-                            day + (PADDING + ((5 + counter) * i)),
+                            day + (PADDING + ((10) * i)),
                         )
 
                 days_with_change_copy = [
