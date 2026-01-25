@@ -476,7 +476,7 @@ def _show_employee_dialog(
             else {uid: instance.number_of_days for uid in instance.shift_types.keys()}
         )
         if employee
-        else {},
+        else {uid: instance.number_of_days for uid in instance.shift_types.keys()},
     }
 
     def save_employee():
@@ -772,8 +772,6 @@ def _show_employee_dialog(
                     value = count_input.value
                     if value is not None and value >= 0:
                         shift_type_limits[current_shift_type_uid] = int(value)
-                    elif current_shift_type_uid in shift_type_limits:
-                        del shift_type_limits[current_shift_type_uid]
                     form_data["max_numbers_of_shifts"] = shift_type_limits.copy()
 
                 def on_shift_type_change(e):
