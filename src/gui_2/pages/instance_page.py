@@ -622,7 +622,7 @@ def _show_employee_dialog(
             # Arbeitszeit
             ui.label("Arbeitszeit (in Minuten)").classes("font-semibold")
 
-            ui.number(label="Minimale Arbeitszeit", min=0, format="%d").classes(
+            ui.number(label="Minimale Arbeitszeit", min=0, step=1, format="%d").classes(
                 "w-full"
             ).bind_value(form_data, "min_minutes_assigned")
 
@@ -632,7 +632,7 @@ def _show_employee_dialog(
 
             # Konsekutive Schichten
             ui.label("Konsekutive Schichten").classes("font-semibold")
-            ui.number(label="Minimale Anzahl", min=0, format="%d").classes(
+            ui.number(label="Minimale Anzahl", min=0, step=1, format="%d").classes(
                 "w-full"
             ).bind_value(form_data, "min_number_consecutive_shifts")
 
@@ -644,7 +644,7 @@ def _show_employee_dialog(
             ui.label("Weitere Einstellungen").classes("font-semibold")
 
             ui.number(
-                label="Min. aufeinander folgende freie Tage", min=0, format="%d"
+                label="Min. aufeinander folgende freie Tage", min=0, step=1, format="%d"
             ).classes("w-full").bind_value(form_data, "min_number_consecutive_days_off")
 
             ui.number(label="Max. Wochenenden", min=0, format="%d").classes(
@@ -778,6 +778,7 @@ def _show_employee_dialog(
                     count_input = ui.number(
                         label="Max. Anzahl",
                         min=1,
+                        step=1,
                         format="%d",
                         placeholder="unbegrenzt",
                         on_change=lambda: save_current_value(),
@@ -1015,9 +1016,9 @@ def _show_shift_type_dialog(
             ).classes("w-full").bind_value(form_data, "name")
 
             # Startzeit
-            ui.input(label="Startzeit (HH:MM)", placeholder="08:00").classes(
-                "w-full"
-            ).bind_value(form_data, "start_time")
+            ui.input(label="Startzeit (HH:MM)", placeholder="08:00").props(
+                'mask="##:##"'
+            ).classes("w-full").bind_value(form_data, "start_time")
             # Länge in Minuten (mit Live-Update für Edit, ohne für Add da es dort schon ist)
             if not is_edit:
                 length_label = ui.label("").classes("text-sm text-gray-600")
@@ -1026,17 +1027,17 @@ def _show_shift_type_dialog(
                     hours = form_data["length"] / 60
                     length_label.text = f"= {hours:.1f} Stunden"
 
-                ui.number(label="Länge in Minuten", min=1, format="%d").classes(
-                    "w-full"
-                ).bind_value(form_data, "length").on_value_change(
+                ui.number(
+                    label="Länge in Minuten", min=240, max=720, step=1, format="%d"
+                ).classes("w-full").bind_value(form_data, "length").on_value_change(
                     lambda: update_length_label()
                 )
 
                 update_length_label()
             else:
-                ui.number(label="Länge in Minuten", min=1, format="%d").classes(
-                    "w-full"
-                ).bind_value(form_data, "length")
+                ui.number(
+                    label="Länge in Minuten", min=240, max=720, step=1, format="%d"
+                ).classes("w-full").bind_value(form_data, "length")
 
             ui.separator()
 
@@ -1220,6 +1221,7 @@ def _display_shift_details_dialog(
                         ui.number(
                             label="Bevorzugte Anzahl Mitarbeiter",
                             min=0,
+                            step=1,
                             format="%d",
                         ).classes("w-full").bind_value(
                             form_data, "preffert_number_employees"
@@ -1228,6 +1230,7 @@ def _display_shift_details_dialog(
                         ui.number(
                             label="Gewicht Unterbesetzung",
                             min=0,
+                            step=1,
                             format="%d",
                         ).classes("w-full").bind_value(
                             form_data, "weight_below_preferred"
@@ -1236,6 +1239,7 @@ def _display_shift_details_dialog(
                         ui.number(
                             label="Gewicht Überbesetzung",
                             min=0,
+                            step=1,
                             format="%d",
                         ).classes("w-full").bind_value(
                             form_data, "weight_above_preferred"
@@ -1330,6 +1334,7 @@ def _display_shift_details_dialog(
                                 assigned_input = ui.number(
                                     label="Strafpunkte bei Zuweisung",
                                     min=0,
+                                    step=1,
                                     format="%d",
                                     on_change=save_penalty_assigned,
                                 ).classes("flex-1")
@@ -1337,6 +1342,7 @@ def _display_shift_details_dialog(
                                 not_assigned_input = ui.number(
                                     label="Strafpunkte bei Nicht-Zuweisung",
                                     min=0,
+                                    step=1,
                                     format="%d",
                                     on_change=save_penalty_not_assigned,
                                 ).classes("flex-1")
