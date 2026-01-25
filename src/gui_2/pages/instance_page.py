@@ -476,7 +476,7 @@ def _show_employee_dialog(
             else {uid: instance.number_of_days for uid in instance.shift_types.keys()}
         )
         if employee
-        else {},
+        else {uid: instance.number_of_days for uid in instance.shift_types.keys()},
     }
 
     def save_employee():
@@ -605,17 +605,23 @@ def _show_employee_dialog(
                 state.set_instance(instance)
 
                 ui.notify(success_msg, type="positive")
+
+                # Aktualisiere Anzeige nur im Erfolgsfall
+                if refresh_callback:
+                    refresh_callback()
+
+                dialog.close()
             else:
                 ui.notify(
-                    "Mitarbeiter wurde nicht gepseichert, da die Instance unlösbar werden würde.",
+                    "Mitarbeiter wurde nicht gespeichert, da die Instance unlösbar werden würde.",
                     type="warning",
                 )
-
-            # Aktualisiere Anzeige
-            if refresh_callback:
-                refresh_callback()
-
-            dialog.close()
+                # Lade ursprüngliche Instance aus dem State neu
+                original_instance = state.get_instance()
+                if original_instance:
+                    instance.employees = original_instance.employees.copy()
+                    if refresh_callback:
+                        refresh_callback()
 
         except Exception as e:
             ui.notify(
@@ -772,8 +778,6 @@ def _show_employee_dialog(
                     value = count_input.value
                     if value is not None and value >= 0:
                         shift_type_limits[current_shift_type_uid] = int(value)
-                    elif current_shift_type_uid in shift_type_limits:
-                        del shift_type_limits[current_shift_type_uid]
                     form_data["max_numbers_of_shifts"] = shift_type_limits.copy()
 
                 def on_shift_type_change(e):
