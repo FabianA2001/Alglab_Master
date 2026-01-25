@@ -1026,17 +1026,17 @@ def _show_shift_type_dialog(
                     hours = form_data["length"] / 60
                     length_label.text = f"= {hours:.1f} Stunden"
 
-                ui.number(label="Länge in Minuten", min=1, format="%d").classes(
-                    "w-full"
-                ).bind_value(form_data, "length").on_value_change(
+                ui.number(
+                    label="Länge in Minuten", min=240, max=720, format="%d"
+                ).classes("w-full").bind_value(form_data, "length").on_value_change(
                     lambda: update_length_label()
                 )
 
                 update_length_label()
             else:
-                ui.number(label="Länge in Minuten", min=1, format="%d").classes(
-                    "w-full"
-                ).bind_value(form_data, "length")
+                ui.number(
+                    label="Länge in Minuten", min=240, max=720, format="%d"
+                ).classes("w-full").bind_value(form_data, "length")
 
             ui.separator()
 
