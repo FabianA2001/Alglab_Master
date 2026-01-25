@@ -579,7 +579,7 @@ def _show_employee_dialog(
                     else set(),
                     max_numbers_of_shifts=form_data["max_numbers_of_shifts"].copy()
                     if form_data["max_numbers_of_shifts"]
-                    else {},
+                    else {uid: 0 for uid in instance.shift_types.keys()},
                 )
 
                 instance.employees[new_uid] = new_employee
@@ -752,7 +752,7 @@ def _show_employee_dialog(
 
                 def save_current_value():
                     value = count_input.value
-                    if value is not None and value > 0:
+                    if value is not None and value >= 0:
                         shift_type_limits[current_shift_type_uid] = int(value)
                     elif current_shift_type_uid in shift_type_limits:
                         del shift_type_limits[current_shift_type_uid]
@@ -764,13 +764,6 @@ def _show_employee_dialog(
                     current_shift_type_uid = e.value
                     update_count_field(current_shift_type_uid)
 
-                def reset_current_value():
-                    if current_shift_type_uid in shift_type_limits:
-                        del shift_type_limits[current_shift_type_uid]
-                    form_data["max_numbers_of_shifts"] = shift_type_limits.copy()
-                    count_input.set_value(None)
-                    ui.notify("Limit entfernt (unbegrenzt)", type="info")
-
                 with ui.row().classes("w-full items-center gap-2"):
                     ui.select(
                         options=shift_type_options,
@@ -781,16 +774,12 @@ def _show_employee_dialog(
 
                     count_input = ui.number(
                         label="Max. Anzahl",
-                        min=1,
+                        min=0,
                         step=1,
                         format="%d",
                         placeholder="unbegrenzt",
                         on_change=lambda: save_current_value(),
                     ).classes("w-48")
-
-                    ui.button(icon="clear", on_click=reset_current_value).props(
-                        "flat"
-                    ).tooltip("Auf unbegrenzt zurücksetzen")
 
                 update_count_field(current_shift_type_uid)
 
@@ -980,6 +969,11 @@ def _show_shift_type_dialog(
                         )
 
                         instance.shifts[day][new_uid] = new_shift
+
+                # Erstelle null value in Mitarbeitern
+                for employee in instance.employees.values():
+                    if new_uid not in employee.max_numbers_of_shifts:
+                        employee.max_numbers_of_shifts[new_uid] = 0
 
                 success_msg = (
                     f"Schichttyp '{form_data['name']}' erfolgreich hinzugefügt"
