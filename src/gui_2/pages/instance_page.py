@@ -952,7 +952,7 @@ def _show_shift_type_dialog(
                 # Erstelle Default-Shifts für alle Tage
                 from ...inputTypes.shift import Shift
 
-                for day in range(1, instance.number_of_days + 1):
+                for day in range(0, instance.number_of_days):
                     # Prüfe ob Tag bereits existiert
                     if day not in instance.shifts:
                         instance.shifts[day] = {}
