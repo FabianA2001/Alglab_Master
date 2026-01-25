@@ -212,9 +212,9 @@ def render_employee_details(refresh_callback=None) -> None:
                     ui.label(f"...{str(employee.uid)[-6:]}")
 
                     ui.label("Arbeitszeit:").classes("font-semibold")
-                    min_hours = employee.min_minutes_assigned / 60
-                    max_hours = employee.max_minutes_assigned / 60
-                    ui.label(f"Min: {min_hours:.1f}h, Max: {max_hours:.1f}h")
+                    min_hours = int(employee.min_minutes_assigned / 60)
+                    max_hours = int(employee.max_minutes_assigned / 60)
+                    ui.label(f"Min: {min_hours}h, Max: {max_hours}h")
 
                     ui.label("Konsekutive Schichten:").classes("font-semibold")
                     ui.label(
@@ -525,18 +525,22 @@ def _show_employee_dialog(
                 # Aktualisiere bestehenden Mitarbeiter
                 if employee:  # Type guard
                     employee.name = form_data["name"].strip()
-                    employee.min_minutes_assigned = form_data["min_minutes_assigned"]
-                    employee.max_minutes_assigned = form_data["max_minutes_assigned"]
-                    employee.min_number_consecutive_shifts = form_data[
-                        "min_number_consecutive_shifts"
-                    ]
-                    employee.max_number_consecutive_shifts = form_data[
-                        "max_number_consecutive_shifts"
-                    ]
-                    employee.min_number_consecutive_days_off = form_data[
-                        "min_number_consecutive_days_off"
-                    ]
-                    employee.max_number_weekends = form_data["max_number_weekends"]
+                    employee.min_minutes_assigned = int(
+                        form_data["min_minutes_assigned"]
+                    )
+                    employee.max_minutes_assigned = int(
+                        form_data["max_minutes_assigned"]
+                    )
+                    employee.min_number_consecutive_shifts = int(
+                        form_data["min_number_consecutive_shifts"]
+                    )
+                    employee.max_number_consecutive_shifts = int(
+                        form_data["max_number_consecutive_shifts"]
+                    )
+                    employee.min_number_consecutive_days_off = int(
+                        form_data["min_number_consecutive_days_off"]
+                    )
+                    employee.max_number_weekends = int(form_data["max_number_weekends"])
                     employee.blocked_shifts = (
                         form_data["blocked_shifts"].copy()
                         if form_data["blocked_shifts"]
@@ -558,18 +562,18 @@ def _show_employee_dialog(
                 new_employee = Employee(
                     uid=new_uid,
                     name=form_data["name"].strip(),
-                    min_minutes_assigned=form_data["min_minutes_assigned"],
-                    max_minutes_assigned=form_data["max_minutes_assigned"],
-                    min_number_consecutive_shifts=form_data[
-                        "min_number_consecutive_shifts"
-                    ],
-                    max_number_consecutive_shifts=form_data[
-                        "max_number_consecutive_shifts"
-                    ],
-                    min_number_consecutive_days_off=form_data[
-                        "min_number_consecutive_days_off"
-                    ],
-                    max_number_weekends=form_data["max_number_weekends"],
+                    min_minutes_assigned=int(form_data["min_minutes_assigned"]),
+                    max_minutes_assigned=int(form_data["max_minutes_assigned"]),
+                    min_number_consecutive_shifts=int(
+                        form_data["min_number_consecutive_shifts"]
+                    ),
+                    max_number_consecutive_shifts=int(
+                        form_data["max_number_consecutive_shifts"]
+                    ),
+                    min_number_consecutive_days_off=int(
+                        form_data["min_number_consecutive_days_off"]
+                    ),
+                    max_number_weekends=int(form_data["max_number_weekends"]),
                     blocked_shifts=form_data["blocked_shifts"].copy()
                     if form_data["blocked_shifts"]
                     else set(),
@@ -626,7 +630,7 @@ def _show_employee_dialog(
                 "w-full"
             ).bind_value(form_data, "min_minutes_assigned")
 
-            ui.number(label="Maximale Arbeitszeit", min=0, format="%d").classes(
+            ui.number(label="Maximale Arbeitszeit", min=0, step=1, format="%d").classes(
                 "w-full"
             ).bind_value(form_data, "max_minutes_assigned")
 
@@ -636,7 +640,7 @@ def _show_employee_dialog(
                 "w-full"
             ).bind_value(form_data, "min_number_consecutive_shifts")
 
-            ui.number(label="Maximale Anzahl", min=0, format="%d").classes(
+            ui.number(label="Maximale Anzahl", min=0, step=1, format="%d").classes(
                 "w-full"
             ).bind_value(form_data, "max_number_consecutive_shifts")
 
@@ -647,7 +651,7 @@ def _show_employee_dialog(
                 label="Min. aufeinander folgende freie Tage", min=0, step=1, format="%d"
             ).classes("w-full").bind_value(form_data, "min_number_consecutive_days_off")
 
-            ui.number(label="Max. Wochenenden", min=0, format="%d").classes(
+            ui.number(label="Max. Wochenenden", min=0, step=1, format="%d").classes(
                 "w-full"
             ).bind_value(form_data, "max_number_weekends")
 
@@ -748,10 +752,8 @@ def _show_employee_dialog(
 
                 def save_current_value():
                     value = count_input.value
-                    if value is not None and value > 0:
+                    if value is not None and value >= 0:
                         shift_type_limits[current_shift_type_uid] = int(value)
-                    elif current_shift_type_uid in shift_type_limits:
-                        del shift_type_limits[current_shift_type_uid]
                     form_data["max_numbers_of_shifts"] = shift_type_limits.copy()
 
                 def on_shift_type_change(e):
@@ -759,13 +761,6 @@ def _show_employee_dialog(
                     save_current_value()
                     current_shift_type_uid = e.value
                     update_count_field(current_shift_type_uid)
-
-                def reset_current_value():
-                    if current_shift_type_uid in shift_type_limits:
-                        del shift_type_limits[current_shift_type_uid]
-                    form_data["max_numbers_of_shifts"] = shift_type_limits.copy()
-                    count_input.set_value(None)
-                    ui.notify("Limit entfernt (unbegrenzt)", type="info")
 
                 with ui.row().classes("w-full items-center gap-2"):
                     ui.select(
@@ -777,16 +772,12 @@ def _show_employee_dialog(
 
                     count_input = ui.number(
                         label="Max. Anzahl",
-                        min=1,
+                        min=0,
                         step=1,
                         format="%d",
                         placeholder="unbegrenzt",
                         on_change=lambda: save_current_value(),
                     ).classes("w-48")
-
-                    ui.button(icon="clear", on_click=reset_current_value).props(
-                        "flat"
-                    ).tooltip("Auf unbegrenzt zurücksetzen")
 
                 update_count_field(current_shift_type_uid)
 
@@ -906,7 +897,7 @@ def _show_shift_type_dialog(
                 if shift_type:  # Type guard
                     shift_type.name = form_data["name"].strip()
                     shift_type.start_time = time(hour=hours, minute=minutes)
-                    shift_type.length = form_data["length"]
+                    shift_type.length = int(form_data["length"])
                     shift_type.blocked_shifts_after = (
                         form_data["blocked_shifts_after"].copy()
                         if form_data["blocked_shifts_after"]
@@ -936,7 +927,7 @@ def _show_shift_type_dialog(
                     uid=new_uid,
                     name=form_data["name"].strip(),
                     start_time=time(hour=hours, minute=minutes),
-                    length=form_data["length"],
+                    length=int(form_data["length"]),
                     blocked_shifts_after=form_data["blocked_shifts_after"].copy()
                     if form_data["blocked_shifts_after"]
                     else set(),
@@ -1024,8 +1015,8 @@ def _show_shift_type_dialog(
                 length_label = ui.label("").classes("text-sm text-gray-600")
 
                 def update_length_label():
-                    hours = form_data["length"] / 60
-                    length_label.text = f"= {hours:.1f} Stunden"
+                    hours = int(form_data["length"] / 60)
+                    length_label.text = f"= {hours} Stunden"
 
                 ui.number(
                     label="Länge in Minuten", min=240, max=720, step=1, format="%d"
@@ -1113,9 +1104,9 @@ def _display_shift_details_dialog(
 
     # Form data für Edit-Modus
     form_data = {
-        "preffert_number_employees": shift.preffert_number_employees,
-        "weight_below_preferred": shift.weight_below_preferred,
-        "weight_above_preferred": shift.weight_above_preferred,
+        "preffert_number_employees": int(shift.preffert_number_employees),
+        "weight_below_preferred": int(shift.weight_below_preferred),
+        "weight_above_preferred": int(shift.weight_above_preferred),
         "assign_employee_day_shift": shift.assign_employee_day_shift.copy()
         if shift.assign_employee_day_shift
         else set(),
@@ -1153,9 +1144,11 @@ def _display_shift_details_dialog(
                 return
 
             # Aktualisiere Shift-Objekt direkt
-            shift.preffert_number_employees = form_data["preffert_number_employees"]
-            shift.weight_below_preferred = form_data["weight_below_preferred"]
-            shift.weight_above_preferred = form_data["weight_above_preferred"]
+            shift.preffert_number_employees = int(
+                form_data["preffert_number_employees"]
+            )
+            shift.weight_below_preferred = int(form_data["weight_below_preferred"])
+            shift.weight_above_preferred = int(form_data["weight_above_preferred"])
 
             # Sichere Handhabung von Sets (können None sein)
             shift.assign_employee_day_shift = (
@@ -1369,7 +1362,7 @@ def _display_shift_details_dialog(
 
                         ui.label("Länge:").classes("font-semibold")
                         ui.label(
-                            f"{shift_type.length} min ({shift_type.length / 60:.1f}h)"
+                            f"{shift_type.length} min ({int(shift_type.length / 60)}h)"
                         )
 
                 # Coverage Requirements
