@@ -157,7 +157,9 @@ def render_employee_details(refresh_callback=None) -> None:
     Args:
         refresh_callback: Optional callback function to refresh the display after changes
     """
-    instance: Instance | None = state.get_instance()
+    inst = state.get_instance()
+    assert inst is not None
+    instance: Instance = inst.model_copy(deep=True)
     if instance is None:
         return
 
@@ -471,7 +473,7 @@ def _show_employee_dialog(
         "max_numbers_of_shifts": (
             employee.max_numbers_of_shifts.copy()
             if employee.max_numbers_of_shifts
-            else {}
+            else {uid: instance.number_of_days for uid in instance.shift_types.keys()}
         )
         if employee
         else {},
@@ -479,6 +481,7 @@ def _show_employee_dialog(
 
     def save_employee():
         """Fügt den neuen Mitarbeiter hinzu oder aktualisiert einen bestehenden."""
+        used_empleoyee_uid = 0
         try:
             # Validierung
             if not form_data["name"] or not form_data["name"].strip():
@@ -524,6 +527,7 @@ def _show_employee_dialog(
             if is_edit:
                 # Aktualisiere bestehenden Mitarbeiter
                 if employee:  # Type guard
+                    used_empleoyee_uid = employee.uid
                     employee.name = form_data["name"].strip()
                     employee.min_minutes_assigned = int(
                         form_data["min_minutes_assigned"]
@@ -558,6 +562,7 @@ def _show_employee_dialog(
             else:
                 # Erstelle neuen Mitarbeiter
                 new_uid = hash_string(f"employee_{form_data['name'].strip()}")
+                used_empleoyee_uid = new_uid
 
                 new_employee = Employee(
                     uid=new_uid,
@@ -592,9 +597,19 @@ def _show_employee_dialog(
 
             # Speichere geänderte Instance
             state.clear_solutions()
-            state.set_instance(instance)
+            from ... import solve_employees
 
-            ui.notify(success_msg, type="positive")
+            if solve_employees.solve_employee.st_solve_employee(
+                used_empleoyee_uid, instance
+            )[0]:
+                state.set_instance(instance)
+
+                ui.notify(success_msg, type="positive")
+            else:
+                ui.notify(
+                    "Mitarbeiter wurde nicht gepseichert, da die Instance unlösbar werden würde.",
+                    type="warning",
+                )
 
             # Aktualisiere Anzeige
             if refresh_callback:

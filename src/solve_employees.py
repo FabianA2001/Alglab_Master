@@ -315,7 +315,7 @@ class solve_employee:
         valid_employee_uids, invalid_employee_uids = solve_employee(
             instance=instance
         ).return_all_valid_invalid_employees()
-        print("one shift validity time: ", time.time()-one_shift_validity_start_time)
+        print("one shift validity time: ", time.time() - one_shift_validity_start_time)
         if len(invalid_employee_uids) > 0:
             print("Something went wrong and the model is infeasible or invalid")
             print("removing invalid employees: ", invalid_employee_uids)
@@ -548,7 +548,7 @@ class solve_employee:
     def st_solve_employee(
         employee_uid: employee.EmployeeUid,
         instance: instace.Instance,
-        in_solution: Solution,
+        in_solution: Solution | None = None,
     ) -> Tuple[bool, Solution]:
         """
         A function that for the instance passed, get an instance that only contains the given employee and then solve this instance and employee, at the end it return True if a solution exist and the employee is valid and False otherwise.
