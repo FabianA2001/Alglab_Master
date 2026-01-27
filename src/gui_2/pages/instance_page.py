@@ -1279,20 +1279,130 @@ def _display_shift_details_dialog(
                             uid: emp.name for uid, emp in instance.employees.items()
                         }
 
-                        ui.select(
-                            options=employee_options,
-                            multiple=True,
-                            label="Zugewiesene Mitarbeiter",
-                        ).classes("w-full").bind_value(
-                            form_data, "assign_employee_day_shift"
+                        # Store previous values for rollback
+                        previous_values = {
+                            "assign": form_data["assign_employee_day_shift"].copy()
+                            if form_data["assign_employee_day_shift"]
+                            else set(),
+                            "ban": form_data["ban_employee_day_shift"].copy()
+                            if form_data["ban_employee_day_shift"]
+                            else set(),
+                        }
+
+                        def validate_employee_assignment_change(
+                            field_name: str, new_value: set | None
+                        ):
+                            """Validates if the employee assignment change makes the instance infeasible."""
+                            from ... import solve_employees
+
+                            # Create a temporary copy of the instance to test
+                            test_instance = instance.model_copy(deep=True)
+                            test_shift = test_instance.shifts[day][shift_type_uid]
+
+                            # Apply the change
+                            if field_name == "assign":
+                                test_shift.assign_employee_day_shift = (
+                                    new_value.copy() if new_value else set()
+                                )
+                            elif field_name == "ban":
+                                test_shift.ban_employee_day_shift = (
+                                    new_value.copy() if new_value else set()
+                                )
+
+                            # Test if instance is still feasible
+                            # Test with each affected employee
+                            affected_employees = set()
+                            if new_value:
+                                affected_employees.update(new_value)
+                            if previous_values[field_name]:
+                                affected_employees.update(previous_values[field_name])
+
+                            if not affected_employees:
+                                # No employees affected, change is valid
+                                previous_values[field_name] = (
+                                    new_value.copy() if new_value else set()
+                                )
+                                return True
+
+                            # Test feasibility for each affected employee
+                            for emp_uid in affected_employees:
+                                is_feasible, _ = (
+                                    solve_employees.solve_employee.st_solve_employee(
+                                        emp_uid, test_instance
+                                    )
+                                )
+                                if not is_feasible:
+                                    # Revert to previous value
+                                    if field_name == "assign":
+                                        form_data["assign_employee_day_shift"] = (
+                                            previous_values["assign"].copy()
+                                        )
+                                    elif field_name == "ban":
+                                        form_data["ban_employee_day_shift"] = (
+                                            previous_values["ban"].copy()
+                                        )
+
+                                    emp_name = (
+                                        instance.employees.get(emp_uid).name  # type: ignore
+                                        if instance.employees.get(emp_uid)
+                                        else "Unbekannt"
+                                    )
+                                    ui.notify(
+                                        f"Diese Änderung würde die Instanz für Mitarbeiter '{emp_name}' unlösbar machen.",
+                                        type="warning",
+                                        timeout=5000,
+                                    )
+
+                                    # Force UI update
+                                    if field_name == "assign":
+                                        assign_select.update()
+                                    elif field_name == "ban":
+                                        ban_select.update()
+
+                                    return False
+
+                            # All tests passed, update previous value
+                            previous_values[field_name] = (
+                                new_value.copy() if new_value else set()
+                            )
+                            return True
+
+                        def on_assign_change(e):
+                            """Handler for assigned employees change."""
+                            assert e.value is not None
+                            new_value = e.value
+                            if isinstance(new_value, list):
+                                new_value = set(new_value)
+                            validate_employee_assignment_change("assign", new_value)
+
+                        def on_ban_change(e):
+                            """Handler for banned employees change."""
+                            assert e.value is not None
+                            new_value = e.value
+                            if isinstance(new_value, list):
+                                new_value = set(new_value)
+                            validate_employee_assignment_change("ban", new_value)
+
+                        assign_select = (
+                            ui.select(
+                                options=employee_options,
+                                multiple=True,
+                                label="Zugewiesene Mitarbeiter",
+                                on_change=on_assign_change,
+                            )
+                            .classes("w-full")
+                            .bind_value(form_data, "assign_employee_day_shift")
                         )
 
-                        ui.select(
-                            options=employee_options,
-                            multiple=True,
-                            label="Gesperrte Mitarbeiter",
-                        ).classes("w-full").bind_value(
-                            form_data, "ban_employee_day_shift"
+                        ban_select = (
+                            ui.select(
+                                options=employee_options,
+                                multiple=True,
+                                label="Gesperrte Mitarbeiter",
+                                on_change=on_ban_change,
+                            )
+                            .classes("w-full")
+                            .bind_value(form_data, "ban_employee_day_shift")
                         )
 
                     # Strafpunkte
