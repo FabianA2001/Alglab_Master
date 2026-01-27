@@ -192,12 +192,13 @@ class Solver:
                 return callback.best_solution  # Return the best solution if it exists
         solution = Solution(self.instance)  # Create a new Solution instance
         solution.solve_status = status
+        solution.solve_time = self.solve_time
         if status in [cp_model.OPTIMAL, cp_model.FEASIBLE]:
             self.store_solution(solver, solution)  # Store the current solution values
             solution.objective_value = solver.ObjectiveValue()
             solution.instance = self.instance
             solution.disabled_constraints = self.disabled_constraints
-            solution.solve_time = self.solve_time
+
             solution.timestamp = datetime.now()
             return solution  # Return the populated solution
 

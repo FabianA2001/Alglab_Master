@@ -10,7 +10,7 @@ from .slice_instance import Slice_instance
 # getestet mit 10
 # getestet mit 40
 
-PADDING = 3
+PADDING = 5
 
 
 def __solve_change(
@@ -38,6 +38,8 @@ def solve_changes(
     max_solve_time: int = 60,
     log_search_progress: bool = True,
 ) -> Solution:
+    number_of_days = old_solution.instance.number_of_days
+    extra_padding = int(number_of_days / 5)
     new_instanc = old_solution.instance
     assert old_solution.instance.number_of_days == new_instanc.number_of_days, (
         "Die Anzahl der Tage in der alten und neuen Instanz muss übereinstimmen."
@@ -72,6 +74,14 @@ def solve_changes(
             small_max_solve_time,
             log_search_progress=log_search_progress,
         )
+        # Prüfe ob Timeout aufgetreten ist
+        timeout_occurred = new_solution.solve_time >= (small_max_solve_time * 0.9)
+        if timeout_occurred:
+            print(
+                f"Timeout erkannt: solve_time={new_solution.solve_time:.2f}s, max_time={small_max_solve_time}s"
+            )
+            return old_solution
+
         if not (
             new_solution.solve_status == cp_model.OPTIMAL
             or new_solution.solve_status == cp_model.FEASIBLE
@@ -85,22 +95,24 @@ def solve_changes(
             # TODO (Fabian) Müsste number_of_days nicht durch 2 geteilt werden weil Padding in beide Richtungen erweitert wird?
             # TODO (Fabian) Small solve time muss angepasst werden weil es jetzt ja pro trag theoretisch mehrmals versucht wird
             while infeasible and ((not reached_start) or (not reached_end)):
-                print(f"Erneuter Versuch mit mehr Padding: {PADDING + ((10) * i)}")
-                start_day = max(0, day - (PADDING + ((10) * i)))
+                print(
+                    f"Erneuter Versuch mit mehr Padding: {PADDING + (extra_padding * i)}"
+                )
+                start_day = max(0, day - (PADDING + (extra_padding * i)))
 
                 end_day = min(
                     new_instanc.number_of_days - 1,
-                    day + (PADDING + ((10) * i)),
+                    day + (PADDING + (extra_padding * i)),
                 )
                 dmin = new_instanc.number_of_days
                 for d in days_with_change_copy:
                     if d >= start_day and d < day and d < dmin:
-                        start_day = max(0, day - (PADDING + ((10) * i)))
+                        start_day = max(0, day - (PADDING + (extra_padding * i)))
                         dmin = d
                     if d <= end_day and d > day:
                         end_day = min(
                             new_instanc.number_of_days - 1,
-                            day + (PADDING + ((10) * i)),
+                            day + (PADDING + (extra_padding * i)),
                         )
 
                 days_with_change_copy = [
@@ -115,6 +127,16 @@ def solve_changes(
                     small_max_solve_time,
                     log_search_progress=log_search_progress,
                 )
+                # Prüfe ob Timeout auch in der Retry-Schleife aufgetreten ist
+                timeout_occurred_retry = new_solution.solve_time >= (
+                    small_max_solve_time * 0.5
+                )
+                if timeout_occurred_retry:
+                    print(
+                        f"Timeout in Retry erkannt: solve_time={new_solution.solve_time:.2f}s, max_time={small_max_solve_time}s"
+                    )
+                    return old_solution
+
                 i += 1
                 if (
                     new_solution.solve_status == cp_model.OPTIMAL
