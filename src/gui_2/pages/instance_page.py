@@ -650,34 +650,38 @@ def _show_employee_dialog(
             # Arbeitszeit
             ui.label("Arbeitszeit (in Minuten)").classes("font-semibold")
 
-            ui.number(label="Minimale Arbeitszeit", min=0, step=1, format="%d").classes(
-                "w-full"
-            ).bind_value(form_data, "min_minutes_assigned")
+            ui.number(
+                label="Minimale Arbeitszeit", min=0, max=1000000, step=1, format="%d"
+            ).classes("w-full").bind_value(form_data, "min_minutes_assigned")
 
-            ui.number(label="Maximale Arbeitszeit", min=0, step=1, format="%d").classes(
-                "w-full"
-            ).bind_value(form_data, "max_minutes_assigned")
+            ui.number(
+                label="Maximale Arbeitszeit", min=0, max=1000000, step=1, format="%d"
+            ).classes("w-full").bind_value(form_data, "max_minutes_assigned")
 
             # Konsekutive Schichten
             ui.label("Konsekutive Schichten").classes("font-semibold")
-            ui.number(label="Minimale Anzahl", min=0, step=1, format="%d").classes(
-                "w-full"
-            ).bind_value(form_data, "min_number_consecutive_shifts")
+            ui.number(
+                label="Minimale Anzahl", min=0, max=1000000, step=1, format="%d"
+            ).classes("w-full").bind_value(form_data, "min_number_consecutive_shifts")
 
-            ui.number(label="Maximale Anzahl", min=0, step=1, format="%d").classes(
-                "w-full"
-            ).bind_value(form_data, "max_number_consecutive_shifts")
+            ui.number(
+                label="Maximale Anzahl", min=0, max=1000000, step=1, format="%d"
+            ).classes("w-full").bind_value(form_data, "max_number_consecutive_shifts")
 
             # Weitere Parameter
             ui.label("Weitere Einstellungen").classes("font-semibold")
 
             ui.number(
-                label="Min. aufeinander folgende freie Tage", min=0, step=1, format="%d"
+                label="Min. aufeinander folgende freie Tage",
+                min=0,
+                max=1000000,
+                step=1,
+                format="%d",
             ).classes("w-full").bind_value(form_data, "min_number_consecutive_days_off")
 
-            ui.number(label="Max. Wochenenden", min=0, step=1, format="%d").classes(
-                "w-full"
-            ).bind_value(form_data, "max_number_weekends")
+            ui.number(
+                label="Max. Wochenenden", min=0, max=1000000, step=1, format="%d"
+            ).classes("w-full").bind_value(form_data, "max_number_weekends")
 
             # Blockierte Tage
             ui.label("Blockierte Tage (optional)").classes("font-semibold")
@@ -797,6 +801,7 @@ def _show_employee_dialog(
                     count_input = ui.number(
                         label="Max. Anzahl",
                         min=0,
+                        max=1000000,
                         step=1,
                         format="%d",
                         placeholder="unbegrenzt",
@@ -1245,6 +1250,7 @@ def _display_shift_details_dialog(
                         ui.number(
                             label="Bevorzugte Anzahl Mitarbeiter",
                             min=0,
+                            max=1000000,
                             step=1,
                             format="%d",
                         ).classes("w-full").bind_value(
@@ -1254,6 +1260,7 @@ def _display_shift_details_dialog(
                         ui.number(
                             label="Gewicht Unterbesetzung",
                             min=0,
+                            max=1000000,
                             step=1,
                             format="%d",
                         ).classes("w-full").bind_value(
@@ -1263,6 +1270,7 @@ def _display_shift_details_dialog(
                         ui.number(
                             label="Gewicht Überbesetzung",
                             min=0,
+                            max=1000000,
                             step=1,
                             format="%d",
                         ).classes("w-full").bind_value(
@@ -1468,6 +1476,7 @@ def _display_shift_details_dialog(
                                 assigned_input = ui.number(
                                     label="Strafpunkte bei Zuweisung",
                                     min=0,
+                                    max=1000000,
                                     step=1,
                                     format="%d",
                                     on_change=save_penalty_assigned,
@@ -1476,6 +1485,7 @@ def _display_shift_details_dialog(
                                 not_assigned_input = ui.number(
                                     label="Strafpunkte bei Nicht-Zuweisung",
                                     min=0,
+                                    max=1000000,
                                     step=1,
                                     format="%d",
                                     on_change=save_penalty_not_assigned,
