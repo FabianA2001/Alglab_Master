@@ -1668,6 +1668,8 @@ def instance_page():
         if not available_instances:
             ui.label("Keine Instances gefunden").classes("text-orange-500")
             ui.label(f"Pfad: {DATA_DIR}").classes("text-sm text-gray-500")
+        elif state.is_solver_running():
+            ui.label("Solver läuft ").classes("text-gray-500 italic")
         else:
             ui.label(f"{len(available_instances)} Instances verfügbar").classes(
                 "text-sm text-gray-600 mb-2"
