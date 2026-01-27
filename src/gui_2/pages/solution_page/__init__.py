@@ -242,6 +242,8 @@ def solution_page():
         if not available_solutions:
             ui.label("Keine Solutions gefunden").classes("text-orange-500")
             ui.label("Pfad: data/solutions").classes("text-sm text-gray-500")
+        elif state.is_solver_running():
+            ui.label("Solver läuft ").classes("text-gray-500 italic")
         else:
             ui.label(f"{len(available_solutions)} Solutions verfügbar").classes(
                 "text-sm text-gray-600 mb-2"
