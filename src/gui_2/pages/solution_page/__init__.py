@@ -19,6 +19,12 @@ from .helpers import load_available_solutions
 def solution_page():
     """Hauptseite für die Lösungsanzeige und -verwaltung."""
 
+    if state.is_solver_running():
+        ui.label(
+            "Lösungen können während des Solver-Laufs nicht geändert werden."
+        ).classes("text-red-500 font-bold")
+        return
+
     # State für Vergleichslösung
     comparison_solution = {"value": None}
     # Arbeitskopie der aktuellen Solution für Änderungen

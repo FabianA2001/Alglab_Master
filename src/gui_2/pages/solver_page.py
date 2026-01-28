@@ -109,9 +109,9 @@ def solver_page() -> None:
                     e.value if e.value else DEFAULT_TIMEOUT_SECONDS
                 ),
             ).classes("w-32")
-            ui.label(f"({current_timeout / 60:.1f} Minuten)").classes(
-                "text-sm text-gray-600"
-            )
+            # ui.label(f"({current_timeout / 60:.1f} Minuten)").classes(
+            #     "text-sm text-gray-600"
+            # )
 
     @ui.refreshable
     def solution_info() -> None:
@@ -460,8 +460,8 @@ def solver_page() -> None:
                         hint_solution=current_solution,
                         max_time_in_seconds=remaining_timeout_seconds,
                     )
-                    if solution.solve_status not in [2,4]:
-                        solution=current_solution
+                    if solution.solve_status not in [2, 4]:
+                        solution = current_solution
                 else:
                     solution = current_solution
 
