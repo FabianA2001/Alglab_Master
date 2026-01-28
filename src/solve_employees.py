@@ -317,7 +317,7 @@ class solve_employee:
         ).return_all_valid_invalid_employees()
         print("one shift validity time: ", time.time() - one_shift_validity_start_time)
         if len(invalid_employee_uids) > 0:
-            print("Something went wrong and the model is infeasible or invalid")
+            print("Something went wrong and the model would be infeasible or invalid")
             print("removing invalid employees: ", invalid_employee_uids)
             original_employees = instance.employees.copy()
             for employee_uid in invalid_employee_uids:
