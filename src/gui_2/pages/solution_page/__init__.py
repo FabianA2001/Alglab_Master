@@ -35,6 +35,7 @@ def solution_page():
             solution = Solution.from_json_file(solution_name)
             # Setze Solution im globalen State (verfügbar für alle Seiten)
             state.rest_solutions()
+            comparison_solution["value"] = None  # Zurücksetzen der Vergleichslösung
             state.add_solution(solution)
             state.set_instance(solution.instance)
             state.clear_changed_days()  # Zurücksetzen bei neuer Solution
@@ -141,7 +142,7 @@ def solution_page():
             ui.notify("Keine Arbeitskopie vorhanden", type="warning")
             return
         # TODO pass the new temp_solution after defining it
-        if test_emp:
+        if test_emp and get_changed_employees() is employee.EmployeeUid():
             changed_solutions = (
                 state.get_changed_solution()
                 if state.get_changed_solution()
@@ -171,7 +172,6 @@ def solution_page():
             state.set_changed_solution(temp_solution)
 
         # Füge die geänderte Solution zum State hinzu
-        state.add_solution(working_solution["value"])
         state.set_instance(working_solution["value"].instance)
         state_sol = state.get_solution()
         assert state_sol is not None
