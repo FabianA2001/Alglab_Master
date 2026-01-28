@@ -305,6 +305,8 @@ def solver_page() -> None:
             if not instance:
                 add_log_message("❌ Keine Instance geladen!")
                 return
+            else:
+                instance = instance.model_copy(deep=True)
 
             # Log Start-Informationen
             add_log_message("🚀 Starte Solver...")
@@ -458,6 +460,8 @@ def solver_page() -> None:
                         hint_solution=current_solution,
                         max_time_in_seconds=remaining_timeout_seconds,
                     )
+                    if solution.solve_status not in [2,4]:
+                        solution=current_solution
                 else:
                     solution = current_solution
 
