@@ -172,7 +172,6 @@ def solution_page():
             state.set_changed_solution(temp_solution)
 
         # Füge die geänderte Solution zum State hinzu
-        state.add_solution(working_solution["value"])
         state.set_instance(working_solution["value"].instance)
         state_sol = state.get_solution()
         assert state_sol is not None
