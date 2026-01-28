@@ -1626,6 +1626,12 @@ def _display_shift_details_dialog(
 def instance_page():
     """Seite für Instance-Verwaltung und -Laden."""
 
+    if state.is_solver_running():
+        ui.label(
+            "Instance kann nicht geändert werden, während der Solver läuft."
+        ).classes("text-red-500 font-semibold mb-4")
+        return
+
     def load_instance(instance_name: str) -> None:
         """Lädt eine Instance und aktualisiert den globalen State.
 
