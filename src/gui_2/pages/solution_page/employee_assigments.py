@@ -356,19 +356,19 @@ def _display_details_dialog(
             employee_change_callback,
         )
 
-        # Weight adjustment section
-        if preferred_count > 0:
-            ui.separator().classes("my-4")
-            _render_weight_adjustment_section(
-                solution,
-                shift_obj,
-                day,
-                shift_type_id,
-                shift_name,
-                weight_below,
-                dialog,
-                commit_callback,
-            )
+        # # Weight adjustment section
+        # if preferred_count > 0:
+        #     ui.separator().classes("my-4")
+        #     _render_weight_adjustment_section(
+        #         solution,
+        #         shift_obj,
+        #         day,
+        #         shift_type_id,
+        #         shift_name,
+        #         weight_below,
+        #         dialog,
+        #         commit_callback,
+        #     )
 
         ui.button("Schließen", on_click=dialog.close).classes("mt-4")
 
