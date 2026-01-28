@@ -142,7 +142,7 @@ def solution_page():
             ui.notify("Keine Arbeitskopie vorhanden", type="warning")
             return
         # TODO pass the new temp_solution after defining it
-        if test_emp:
+        if test_emp and get_changed_employees() is employee.EmployeeUid():
             changed_solutions = (
                 state.get_changed_solution()
                 if state.get_changed_solution()
