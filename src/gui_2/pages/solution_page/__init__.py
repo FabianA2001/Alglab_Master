@@ -35,6 +35,7 @@ def solution_page():
             solution = Solution.from_json_file(solution_name)
             # Setze Solution im globalen State (verfügbar für alle Seiten)
             state.rest_solutions()
+            comparison_solution["value"] = None  # Zurücksetzen der Vergleichslösung
             state.add_solution(solution)
             state.set_instance(solution.instance)
             state.clear_changed_days()  # Zurücksetzen bei neuer Solution
