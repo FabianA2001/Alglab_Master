@@ -53,7 +53,6 @@ class callback_improvement_slowed(cp_model.CpSolverSolutionCallback):
     def on_solution_callback(self):
         if (
             time.time() - self.last_check_time >= self.time_between_checks_in_seconds
-            and (self.percentual_improvement > 0 or self.numerical_improvement > 0)
         ):
             print(
                 "time since last objective function improvement check: ",
@@ -81,7 +80,7 @@ class callback_improvement_slowed(cp_model.CpSolverSolutionCallback):
                 >= self.objective_value
                 and self.last_check_objective_value * (1 - self.percentual_improvement)
                 >= self.objective_value
-            ):
+            ) and (self.percentual_improvement > 0 or self.numerical_improvement > 0):
                 self.StopSearch()
             else:
                 self.last_check_objective_value = self.objective_value
