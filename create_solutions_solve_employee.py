@@ -269,7 +269,7 @@ def main():
                     )
                     callback_opt_work_var = callback_improvement_slowed(
                         percentual_improvement=0,
-                        time_between_checks_in_seconds=0,
+                        time_between_checks_in_seconds=30,
                     )
                     callback_opt = callback_improvement_slowed(
                         numerical_improvement=numerical_improvement_opt,
