@@ -251,7 +251,7 @@ def main():
     #                     solution.to_json_file(filename)
 
     # create LNS solution using first one_shift method and optimizing after LNS stop finding solutions
-    for one_shift_time, work_var_time, opt_time in [(0, 0, 30)]:
+    for one_shift_time, work_var_time, opt_time in [(10, 20, 0), (0, 0, 30)]:
         #     # ,  (2.5, 0, 0), (1, 0, 0),  (5, 2.5, 0), (5, 5, 0),  (10, 5, 0), (5, 10, 0),  (10, 10, 0), (0, 0, 30), (0, 2.5, 27.5), (2.5, 0, 27.5), (2.5, 2.5, 25), (2.5, 5, 22.5), (5, 2.5, 22.5), (5, 5, 20), (5, 10, 15), (10, 10, 10), (10, 5, 15)
         for json_file in json_files_best_till_time:
             for x in range(0, 1):
