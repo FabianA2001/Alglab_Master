@@ -268,8 +268,8 @@ def main():
                         time_between_checks_in_seconds=time_between_checks_in_seconds_shift,
                     )
                     callback_opt_work_var = callback_improvement_slowed(
-                        percentual_improvement=percentual_improvement_work_var,
-                        time_between_checks_in_seconds=time_between_checks_in_seconds_work_var,
+                        percentual_improvement=0,
+                        time_between_checks_in_seconds=0,
                     )
                     callback_opt = callback_improvement_slowed(
                         numerical_improvement=numerical_improvement_opt,
@@ -288,6 +288,7 @@ def main():
                         fixed_work_var_opt_max_time=work_var_time * 60,
                         general_optimization_max_time=0 * 60,
                         one_shift_callback=callback_one_shift,
+                        fixed_work_var_opt_callback=callback_opt_work_var,
                     )
 
                     timeout_seconds = opt_time * 60 - (time.time() - start_time)
