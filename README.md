@@ -1,89 +1,48 @@
-# Alglab Master
+# Nurse Rostering Project
 
-### Aufgabe
-[Instances](https://www.schedulingbenchmarks.org/nrp/)
+Dieses Projekt behandelt das Nurse Rostering Problem mit einer Kombination aus CP-SAT und Large Neighborhood Search (LNS). Ziel ist es, Mitarbeiterpläne effizient zu erzeugen und bei Änderungen schnell neu zu berechnen. Dabei werden Instanzen und Lösungen als JSON gespeichert und die Eingaben durch Pydantic validiert.
 
-[Constraints](https://www.schedulingbenchmarks.org/nrp/instances1_24.html)
+## Problemstellung
 
-### Installation
-`pip install -e ".[dev]"`
+Das Ziel des Projekts ist die Erstellung eines validen Dienstplans für Pflegekräfte unter Berücksichtigung von Constraints und Anforderungen. Die Lösung muss nicht nur feasible sein, sondern auch in der Praxis nutzbar bleiben, wenn sich Anforderungen oder Eingabedaten ändern.
 
-### Run
-`main`
+## Lösungsansatz
+Zunächst wird eine initiale Lösung erstellt, indem eine vereinfachte Version der Instanz mit CP-SAT gelöst wird. Diese erste Lösung dient als Ausgangsbasis für die weitere Optimierung.
 
-### Test
-`pytest`
+Anschließend wird die Lösung mit Large Neighborhood Search (LNS) schrittweise verbessert. Dabei werden jeweils nur begrenzte Zeiträume der Planung erneut durch CP-SAT gelöst, während die restlichen Informationen der bestehenden Lösung als Randbedingungen berücksichtigt werden. Dadurch bleibt die Berechnung effizient, auch bei größeren Instanzen.
 
-### Frontend
-* Run the following commands in the folder [src/gui/pages/component_solution/my_component/frontend/](src/gui/pages/component_solution/my_component/frontend/): 
-1. "npm install"
-2. "npm start"
-* In case of an error related to patch-package, please install it with pip using: "npm i patch-package" and repeat
-* You need to have npm installed (possibly also nodejs)
+Wenn sich eine Instanz oder ein Teil der Anforderungen ändert, wird ebenfalls nur der betroffene Zeitraum der Lösung neu bewertet und angepasst. So lassen sich Änderungen schnell und gezielt integrieren, ohne die gesamte Planung erneut vollständig neu zu berechnen.
 
-### GUI
-First run the frontend
+## GUI
 
-`streamlit run run_gui.py`
+Die Benutzeroberfläche wurde mit NiceGUI erstellt. Sie ermöglicht das Auswählen, Bearbeiten und Überprüfen von Instanzen sowie das Starten des Solvers und die Darstellung der Ergebnisse.
 
+### Beispielansichten
 
-### Branches
+Instanzen auswählen und bearbeiten
+![alt text](readme_data/image-1.png)
 
-- Dev Branch
-- Merge Main in Dev Branch
-- Pull request
-    - add description with important chanages
-- Optional Copilot Review
-- accapt diffrent Person
+Solver starten und Ausgabe anzeigen
+![alt text](readme_data/image-2.png)
 
-### Commit
-- fix(class, file): fix a bug
-- feat(class, file): add feature
-- refactor(class,file): doesn't change logik
-- remove: remove feature
-- docs: add/edit comment
-- type(class, file) [BROKEN]: Commit doesn't work
-- type(class,file): small discription
+Lösung anzeigen
+![alt text](readme_data/image-3.png)
 
-### Benchmarks: Ergebnisse visualisieren
+Lösung bearbeiten
+![alt text](readme_data/image-4.png)
 
-Das Projekt enthält ein Skript zum Erstellen von Diagrammen aus den Benchmark-Ergebnisdateien (JSON) in `benchmarks/`. Das Skript befindet sich in `benchmarks/visualize_results.py` und bietet mehrere Modi:
+## Installation
 
-- Einzelne Ergebnisdatei visualisieren (erstellt Balken- und kumulatives Diagramm):
+Um das Projekt lokal zu installieren, wird folgendes Kommando verwendet:
 
 ```bash
-python -m benchmarks.visualize_results --input benchmarks/results_first/results_20251203_210153.json --output benchmarks/graphs
+pip install -e ".[dev]"
 ```
 
-- Alle JSON-Dateien in einem Ordner verarbeiten (je File eigene Graphen):
+## Ausführung
+
+Nach der Installation kann die GUI gestartet werden:
 
 ```bash
-python -m benchmarks.visualize_results --input benchmarks/results_first --all --output benchmarks/graphs
+./gui
 ```
-
-- Mehrere Läufe vergleichen (pro Instanz Balken nebeneinander):
-
-```bash
-python -m benchmarks.visualize_results --inputs \
-    benchmarks/results_first/results_20251201_202044.json \
-    benchmarks/results_first/results_20251201_202352.json \
-    --compare --output benchmarks/graphs
-```
-
-- Ganzen Ordner vergleichen und zusätzlich eine gruppierte Gesamt-Ansicht erstellen (eine Grafik mit mehreren Balken pro Instanz):
-
-```bash
-python -m benchmarks.visualize_results --input benchmarks/results_first --all --compare --grouped --output benchmarks/graphs
-```
-
-- Anzeigen statt Speichern (öffnet die Plots interaktiv):
-
-```bash
-python -m benchmarks.visualize_results --input benchmarks/results_first/results_20251203_210153.json --show
-```
-
-Ausgabe:
-- Standardmäßig werden PNG-Dateien unter `benchmarks/graphs/` abgelegt.
-- Beim Vergleich mehrerer Läufe wird ein Unterordner `compare_<labels>/` angelegt; dort findest du für jede Instanz `compare_<InstanceName>.png` und (wenn `--grouped`) `grouped_compare.png`.
-
-Hinweis: Falls viele Dateien verglichen werden, wird der Ordnername gekürzt/gehasht, um Probleme mit zu langen Pfaden zu vermeiden.
